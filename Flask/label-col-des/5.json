@@ -1,0 +1,10 @@
+{
+    "labelCols": [
+      "state_name",
+      "state",
+      "county_name",
+      "county",
+      "cz",
+      "czname"
+    ]
+  }

@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View Data</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="icon" href="img.png">
+    <style>
+        .load-more-link {
+            display: block;
+            text-align: center;
+            margin: 20px auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-box" id="chat-box"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+    <script>
+        let tableData = [];
+
+        function downloadTableAsXlsx(event) {
+            event.preventDefault();
+            console.log("Downloading table as XLSX");
+
+            try {
+                // Create a new workbook and worksheet
+                var wb = XLSX.utils.book_new();
+                var ws = XLSX.utils.aoa_to_sheet(tableData);
+
+                // Append the worksheet to the workbook
+                XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
+
+                // Generate XLSX file and download it
+                XLSX.writeFile(wb, 'table.xlsx');
+            } catch (error) {
+                console.error('Error in downloadTableAsXlsx:', error);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const chatBox = document.getElementById('chat-box');
+            appendMessage('topMessage error', 'Fetching your data <span class="animate-ellipsis"></span>');
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const sheet = urlParams.get('sheet');
+            const variable = urlParams.get('var');
+            let dataName = "";
+
+            fetch('http://127.0.0.1:3000/getData', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ sheet, variable }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                function generateRandomNumber() {
+                    // Generate a random 10-digit number
+                    const randomNumber = Math.floor(1000000000 + Math.random() * 9000000000);
+                    return randomNumber;
+                }
+
+                removeLastMessage();
+                tableData = data.tableData;
+                dataName = tableData[0][tableData[0].length - 1];
+                const id = generateRandomNumber();
+                appendMessage('topMessage error', "Here is the data. Each row represents a different " + data.units + ". " + '<a href="#" onclick="downloadTableAsXlsx(event)" class="download-link"><img height="1em" width="1em" src="download_icon.png" alt="Download"> Click here to download</a>');
+                displayTable(tableData, 20);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+
+            function displayTable(data, rowsToShow) {
+                let text = '<table class="table table-bordered"><tbody>';
+                let rowsDisplayed = 0;
+
+                for (let i = 0; i < data.length && i < rowsToShow; i++) {
+                    let row = data[i];
+                    text += '<tr>';
+                    for (let cell of row) {
+                        text += `<td>${cell}</td>`;
+                    }
+                    text += '</tr>';
+                    rowsDisplayed++;
+                }
+
+                text += '</tbody></table>';
+                appendMessage('botBig', text);
+
+                if (rowsDisplayed < data.length) {
+                    const loadMoreLink = document.createElement('a');
+                    loadMoreLink.href = '#';
+                    loadMoreLink.className = 'load-more-link';
+                    loadMoreLink.innerText = 'Load more';
+                    loadMoreLink.onclick = function(event) {
+                        event.preventDefault();
+                        loadMoreRows(data, rowsDisplayed, 20);
+                    };
+                    chatBox.appendChild(loadMoreLink);
+                    console.log("Load more link created and appended");
+                }
+            }
+
+            function loadMoreRows(data, start, count) {
+                const table = document.querySelector('.table tbody');
+                let text = '';
+
+                for (let i = start; i < data.length && i < start + count; i++) {
+                    let row = data[i];
+                    text += '<tr>';
+                    for (let cell of row) {
+                        text += `<td>${cell}</td>`;
+                    }
+                    text += '</tr>';
+                }
+
+                table.insertAdjacentHTML('beforeend', text);
+                console.log(`Loaded ${count} more rows`);
+
+                if (start + count >= data.length) {
+                    document.querySelector('.load-more-link').remove();
+                    console.log("All rows loaded, 'Load more' link removed");
+                }
+            }
+
+            function appendMessage(sender, message) {
+                let formattedMessage = message;
+                const messageElement = document.createElement('div');
+                messageElement.classList.add('message');
+                sender.split(' ').forEach(className => messageElement.classList.add(className));
+                messageElement.innerHTML = formattedMessage;
+                chatBox.appendChild(messageElement);
+                console.log(`Message appended: ${message}`);
+            }
+
+            function removeLastMessage() {
+                const messages = document.querySelectorAll('.message');
+                if (messages.length > 0) {
+                    messages[messages.length - 1].remove();
+                    console.log("Last message removed");
+                }
+            }
+        });
+    </script>
+</body>
+</html>

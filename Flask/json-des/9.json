@@ -1,0 +1,109 @@
+{
+  "variables": [
+    {
+      "name": "state",
+      "description": "Two-digit state 2010 FIPS code"
+    },
+    {
+      "name": "county",
+      "description": "Three-digit county 2010 FIPS code"
+    },
+    {
+      "name": "state_name",
+      "description": "State name"
+    },
+    {
+      "name": "county_name",
+      "description": "County name"
+    },
+    {
+      "name": "tract",
+      "description": "Six-digit tract 2010 FIPS code"
+    },
+    {
+      "name": "cz",
+      "description": "Five-digit 1990 commuter zone code"
+    },
+    {
+      "name": "czname",
+      "description": "Name of 1990 commuter zone"
+    },
+    {
+      "name": "ann_avg_job_growth_2004_2013",
+      "description": "Average annualized job growth rate over the time period 2004 to 2013. Constructed using LODES - WAC data files provided by the Census Bureau. Data unavailable for Massachusetts and Washington D.C."
+    },
+    {
+      "name": "emp2000",
+      "description": "The rate of employment computed as total employed population (the sum of employed females and employed males) divided by the total population 16 years and over. Obtained from 2000 Decennial Census"
+    },
+    {
+      "name": "foreign_share2010",
+      "description": "Number of foreign born residents in the 2010 Census divided by the sum of native and foreign born residents. Obtained from the ACS 2006-2010"
+    },
+    {
+      "name": "frac_coll_plus[year]",
+      "description": "Number of people aged 25 or older who have a bachelor's degree, master's degree, professional school degree, or doctorate degree, divided by the total number of people aged 25 or older in a tract. We use the 2000 Census to obtain the estimate for 2000, and the 2006-2010 ACS to obtain the estimate for 2010."
+    },
+    {
+      "name": "gsmn_math_g3_2013",
+      "description": "Mean 3rd grade math test scores in 2013. Obtained from the Stanford Education Data Archive and measured at the district level. We create a crosswalk from districts to tracts by weighting by the proportion of land area that a given school district covers in a tract."
+    },
+    {
+      "name": "hhinc_mean2000",
+      "description": "Mean household income. Obtained from 2000 Decennial Census."
+    },
+    {
+      "name": "job_density_2013",
+      "description": "Number of jobs per square mile in each tract. Constructed using LODES - WAC data files provided by the Census Bureau."
+    },
+    {
+      "name": "jobs_highpay_5mi_2015",
+      "description": "Number of jobs with earnings greater than $3,333 per month in own and neighboring tracts whose centroids fall within a radius of 5 miles from own tract centroid. Constructed using LODES - WAC data files provided by the Census Bureau."
+    },
+    {
+      "name": "jobs_total_5mi_2015",
+      "description": "Total number of jobs in own and neighboring tracts whose centroids fall within a radius of 5 miles from own tract centroid. Constructed using information from the Workplace Area Characteristics (WAC) data files in the LEHD Origin-Destination Employment Statistics (LODES) provided by the Census Bureau."
+    },
+    {
+      "name": "ln_wage_growth_hs_grad",
+      "description": "Wage growth for high school graduates. Wages are constructed by dividing the average high school graduate annual earnings by the product of overall average weekly hours worked and 52. High school graduate wage growth is then computed as the difference in logarithms between high school graduate wages in 2010-2014 and school graduate wages in 2005-2009. Wages are measured in the 2005-2009 and 2010-2014 American Community Surveys."
+    },
+    {
+      "name": "mail_return_rate2010",
+      "description": "The 2010 Census return rate, measured as the number of 2010 Census mail forms completed and returned over the number of valid occupied housing units where a Census form was expected to be delivered for mail return to Census. Taken from the Census planning database."
+    },
+    {
+      "name": "mean_commutetime2000",
+      "description": "Mean commute time for workers over 16 years old in the tract, as measured in the 2000 Decennial Census."
+    },
+    {
+      "name": "med_hhinc[year]",
+      "description": "Median household income. The data for 1990 is measured in the 1990 Census, while the data for 2016 comes from the 2012-2016 American Community Survey."
+    },
+    {
+      "name": "poor_share[year]",
+      "description": "Share of individuals in the tract below the federal poverty line, measured in the decennial Census of the relevant year for the 1990 and 2000 estimates, and measured in the 2006-2010 ACS for the 2010 estimate."
+    },
+    {
+      "name": "popdensity[year]",
+      "description": "Number of residents per square mile, calculated by dividing the total tract level population in the Decennial Census from 2000 and 2010 with tract land area given in square miles from the 2010 Census Gazetteer Files"
+    },
+    {
+      "name": "rent_twobed2015",
+      "description": "The median gross rent for renter-occupied housing units with two bedrooms that pay cash rent (from the 2011-2015 ACS)"
+    },
+    {
+      "name": "share_[race][year]",
+      "description": "Racial Shares in the decennial Census. All races (except Hispanic) exclude Hispanics and Latinos"
+    },
+    {
+      "name": "singleparent_share[year]",
+      "description": "The number of households with females heads (and no husband present) or male heads (and no wife present) with own children under 18 years old present divided by the total number of households with own children present (1990 and 2000 estimates are from the decennial Census, and the 2010 estimate is from the 2006-2010 estimate)."
+    },
+    {
+      "name": "traveltime15_2010",
+      "description": "Share of workers 16 years and over who do not work at home whose commute is shorter than 15 minutes. Measured in the 2006-2010 ACS."
+    }
+  ],
+  "units": "census tract"
+}

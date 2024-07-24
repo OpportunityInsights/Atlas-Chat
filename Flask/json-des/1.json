@@ -1,0 +1,53 @@
+{
+  "variables": [
+    {
+      "name": "cz",
+      "description": "Commuting zone identifier (1990 definitions)"
+    },
+    {
+      "name": "czname",
+      "description": "Commuting zone name"
+    },
+    {
+      "name": "kfr_[race]_[gender]_p25",
+      "description": "Mean household income rank for children whose parents were at the 25th percentile of the national income distribution. Incomes for children were measured as mean earnings in 2014-2015 when they were between the ages 31-37. Household income is defined as the sum of own and spouse’s income. Race is either Pooled, White, Black or Hispanic. Data on additional races can be found in full set of CZ level outcomes. Gender is one of pooled, male or female."
+    },
+    {
+      "name": "kfr_[race]_[gender]_p25_se",
+      "description": "Estimated standard error for kfr_[race]_[gender]_p25"
+    },
+    {
+      "name": "jail_[race]_[gender]_p25",
+      "description": "Fraction of children born in 1978-1983 birth cohorts with parents at the 25th percentile of the national income distribution who were incarcerated on April 1st, 2010. Incarceration is defined as residing in a federal detention center, federal prison, state prison, local jail, residential correctional facility, military jail, or juvenile correctional facility. Race is either Pooled, White, Black or Hispanic. Data on additional races can be found in full set of CZ level outcomes. Gender is one of pooled, male or female. "
+    },
+    {
+      "name": "jail_[race]_[gender]_p25_se",
+      "description": "Estimated standard error for jail_[race]_[gender]_p25"
+    },
+    {
+      "name": "[race]_[gender]_count",
+      "description": "Number of children under 18 living in the given CZ with parents whose household income was below the national median. This is computed by multiplying the number of children living in the county according to the 2000 Decennial Census by the fraction of children living in households in which the parents earn less than the national median in the relevant analysis sample. Race is either Pooled, White, Black or Hispanic. Data on additional races can be found in full set of county level outcomes. Gender is one of pooled, male or female. We use this variable as our preferred population weighting variable when analyzing these outcomes across places. Note that this is called “kid_[race]_[gender]_blw_p50_n” in the unabridged data tables."
+    },
+    {
+      "name": "state",
+      "description": "Two-digit state 2010 FIPS code"
+    },
+    {
+      "name": "county",
+      "description": "Three-digit county 2010 FIPS code"
+    },
+    {
+      "name": "tract",
+      "description": "Six-digit tract 2010 FIPS code"
+    },
+    {
+      "name": "state_name",
+      "description": "State name"
+    },
+    {
+      "name": "county_name",
+      "description": "County name"
+    }
+  ],
+  "units": "census tract"
+}

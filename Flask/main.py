@@ -300,7 +300,7 @@ def handle_chat_request_no_sheets(user_message):
         for index in indexes:
             if (not rawForIndex[sheetName][index].endswith("_se") and not rawForIndex[sheetName][index].endswith("_n")):
                 headers_and_descriptions.append(f"{titles[sheetName]}LINK{rawForIndex[sheetName][index]}SPECIAL{new_headers_dict[sheetName][index]}")
-                if (rawForIndex[sheetName][index].startswith("jail")):
+                if (rawForIndex[sheetName][index].startswith("has_mom")):
                     print(rawForIndex[sheetName][index])
 
     print("HERE")
@@ -356,8 +356,8 @@ def ask_ollama(prompt):
 #     print(prompt)
 #     print(ask_ollamaf(prompt))
 
-def function_langchain(prompt, function, requiredFunction=None):
-    llm = OllamaFunctions(model="llama3-groq-tool-use", format="json", temperature=0)
+def function_langchain(prompt, function, temperature, requiredFunction=None):
+    llm = OllamaFunctions(model="llama3-groq-tool-use", format="json", temperature=temperature)
     llm_with_tools = llm.bind_tools([function])
     tools = [{"type": "function", "function": function}]
     if requiredFunction:
@@ -1320,6 +1320,37 @@ def parse_function_call_string(string: str) -> ChatCompletionMessage:
 #             print(variable)
 #             print(response)
 #             print("\n\n")
+
+# new flask endpoint
+@app.route('/remakeDes', methods=['GET'])
+def remake_des():
+    names = ['1', '4', '9', '12']
+    for name in names:
+        data = read_json_file(f"newHeader/{name}.json")
+        variables = data['embedding']
+        for variable in variables:
+            messages = [
+                {"role": "system", "content": "You are rewriting these descriptions as examples queries that a user might use when asking for this variable. Do not include the variable name in the query and do not just copy the description."},
+                {"role": "user", "content": f"Please remake the following description as queries. \n\n{variable}"}
+            ]
+
+            function = {
+                "name": "remake_description",
+                "description": "A function to get the query.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "query": {"type": "string", "description": "The rewritten description rewritten as a query. This should not just be a copy of the description. It should be rewritten to feel human and natural. It should feel like a real human being who is not an expert in the field would ask for this variable. Make sure to include race, gender, and percentile information from the variable name. For example, if the name includes asian, make sure to include asian in the query."},
+                    },
+                     "required": ["description"]
+                }
+            }
+
+            response = function_langchain(messages, function, 1, "remake_description")
+
+            print(variable)
+            print(response)
+            print("\n\n")
 
 if __name__ == '__main__':
     app.run(port=3000)

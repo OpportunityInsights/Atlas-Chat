@@ -1895,37 +1895,32 @@ function graphVariable(variable, otherKey) {
 
 function downloadTableAsXlsx(event) {
     event.preventDefault();
-    
 
     try {
         var link = event.currentTarget;
         var linkId = link.id;
-        
 
         var table = document.getElementById("t" + linkId);
         if (!table) {
-            
             return;
         }
-        
-
-        // Clone the table to avoid modifying the original table
-        var clonedTable = table.cloneNode(true);
-
-        // Add the cloned table to a hidden div
-        var hiddenDiv = document.createElement('div');
-        hiddenDiv.style.display = 'none';
-        hiddenDiv.appendChild(clonedTable);
-        document.body.appendChild(hiddenDiv);
 
         var wb = XLSX.utils.book_new();
-        var ws = XLSX.utils.table_to_sheet(clonedTable);
+        var ws_data = [];
 
+        for (var r = 0, n = table.rows.length; r < n; r++) {
+            var row = table.rows[r];
+            var row_data = [];
+            for (var c = 0, m = row.cells.length; c < m; c++) {
+                row_data.push(row.cells[c].innerText);
+            }
+            ws_data.push(row_data);
+        }
+
+        var ws = XLSX.utils.aoa_to_sheet(ws_data);
         XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
         XLSX.writeFile(wb, 'table.xlsx');
 
-        // Remove the hidden div after the download
-        document.body.removeChild(hiddenDiv);
     } catch (error) {
         console.error('Error in downloadTableAsXlsx:', error);
     }

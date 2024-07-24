@@ -14,7 +14,7 @@ from shapely import wkt
 import folium
 import geopandas as gpd
 
-from datetime import datetimef
+from datetime import datetime
 import random
 import firebase_admin
 from firebase_admin import credentials

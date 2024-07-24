@@ -955,7 +955,7 @@ function processChatData(data) {
         let cells = row.split("SPECIAL").map((cell, index) => {
             if (index === 0) {
                 let [sheet, varName] = cell.split("LINK");
-                return `<td><a href="file:///Users/maxwelllaibson/Documents/GitHub/OI-Prototype-2/viewData.html?sheet=${sheet}&var=${varName}" target="_blank">${varName}</a></td>`;
+                return `<td><a href="file:///Users/maxwelllaibson/Documents/GitHub/OIP3/viewData.html?sheet=${sheet}&var=${varName}" target="_blank">${varName}</a></td>`;
             } else {
                 return `<td>${cell}</td>`;
             }

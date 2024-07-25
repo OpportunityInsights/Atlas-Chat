@@ -610,7 +610,7 @@ def des():
                 "parameters": {"type": "object",
                                "properties": 
                                {"query": {"type": "string", "description": "Key words or phrases that should be put into the database's vector search features. These should not include any reference to location, race, percentile, or gender. If the user wants the same variable that they got before, use the full description of that variable from above."},
-                                "location type": {"type": "string", "enum":["address", "commuting zone", "county", "other", "counties in state", "census tracts in state", "state"], "description": "The type of location the user has provided if they provided one. The double location names, like counties in state are for when the user asks for something in something else. For example, they could ask for census tracts in Florida or counties in New York. Do not be afraid to say other or not include this parameter if they do not mention a location."},
+                                "location type": {"type": "string", "enum":["address", "commuting zone", "county", "other", "counties in state", "census tracts in state", "state", "all US counties"], "description": "The type of location the user has provided if they provided one. The double location names, like counties in state are for when the user asks for something in something else. For example, they could ask for census tracts in Florida or counties in New York. Do not be afraid to say other or not include this parameter if they do not mention a location."},
                                 "location name": {"type": "string", "description": "The name of the location, if one is provided, that should be used. If it is abbreviated, write it out fully. For example, NY would be New York."},
                                 "race": {"type": "string", "enum":["white", "black", "natam", "asian", "other", "pooled"], "description": "The race the data should be found for. Use pooled if not race is given."},
                                 "gender": {"type": "string", "enum":["male", "female", "pooled"], "description": "The gender the data should be found for. Use pooled if no gender is given."},
@@ -667,7 +667,7 @@ def use_case():
 @app.route('/pickSingleStatVar', methods=['POST'])
 def pick_single_stat_var():
     messages = request.json['messages']
-    messages.append({"role": "assistant", "content": "I will look at the variables listed under \"PROVIDED VARIABLES\" (if there are any) to see if I have one to calculate a statistic with. If I can I will put the variable name into variable. If not I tell the user why not. I will never make up a variable name that I was not explicitly given."})
+    messages.append({"role": "assistant", "content": "I will look at the variables listed under \"PROVIDED VARIABLES\" (if there are any) to see if I have one to calculate a statistic with. If I can I will put the variable name into variable. If not I tell the user why not. I will never make up a variable name that I was not explicitly given. If I can not find the right variables I will let the user know that they need to first ask for specific variables and get data tables for those variables. I will tell them to say things like \"Get me median household income for all counties in Texas.\""})
     function = {"name": "pick_stat_vars",
                 "description": "Calculates a statistic if there is a variable to work with provided under \"PROVIDED VARIABLES\". Otherwise, this function does not run.",
                 "parameters": {"type": "object",
@@ -685,7 +685,7 @@ def pick_single_stat_var():
 @app.route('/pickDoubleStatVars', methods=['POST'])
 def pick_double_stat_vars():
     messages = request.json['messages']
-    messages.append({"role": "assistant", "content": "I will look at the variables listed under \"PROVIDED VARIABLES\" (if there are any) to see if I have two of the same type to use to calculate a statistic with. If I can I will put the variable names into the variable1 and variable2. If not I tell the user why not. I will never make up a variable name that I was not explicitly given."})
+    messages.append({"role": "assistant", "content": "I will look at the variables listed under \"PROVIDED VARIABLES\" (if there are any) to see if I have two of the same type to use to calculate a statistic with. If I can I will put the variable names into the variable1 and variable2. If not I tell the user why not. I will never make up a variable name that I was not explicitly given. If I can not find the right variables I will let the user know that they need to first ask for specific variables and get data tables for those variables. I will tell them to say things like \"Get me median household income for all counties in Texas.\""})
     function = {"name": "pick_stat_vars",
                 "description": "Calculates a statistic if there are two variables to work with provided under \"PROVIDED VARIABLES\" of the same type. Otherwise, this function does not run.",
                 "parameters": {"type": "object",
@@ -705,7 +705,7 @@ def pick_double_stat_vars():
 @app.route('/pickGraphVars', methods=['POST'])
 def pick_graph_vars():
     messages = request.json['messages']
-    messages.append({"role": "assistant", "content": "I will look at the variables listed under \"PROVIDED VARIABLES\" (if there are any) to see if I have enough variables of the same type to make a graph. If I can I will put the x and y variable names into x and y. If not I tell the user why not. I will never make up a variable name that I was not explicitly given."})
+    messages.append({"role": "assistant", "content": "I will look at the variables listed under \"PROVIDED VARIABLES\" (if there are any) to see if I have enough variables of the same type to make a graph. If I can I will put the x and y variable names into x and y. If not I tell the user why not. I will never make up a variable name that I was not explicitly given. If I can not find the right variables I will let the user know that they need to first ask for specific variables and get data tables for those variables. I will tell them to say things like \"Get me median household income for all counties in Texas.\""})
     function = {"name": "pick_graph_vars",
                 "description": "Makes a graph if there are enough variables of the same type to do so provided under \"PROVIDED VARIABLES\". Otherwise, this function does not run.",
                 "parameters": {"type": "object",
@@ -742,7 +742,7 @@ def get_des():
 @app.route('/pickMapVars', methods=['POST'])
 def pick_map_vars():
     messages = request.json['messages']
-    messages.append({"role": "assistant", "content": "I will look at the variables listed under \"PROVIDED VARIABLES\" (if there are any) to see if I a variable to map. If I do not have the right variable I will tell the user why not. I will never make up a variable name that I was not explicitly given."})
+    messages.append({"role": "assistant", "content": "I will look at the variables listed under \"PROVIDED VARIABLES\" (if there are any) to see if I a variable to map. If I do not have the right variable I will tell the user why not. I will never make up a variable name that I was not explicitly given. If I can not find the right variables I will let the user know that they need to first ask for specific variables and get data tables for those variables. I will tell them to say things like \"Get me median household income for all counties in Texas.\""})
     function = {"name": "pick_map_vars",
                 "description": "Makes a map if there is a variable to map provided under \"PROVIDED VARIABLES\". Otherwise, this function does not run. This function can only graph data for counties in a state.",
                 "parameters": {"type": "object",
@@ -1017,7 +1017,7 @@ def save_report():
 
 #     return jsonify({'status': 'CZ column cells edited successfully'})
 
-def create_folium_choropleth(gdf, data_column, map_title, state_center, centroids):
+def create_folium_choropleth(gdf, data_column, map_title, state_center, centroids, zoom):
     print("DataFrame columns in create_folium_choropleth:\n", gdf.head())
     # Convert the 'geometry' column to shapely geometries
     gdf['geometry'] = gdf['geometry'].apply(wkt.loads)
@@ -1032,7 +1032,7 @@ def create_folium_choropleth(gdf, data_column, map_title, state_center, centroid
     geo_json_data = gdf.to_json()
 
     # Create the map centered on the state
-    m = folium.Map(location=state_center, zoom_start=5.5, scrollWheelZoom=False)
+    m = folium.Map(location=state_center, zoom_start=zoom, scrollWheelZoom=False)
     print("Center of the map:", state_center)
     print("Data column for choropleth:", data_column)
     # Add the choropleth layer
@@ -1058,8 +1058,17 @@ def generate_map():
     geo_level = request.json.get('geo_level', 'county')
 
     df = pd.DataFrame(data)
-    state_name = df.iloc[0, 0]
-    state_fips = str(df.iloc[0, 1]).zfill(2)
+
+    # Check if multiple states are present
+    states = df.iloc[:, 0].unique()
+
+    if len(states) > 1:
+        state_fips_list = df.iloc[:, 1].apply(lambda x: str(x).zfill(2)).unique().tolist()
+    else:
+        state_name = df.iloc[0, 0]
+        state_fips = str(df.iloc[0, 1]).zfill(2)
+        state_fips_list = [state_fips]
+
     county_fips = df.iloc[:, 3].apply(lambda x: str(x).zfill(3)).tolist()
     values = df.iloc[:, -1].apply(pd.to_numeric, errors='coerce').tolist()
 
@@ -1074,7 +1083,7 @@ def generate_map():
         tract_files = [os.path.join('unzipped', f) for f in os.listdir('unzipped') if f.endswith('_tract.shp')]
         for tract_file in tract_files:
             gdf = gpd.read_file(tract_file)
-            if 'STATEFP' in gdf.columns and gdf['STATEFP'].iloc[0] == state_fips:
+            if 'STATEFP' in gdf.columns and gdf['STATEFP'].iloc[0] in state_fips_list:
                 shapefile_path = tract_file
                 break
 
@@ -1094,12 +1103,12 @@ def generate_map():
 
     if geo_level == 'county':
         geo_df['GEOID'] = geo_df['STATEFP'] + geo_df['COUNTYFP']
-        geo_df = geo_df[geo_df['STATEFP'] == state_fips]
-        df['GEOID'] = [state_fips + county for county in county_fips]
+        geo_df = geo_df[geo_df['STATEFP'].isin(state_fips_list)]
+        df['GEOID'] = [state_fips + county for state_fips, county in zip(df.iloc[:, 1].apply(lambda x: str(x).zfill(2)).tolist(), county_fips)]
     elif geo_level == 'tract':
         geo_df['GEOID'] = geo_df['STATEFP'] + geo_df['COUNTYFP'] + geo_df['TRACTCE']
-        geo_df = geo_df[geo_df['STATEFP'] == state_fips]
-        df['GEOID'] = [state_fips + county + tract for county, tract in zip(county_fips, tract_fips)]
+        geo_df = geo_df[geo_df['STATEFP'].isin(state_fips_list)]
+        df['GEOID'] = [state_fips + county + tract for state_fips, county, tract in zip(df.iloc[:, 1].apply(lambda x: str(x).zfill(2)).tolist(), county_fips, tract_fips)]
 
     print("GeoDataFrame after adding GEOID:", geo_df.head())
     print("DataFrame to merge:", df.head())
@@ -1129,8 +1138,12 @@ def generate_map():
     print("Calculated state center:", state_center)
     
     data_column = merged.columns[-1]
-    map_title = f'{state_name} Data Visualization'
-    m = create_folium_choropleth(merged, data_column, map_title, state_center, centroids)
+    map_title = f'{", ".join(states)} Data Visualization'
+    m = ""
+    if len(states) > 1:
+        m = create_folium_choropleth(merged, data_column, map_title, state_center, centroids, 3.5)
+    else:
+        m = create_folium_choropleth(merged, data_column, map_title, state_center, centroids, 5.5)
 
     # Save the map to an HTML string
     map_html = m._repr_html_()

@@ -724,6 +724,9 @@ async function requestMapVars() {
             data.push(row);
         }
 
+        // Set up timeout for the second fetch
+        const controller2 = new AbortController();
+        const timeoutId2 = setTimeout(() => controller2.abort(), 300000); // 30 seconds timeout
 
         let d = document.createElement('div');
         let randomNum = Math.floor(Math.random() * 1000000);
@@ -736,9 +739,13 @@ async function requestMapVars() {
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ table: data, geo_level: cOT })
+            body: JSON.stringify({ table: data, geo_level: cOT }),
+            signal: controller2.signal
         })
-        .then(response => response.json())
+        .then(response => {
+            clearTimeout(timeoutId2);
+            return response.json();
+        })
         .then(data => {
             removeLastMessage();
             appendMessage('error', `Here is your map of ${pars["variable"]} for ${result}. <a href="#" id="${'li' + randomNum}" onclick="captureElementM(event)" class="download-link"><img height="1em" width="1em" src="${downloadIconUrl}" alt="Download"> Click here to download</a>`);
@@ -1226,7 +1233,7 @@ function linkRows(table) {
 function answerQuestion(variableText, table) {
     messages.push({ role: 'assistant', content: variableText });
     messages.push({ role: 'assistant', content: "THE USER DOES NOT SEE THIS MESSAGE: Variables with _n in their names do not refer to the number of people who have a certain outcome or did a certain thing. Instead, these variables refer to the number of people used to make a estimate in another variable. Almost never give a variable ending in _n to the user. Variable with pSOMENUMBER like p50 in them only refer to people with parents in a specific income bracet. Make sure to mention this to the user in descriptions." });
-    if (locationNameQ != null) {
+    if (locationTypeQ != null) {
         appendMessage('error', 'Looking for location specific data <span class="animate-ellipsis"></span>');
         answerQuestionContinuedLoc(table);
     } else {
@@ -1465,11 +1472,11 @@ async function getLocationData(table) {
       }
 
 
-      if (result.correspondingSheet == "Household Income and Incarceration for Children from Low-Income Households by Census Tract, Race, and Gender" && (locationTypeQ == "county" || locationTypeQ == "counties in state")) {
+      if (result.correspondingSheet == "Household Income and Incarceration for Children from Low-Income Households by Census Tract, Race, and Gender" && (locationTypeQ == "county" || locationTypeQ == "counties in state" || locationTypeQ == "all US counties")) {
         result.correspondingSheet = "Household Income and Incarceration for Children from Low-Income Households by County, Race, and Gender"
-     } else if (result.correspondingSheet == "All Outcomes by Census Tract, Race, Gender and Parental Income Percentile" && (locationTypeQ == "county" || locationTypeQ == "counties in state")) {
+     } else if (result.correspondingSheet == "All Outcomes by Census Tract, Race, Gender and Parental Income Percentile" && (locationTypeQ == "county" || locationTypeQ == "counties in state" || locationTypeQ == "all US counties")) {
            result.correspondingSheet = "All Outcomes by County, Race, Gender and Parental Income Percentile"
-     } else if (result.correspondingSheet == "Neighborhood Characteristics by Census Tract" && (locationTypeQ == "county" || locationTypeQ == "counties in state")) {
+     } else if (result.correspondingSheet == "Neighborhood Characteristics by Census Tract" && (locationTypeQ == "county" || locationTypeQ == "counties in state" || locationTypeQ == "all US counties")) {
            result.correspondingSheet = "Neighborhood Characteristics by County"
      }
 
@@ -1534,12 +1541,18 @@ async function getLocationData(table) {
             let stateId2 = await getStateIdFromName(locationNameQ);
             filteredRows = await filterRowsByStateId(data.tableData, stateId2);
             break;
+        case 'all US counties':
+            filteredRows = data.tableData.slice(1).filter(row => row[0] !== "");
+            break;
         default:
           throw new Error('Invalid location type');
       }
   
       if (filteredRows.length > 0) {
         removeLastMessage();
+        if (locationNameQ == undefined) {
+            locationNameQ = "the full US";
+        }
         displayLocationData(locationNameQ, data.units, data.tableData[0], filteredRows);
       } else {
         removeLastMessage();

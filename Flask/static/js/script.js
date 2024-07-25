@@ -274,13 +274,6 @@ document.getElementsByClassName("cart-button")[0].addEventListener("click", func
             if (row) {
                 combinedTable.appendChild(row);
             }
-
-            if (title == "Choropleth Maps" || title == "Calculated Statistics" || title == "Scatter Plots") {
-                appendMessageSCDI('message bot dtd', item);
-                return;
-            } else if (index != 0) {
-                appendMessageSCDI('message error', '<br>');
-            }
         });
 
         // Append the combined table to the DOM
@@ -1034,8 +1027,6 @@ function appendMessage(sender, message) {
 }
 
 function appendMessageSCDI(sender, message) {
-    removeBR();
-    removeBR();
     //const formattedMessage = message.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
     let formattedMessage = message;
     if (sender.split(' ').includes('error')) {
@@ -1047,11 +1038,6 @@ function appendMessageSCDI(sender, message) {
     sender.split(' ').forEach(className => messageElement.classList.add(className));
     messageElement.innerHTML = formattedMessage;
     document.getElementById("scdi").appendChild(messageElement);
-
-    let br = document.createElement('br');
-    document.getElementById("scdi").appendChild(br);
-    br = document.createElement('br');
-    document.getElementById("scdi").appendChild(br);
 }
 
 function removeBR() {

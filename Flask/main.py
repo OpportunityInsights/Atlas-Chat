@@ -222,8 +222,56 @@ def get_relevant_columns(index, columns):
         return []
 
 def handle_chat_request_no_sheets(user_message):
+    all_merged_headers_and_description = []
+    for num in (1, 4, 9, 12):
+      headers = get_header_row(f'./sheets/{num}.csv')
+      toRemove = ["p1", "p10", "p25", "p50", "p75", "p100", "n", "mean", "se", "s", "imp", "white", "black", "hisp", "asian", "natam", "other", "pooled", "male", "female", "2010", "2000", "2016", "1990", "24", "26", "29", "32"]
+      # Split headers and remove unwanted words
+      processed_headers = []
+      for header in headers:
+          split_header = re.split(r'[_\s]', header)
+          filtered_header = [word for word in split_header if word not in toRemove]
+          processed_headers.append(filtered_header)
+      # Remove duplicates while preserving order
+      unique_headers = []
+      seen = set()
+      for header in processed_headers:
+          header_tuple = tuple(header)  # Convert list to tuple for hashing
+          if header_tuple not in seen:
+              seen.add(header_tuple)
+              unique_headers.append(header)
+      headers = unique_headers
+      #descriptions = get_descriptions(f'./json-des/{num}.json')
+      descriptions = get_descriptions(f'./json-des/{num}.json')
+      matched_headers = []
+      for header in headers:
+          best_match = {"header": header, "description": "", "score": 0}
+          for desc in descriptions:
+              desc_name = simplify_name(desc["name"])
+              score = match_score(header, desc_name)
+              if score > best_match["score"]:
+                 best_match = {"header": header, "description": desc["description"], "score": score}
+          if best_match["score"] > 0:
+              matched_headers.append(best_match)
+          else:
+              matched_headers.append({"header": header, "description": ""})
+      # Check if any headers didn't get a match
+      unmatched = [h for h in matched_headers if h["description"] == ""]
+      if unmatched:
+          print("Warning: Some headers did not get a match.")
+          print("Unmatched headers:", [h["header"] for h in unmatched])
+      for header in matched_headers:
+          header["header"] = '_'.join(header["header"])
+      merged_headers_descriptions = [f"VARIABLE NAME: {matched_headers[i]["header"]} - VARIABLE DESCRIPTION: {matched_headers[i]["description"]}" for i in range(len(headers))]
+      #unit = read_json_file(f"json-des/{num}.json")['units']
+      unit = read_json_file(f"json-des/{num}.json")['units']
+      merged_headers_descriptions = [f"{desc} - UNIT: {unit}" for desc in merged_headers_descriptions]
+      all_merged_headers_and_description.extend(merged_headers_descriptions)
+
+#good code below here
     embedding = get_embedding_throttled([user_message])
     names = [int(name[:-5]) for name in get_files_in_folder("embedding")]
+    names.sort()
     embeddings = [read_json_file(f"embedding/{name}.json") for name in names]
     distances = [[similarity(embedding[0].data[0].embedding, emb[j]) for j in range(len(emb))] for emb in embeddings]
     all_distances = [dist for sublist in distances for dist in sublist]
@@ -271,18 +319,18 @@ def handle_chat_request_no_sheets(user_message):
         indexes = [i for i, x in enumerate(processedForIndex[sheetName]) if x == header]
         allCols.append({'indexes': indexes, 'sheetName': sheetName})
 
+    for i in range(len(all_distances)):
+        print(all_merged_headers_and_description[i])
+        print(all_distances[i])
+        print("\n")
+
     sorted_headers = sort_distances_with_headers(all_distances, allCols)
-    print("SORTED_HEADERS")
-    print(sorted_headers)
 
     if sorted_headers[0][0] < 0.2:
         return {"headers": ["NO"], "distances": all_distances}
 
     allColsSorted = sorted_headers[1]
     new_headers_dict = {name: read_json_file(f"simplifiedDescriptions/{name}.json")['simplified_descriptions'] if os.path.exists(f"simplifiedDescriptions/{name}.json") else read_json_file(f"newHeader/{name}.json")['embedding'] for name in names}
-
-    print("NEW_HEADERS_DICT")
-    print(new_headers_dict)
 
     def ensure_ending(value):
         if isinstance(value, list):
@@ -303,17 +351,6 @@ def handle_chat_request_no_sheets(user_message):
                 if (rawForIndex[sheetName][index].startswith("has_mom")):
                     print(rawForIndex[sheetName][index])
 
-    print("HERE")
-    # print 20 elements of headers_and_descriptions
-    for i in range(min(20, len(headers_and_descriptions))):
-        sorted_header = sorted_headers[1][i]
-        header_description = headers_and_descriptions[i]
-        corresponding_distance = sorted_headers[0][i]
-        print(f"Header and Description: {header_description}")
-        print(f"Distance: {corresponding_distance}\n")
-
-    print(len(all_distances))
-    print(len(headers_and_descriptions))
 
     return {"headers": headers_and_descriptions, "distances": all_distances}
 
@@ -454,71 +491,68 @@ def match_score(header, desc_name):
     
     return len(header_parts.intersection(desc_parts)) / len(header_parts)
 
-# @app.route('/headers/<num>', methods=['GET'])
-# def get_headers(num):
-#      num = int(num)
-#      headers = get_header_row(f'./sheets/{num}.csv')
-#      toRemove = ["p1", "p10", "p25", "p50", "p75", "p100", "n", "mean", "se", "s", "imp", "white", "black", "hisp", "asian", "natam", "other", "pooled", "male", "female", "2010", "2000", "2016", "1990", "24", "26", "29", "32"]
-#      # Split headers and remove unwanted words
-#      processed_headers = []
-#      for header in headers:
-#          split_header = re.split(r'[_\s]', header)
-#          filtered_header = [word for word in split_header if word not in toRemove]
-#          processed_headers.append(filtered_header)
-
-#      # Remove duplicates while preserving order
-#      unique_headers = []
-#      seen = set()
-#      for header in processed_headers:
-#          header_tuple = tuple(header)  # Convert list to tuple for hashing
-#          if header_tuple not in seen:
-#              seen.add(header_tuple)
-#              unique_headers.append(header)
-
-#      headers = unique_headers
-
-#      #descriptions = get_descriptions(f'./json-des/{num}.json')
-#      descriptions = get_descriptions(f'./json-des/{num}.json')
-#      matched_headers = []
-#      for header in headers:
-#          best_match = {"header": header, "description": "", "score": 0}
-        
-#          for desc in descriptions:
-#              desc_name = simplify_name(desc["name"])
-#              score = match_score(header, desc_name)
-            
-#              if score > best_match["score"]:
-#                 best_match = {"header": header, "description": desc["description"], "score": score}
-        
-#          if best_match["score"] > 0:
-#              matched_headers.append(best_match)
-#          else:
-#              matched_headers.append({"header": header, "description": ""})
-
-#      # Check if any headers didn't get a match
-#      unmatched = [h for h in matched_headers if h["description"] == ""]
-#      if unmatched:
-#          print("Warning: Some headers did not get a match.")
-#          print("Unmatched headers:", [h["header"] for h in unmatched])
-
-#      for header in matched_headers:
-#          header["header"] = '_'.join(header["header"])
-
-#      merged_headers_descriptions = [f"VARIABLE NAME: {matched_headers[i]["header"]} - VARIABLE DESCRIPTION: {matched_headers[i]["description"]}" for i in range(len(headers))]
-#      #unit = read_json_file(f"json-des/{num}.json")['units']
-#      unit = read_json_file(f"json-des/{num}.json")['units']
-#      merged_headers_descriptions = [f"{desc} - UNIT: {unit}" for desc in merged_headers_descriptions]
-#      embeddings = prep_embedding_list(get_embedding_throttled(merged_headers_descriptions))
-
-#      # open the corresponding label-col-des file
-#      #label_cols = len(read_json_file(f"label-col-des/{num}.json")['labelCols'])
-#      label_cols = len(read_json_file(f"label-col-des/{num}.json")['labelCols'])
-#      for i in range(label_cols):
-#          for j in range(len(embeddings[i])):
-#              embeddings[i][j] = 0
-
-#      save_embedding(embeddings, f'embedding/{num}.json')
-#      return jsonify({'mergedHeadersDescriptions': merged_headers_descriptions, 'embeddings': embeddings})
+@app.route('/headers/<num>', methods=['GET'])
+def get_headers(num):
+     num = int(num)
+     headers = get_header_row(f'./sheets/{num}.csv')
+     toRemove = ["p1", "p10", "p25", "p50", "p75", "p100", "n", "mean", "se", "s", "imp", "white", "black", "hisp", "asian", "natam", "other", "pooled", "male", "female", "2010", "2000", "2016", "1990", "24", "26", "29", "32"]
+     # Split headers and remove unwanted words
+     processed_headers = []
+     for header in headers:
+         split_header = re.split(r'[_\s]', header)
+         filtered_header = [word for word in split_header if word not in toRemove]
+         processed_headers.append(filtered_header)
+     # Remove duplicates while preserving order
+     unique_headers = []
+     seen = set()
+     for header in processed_headers:
+         header_tuple = tuple(header)  # Convert list to tuple for hashing
+         if header_tuple not in seen:
+             seen.add(header_tuple)
+             unique_headers.append(header)
+     headers = unique_headers
+     #descriptions = get_descriptions(f'./json-des/{num}.json')
+     descriptions = get_descriptions(f'./json-des/{num}.json')
+     matched_headers = []
+     for header in headers:
+         best_match = {"header": header, "description": "", "score": 0}
+      
+         for desc in descriptions:
+             desc_name = simplify_name(desc["name"])
+             score = match_score(header, desc_name)
+          
+             if score > best_match["score"]:
+                best_match = {"header": header, "description": desc["description"], "score": score}
+      
+         if best_match["score"] > 0:
+             matched_headers.append(best_match)
+         else:
+             matched_headers.append({"header": header, "description": ""})
+     # Check if any headers didn't get a match
+     unmatched = [h for h in matched_headers if h["description"] == ""]
+     if unmatched:
+         print("Warning: Some headers did not get a match.")
+         print("Unmatched headers:", [h["header"] for h in unmatched])
+     for header in matched_headers:
+         header["header"] = '_'.join(header["header"])
+     merged_headers_descriptions = [f"VARIABLE NAME: {matched_headers[i]["header"]} - VARIABLE DESCRIPTION: {matched_headers[i]["description"]}" for i in range(len(headers))]
+     #unit = read_json_file(f"json-des/{num}.json")['units']
+     unit = read_json_file(f"json-des/{num}.json")['units']
+     merged_headers_descriptions = [f"{desc} - UNIT: {unit}" for desc in merged_headers_descriptions]
+     embeddings = prep_embedding_list(get_embedding_throttled(merged_headers_descriptions))
+     # open the corresponding label-col-des file
+     #label_cols = len(read_json_file(f"label-col-des/{num}.json")['labelCols'])
+     label_cols = read_json_file(f"label-col-des/{num}.json")['labelCols']
+     for i in range(len(embeddings)):
+          print("\n")
+          print(matched_headers[i]["header"])
+          print(label_cols)
+          if (matched_headers[i]["header"] in label_cols):
+                print("zeros")
+                for j in range(len(embeddings[i])):
+                    embeddings[i][j] = 0
+     save_embedding(embeddings, f'embedding/{num}.json')
+     return jsonify({'mergedHeadersDescriptions': merged_headers_descriptions, 'embeddings': embeddings})
 
 # @app.route('/makeDes/<num>', methods=['GET'])
 # def make_des(num):

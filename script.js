@@ -71,7 +71,6 @@
 })();
 
 function downloadAsXLSX(data, sheetName) {
-    console.log(data);
     data = data.tableData;
     const ws = XLSX.utils.aoa_to_sheet(data);
     const wb = XLSX.utils.book_new();
@@ -163,7 +162,6 @@ document.getElementsByClassName("cart-button")[0].addEventListener("click", func
 
                 // Extract the title from the first cell
                 let firstCellAnchor = clonedTable.querySelector('td a');
-                console.log(firstCellAnchor);
                 let title = firstCellAnchor.href;
 
                 // Create the links
@@ -179,14 +177,9 @@ document.getElementsByClassName("cart-button")[0].addEventListener("click", func
                 ];
 
                 // Remove "Download Census Tract Data" link if the title contains "in5Not4"
-                console.log("SLDKFJSDLKF 1111")
-                console.log(title)
                 if (title.includes('in5Not4')) {
-                    console.log(title);
-                    console.log("SJDKFLJSDLKFJKLSDJF")
                     links.shift();
                 }
-                console.log(links);
 
                 // Add the links as new columns in the single row
                 let row = clonedTable.querySelector('tr');
@@ -243,7 +236,6 @@ document.getElementsByClassName("cart-button")[0].addEventListener("click", func
         combinedTable.classList.add('table-bordered');
 
         category.forEach((item, index) => {
-            console.log(item);
 
             if (title != "Variable Tables") {
                 return;
@@ -537,8 +529,6 @@ async function requestSingleStatVar(operation) {
         }
 
         let lastColumnData = data.map(row => parseFloat(row[row.length - 1])).filter(value => !isNaN(value));
-        console.log("HELLO!")
-        console.log(lastColumnData)
         if (operation === 'get mean') {
             // Calculate mean
             let sum = lastColumnData.reduce((acc, val) => acc + val, 0);
@@ -748,8 +738,6 @@ async function requestMapVars() {
         d.style.display = 'none';
         d.style.width = '100%';
         appendMessage('error toDelete', 'Making your map <span class="animate-ellipsis"></span>');
-        console.log("cOT")
-        console.log(cOT)
         fetch('http://127.0.0.1:3000/generate_map', {
             method: 'POST',
             headers: {
@@ -837,8 +825,6 @@ async function requestGraphVars() {
         graphVariable([pars["y"], yKey], xKey);
         messages.push({ role: 'assistant', content: "Graph created!" });
     } catch (error) {
-        console.log(varsData.reply);
-        console.log(error);
         removeLastMessage();
         appendMessage('error', varsData.reply);
         messages.push({ role: 'assistant', content: varsData.reply });
@@ -891,8 +877,7 @@ async function fetchData() {
     try {
         
         // DO THIS AGAIN
-        console.log("QUERRY");
-        console.log(queryQ);
+        console.log("queryQ: " + queryQ);
         const chatResponse = await fetch('http://127.0.0.1:3000/chat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -907,12 +892,8 @@ async function fetchData() {
             return;
         }
 
-        console.log("CHAT DATA")
-        console.log(chatData)
         chatData.reply.forEach((row, index) => {
-            console.log(row)
             if (row.startsWith("Household Income and Incarceration for Children from Low-Income Households by Census Tract, Race, and GenderLINKjail_pooled_pooled_mean")) {
-                console.log(row)
             }
             
         });
@@ -973,9 +954,7 @@ function processChatData(data) {
     allDescriptions.push([]);
     allLinks.push([]);
 
-    console.log(document.getElementById(randomID).innerHTML);
     condense(document.getElementById(randomID));
-    console.log(document.getElementById(randomID).innerHTML);
     chooseDropdown(document.getElementById(randomID), distances);
 }
 
@@ -1132,9 +1111,6 @@ function condense(table) {
         links.push(link.href);
     });
 
-    console.log(descriptions);
-    console.log(titles);
-
     let titles1 = titles.map(title => title.map(part => (all.includes(part) ? '' : part)));
 
     for (let i = 0; i < titles1.length; i++) {
@@ -1224,6 +1200,16 @@ function linkRows(table) {
     let processedCount = 0;
     let toShow = [];
     linkedRows = linkedRows.flat();
+
+    console.log("new one");
+    for (let i = 0; i < 20; i++) {
+        let url = new URL(rows[linkedRows[i]].querySelector('td:nth-child(1) a').href).searchParams.get('var');
+        const parseVarName = url.split('_').filter(part => !addOns.includes(part)).join('_');
+
+        url = new URL(rows[linkedRows[i]].querySelector('td:nth-child(1) a').href).searchParams.get('var');
+        console.log(parseVarName);
+    }
+
     for (let i = 0; i < linkedRows.length && processedCount < 6; i++) {
         let url = new URL(rows[linkedRows[i]].querySelector('td:nth-child(1) a').href).searchParams.get('var');
         const parseVarName = url.split('_').filter(part => !addOns.includes(part)).join('_');
@@ -1238,10 +1224,6 @@ function linkRows(table) {
         
         processedCount++;
     }
-
-    console.log("VARIBLE!!!!!!!!")
-    console.log(variable);
-    console.log(locations);
 
     for (let i = rows.length - 1; i >= 0; i--) {
         if (!toShow.includes(i)) {
@@ -1282,9 +1264,6 @@ function answerQuestionContinued(table) {
             // Remove all other rows from the table
             const rows = Array.from(table.querySelectorAll('tr'));
             const toShow = pars['name'];
-            console.log("TO SHOW");
-            console.log(toShow);
-            console.log("VARIABLE");
             for (let i = 0; i < added; i++) {
                 if (variable[variable.length - 1 - i] !== toShow && variable[variable.length - 1 - i] + "_mean" !== toShow) {
                     variable.splice(variable.length - 1 - i, 1);
@@ -1293,8 +1272,6 @@ function answerQuestionContinued(table) {
                     added--;
                 }
             }
-            console.log("VARIABLE");
-            console.log(variable);
 
             if (variable.includes(toShow) && locations[variable.indexOf(toShow)] != locationNameQ) display = false;
             
@@ -1302,11 +1279,7 @@ function answerQuestionContinued(table) {
             for (let I = rows.length - 1; I >= 0; I--) {
                 const row = rows[I];
                 const variableName = new URL(row.querySelector('td:nth-child(1) a').href).searchParams.get('var');
-                console.log(variableName);
-                console.log(toShow);
-                console.log("_-----------------");
                 if (variableName !== toShow) {
-                    console.log("REMOVING");
                     row.remove();
                     allOptions[allOptions.length - 1].splice(I, 1);
                     allDescriptions[allOptions.length - 1].splice(I, 1);
@@ -1336,8 +1309,6 @@ function answerQuestionContinued(table) {
                 i--;
                 added--;
             }
-            console.log("VARIABLE");
-            console.log(variable);
             
             // check the beginning of last message in messages content
             if (messages[messages.length - 1].content.startsWith("Looking for location specific data")) {
@@ -1410,11 +1381,6 @@ function answerQuestionContinuedLoc(table) {
             }
 
             if (variable.includes(toShow) && locations[variable.indexOf(toShow)] != locationNameQ) display = false;
-
-            if (table.querySelector('tr') === null) {
-                console.log("ERROR HERE");
-                console.log(toShow);
-            }
 
             // this one there is no longer a table
             getLocationData(table);
@@ -1591,8 +1557,6 @@ async function getLocationData(table) {
         displayLocationData(locationNameQ, data.units, data.tableData[0], filteredRows);
       } else {
         removeLastMessage();
-        console.log(locationTypeQ);
-        console.log(locationNameQ);
         appendMessage('error', `That variable is not available for ${locationNameQ}.`)
         messages.push({ role: 'assistant', content: `That variable is not available for ${locationNameQ}.` });
       }
@@ -1729,7 +1693,6 @@ async function filterRowsByStateId(tableData, stateId) {
     const filteredRows = tableData.filter(row => {
         if (row.length < 2) return false; // Ensure the row has at least 2 columns
         const rowStateCode = row[1].toString().trim();
-        console.log(rowStateCode);
         
         if (stateId == rowStateCode) {
             return true;
@@ -2231,7 +2194,6 @@ function downloadAll(event) {
         }
         nt.push([]);
         lp.forEach((link) => {
-            console.log(link);
             if (link.classList.contains("broken")) {
                 nt[nt.length - 1].push(link.innerHTML);
             } else {
@@ -2246,8 +2208,6 @@ function downloadAll(event) {
         links: tableLinkParams,
         whatever: nt
     };
-
-    console.log(tableData);
 
     for (let i = 0; i < tableData.links.length; i++) {
         let data = {
@@ -2268,8 +2228,6 @@ function downloadAll(event) {
             }
         }
         let varNames = [];
-
-        console.log(data);
 
     function generateCombinations(dropdowns, varNames, index) {
         varNames = [...varNames];
@@ -2299,8 +2257,6 @@ function downloadAll(event) {
     }
 
     varNames = generateCombinations(data.dropdowns[0], [], 0);
-    console.log("VARNAMES");
-    console.log(varNames);
       
       let finalVarNames = [];
       
@@ -2321,12 +2277,9 @@ function downloadAll(event) {
       }
       
       varNames = finalVarNames;
-      console.log(varNames);
       if (varNames.length == 0) {
         varNames = [data.links[0].var];
       }
-      console.log(data.links[0].sheet);
-      console.log(data.checkboxes);
 
       if (data.checkboxes[0].length == 2) {
             if (data.checkboxes[0][0]) {
@@ -2341,19 +2294,16 @@ function downloadAll(event) {
             }
       } else {
         if (data.checkboxes[0][0]) {
-            console.log('TRACT')
             varNames.forEach((name) => {
                 fetchCensusTractData(data.links[0].sheet, name);
             });
         }
         if (data.checkboxes[0][1]) {
-            console.log('COUNT')
             varNames.forEach((name) => {
                 fetchCountyData(data.links[0].sheet, name);
             });
         }
         if (data.checkboxes[0][2]) {
-            console.log('COMM')
             varNames.forEach((name) => {
                 fetchCommutingZoneData(data.links[0].sheet, name);
             });

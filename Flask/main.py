@@ -305,8 +305,15 @@ def handle_chat_request_no_sheets(user_message):
 
     print("HERE")
     # print 20 elements of headers_and_descriptions
-    print(headers_and_descriptions[:20])
-    print(all_distances)
+    for i in range(min(20, len(headers_and_descriptions))):
+        sorted_header = sorted_headers[1][i]
+        header_description = headers_and_descriptions[i]
+        corresponding_distance = sorted_headers[0][i]
+        print(f"Header and Description: {header_description}")
+        print(f"Distance: {corresponding_distance}\n")
+
+    print(len(all_distances))
+    print(len(headers_and_descriptions))
 
     return {"headers": headers_and_descriptions, "distances": all_distances}
 

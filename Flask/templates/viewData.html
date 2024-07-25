@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>View Data</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="icon" href="img.png">
+    <link rel="icon" href="{{ url_for('static', filename='images/img.png') }}">
     <style>
         .load-more-link {
             display: block;
@@ -56,7 +56,7 @@
             const variable = urlParams.get('var');
             let dataName = "";
 
-            fetch('http://127.0.0.1:3000/getData', {
+            fetch('https://j2ssg7q1-3000.use.devtunnels.ms/getData', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -75,7 +75,7 @@
                 tableData = data.tableData;
                 dataName = tableData[0][tableData[0].length - 1];
                 const id = generateRandomNumber();
-                appendMessage('topMessage error', "Here is the data. Each row represents a different " + data.units + ". " + '<a href="#" onclick="downloadTableAsXlsx(event)" class="download-link"><img height="1em" width="1em" src="download_icon.png" alt="Download"> Click here to download</a>');
+                appendMessage('topMessage error', "Here is the data. Each row represents a different " + data.units + ". " + '<a href="#" onclick="downloadTableAsXlsx(event)" class="download-link"><img height="1em" width="1em" src="{{ url_for('static', filename='images/download_icon.png') }}" alt="Download"> Click here to download</a>');
                 displayTable(tableData, 20);
             })
             .catch(error => {

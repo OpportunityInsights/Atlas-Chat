@@ -4,7 +4,7 @@ import csv
 import time
 import numpy as np
 import pandas as pd
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 from dotenv import load_dotenv
 import requests
@@ -454,84 +454,84 @@ def match_score(header, desc_name):
     
     return len(header_parts.intersection(desc_parts)) / len(header_parts)
 
-@app.route('/headers/<num>', methods=['GET'])
-def get_headers(num):
-     num = int(num)
-     headers = get_header_row(f'./sheets/{num}.csv')
-     toRemove = ["p1", "p10", "p25", "p50", "p75", "p100", "n", "mean", "se", "s", "imp", "white", "black", "hisp", "asian", "natam", "other", "pooled", "male", "female", "2010", "2000", "2016", "1990", "24", "26", "29", "32"]
-     # Split headers and remove unwanted words
-     processed_headers = []
-     for header in headers:
-         split_header = re.split(r'[_\s]', header)
-         filtered_header = [word for word in split_header if word not in toRemove]
-         processed_headers.append(filtered_header)
+# @app.route('/headers/<num>', methods=['GET'])
+# def get_headers(num):
+#      num = int(num)
+#      headers = get_header_row(f'./sheets/{num}.csv')
+#      toRemove = ["p1", "p10", "p25", "p50", "p75", "p100", "n", "mean", "se", "s", "imp", "white", "black", "hisp", "asian", "natam", "other", "pooled", "male", "female", "2010", "2000", "2016", "1990", "24", "26", "29", "32"]
+#      # Split headers and remove unwanted words
+#      processed_headers = []
+#      for header in headers:
+#          split_header = re.split(r'[_\s]', header)
+#          filtered_header = [word for word in split_header if word not in toRemove]
+#          processed_headers.append(filtered_header)
 
-     # Remove duplicates while preserving order
-     unique_headers = []
-     seen = set()
-     for header in processed_headers:
-         header_tuple = tuple(header)  # Convert list to tuple for hashing
-         if header_tuple not in seen:
-             seen.add(header_tuple)
-             unique_headers.append(header)
+#      # Remove duplicates while preserving order
+#      unique_headers = []
+#      seen = set()
+#      for header in processed_headers:
+#          header_tuple = tuple(header)  # Convert list to tuple for hashing
+#          if header_tuple not in seen:
+#              seen.add(header_tuple)
+#              unique_headers.append(header)
 
-     headers = unique_headers
+#      headers = unique_headers
 
-     #descriptions = get_descriptions(f'./json-des/{num}.json')
-     descriptions = get_descriptions(f'./json-des/{num}.json')
-     matched_headers = []
-     for header in headers:
-         best_match = {"header": header, "description": "", "score": 0}
+#      #descriptions = get_descriptions(f'./json-des/{num}.json')
+#      descriptions = get_descriptions(f'./json-des/{num}.json')
+#      matched_headers = []
+#      for header in headers:
+#          best_match = {"header": header, "description": "", "score": 0}
         
-         for desc in descriptions:
-             desc_name = simplify_name(desc["name"])
-             score = match_score(header, desc_name)
+#          for desc in descriptions:
+#              desc_name = simplify_name(desc["name"])
+#              score = match_score(header, desc_name)
             
-             if score > best_match["score"]:
-                best_match = {"header": header, "description": desc["description"], "score": score}
+#              if score > best_match["score"]:
+#                 best_match = {"header": header, "description": desc["description"], "score": score}
         
-         if best_match["score"] > 0:
-             matched_headers.append(best_match)
-         else:
-             matched_headers.append({"header": header, "description": ""})
+#          if best_match["score"] > 0:
+#              matched_headers.append(best_match)
+#          else:
+#              matched_headers.append({"header": header, "description": ""})
 
-     # Check if any headers didn't get a match
-     unmatched = [h for h in matched_headers if h["description"] == ""]
-     if unmatched:
-         print("Warning: Some headers did not get a match.")
-         print("Unmatched headers:", [h["header"] for h in unmatched])
+#      # Check if any headers didn't get a match
+#      unmatched = [h for h in matched_headers if h["description"] == ""]
+#      if unmatched:
+#          print("Warning: Some headers did not get a match.")
+#          print("Unmatched headers:", [h["header"] for h in unmatched])
 
-     for header in matched_headers:
-         header["header"] = '_'.join(header["header"])
+#      for header in matched_headers:
+#          header["header"] = '_'.join(header["header"])
 
-     merged_headers_descriptions = [f"VARIABLE NAME: {matched_headers[i]["header"]} - VARIABLE DESCRIPTION: {matched_headers[i]["description"]}" for i in range(len(headers))]
-     #unit = read_json_file(f"json-des/{num}.json")['units']
-     unit = read_json_file(f"json-des/{num}.json")['units']
-     merged_headers_descriptions = [f"{desc} - UNIT: {unit}" for desc in merged_headers_descriptions]
-     embeddings = prep_embedding_list(get_embedding_throttled(merged_headers_descriptions))
+#      merged_headers_descriptions = [f"VARIABLE NAME: {matched_headers[i]["header"]} - VARIABLE DESCRIPTION: {matched_headers[i]["description"]}" for i in range(len(headers))]
+#      #unit = read_json_file(f"json-des/{num}.json")['units']
+#      unit = read_json_file(f"json-des/{num}.json")['units']
+#      merged_headers_descriptions = [f"{desc} - UNIT: {unit}" for desc in merged_headers_descriptions]
+#      embeddings = prep_embedding_list(get_embedding_throttled(merged_headers_descriptions))
 
-     # open the corresponding label-col-des file
-     #label_cols = len(read_json_file(f"label-col-des/{num}.json")['labelCols'])
-     label_cols = len(read_json_file(f"label-col-des/{num}.json")['labelCols'])
-     for i in range(label_cols):
-         for j in range(len(embeddings[i])):
-             embeddings[i][j] = 0
+#      # open the corresponding label-col-des file
+#      #label_cols = len(read_json_file(f"label-col-des/{num}.json")['labelCols'])
+#      label_cols = len(read_json_file(f"label-col-des/{num}.json")['labelCols'])
+#      for i in range(label_cols):
+#          for j in range(len(embeddings[i])):
+#              embeddings[i][j] = 0
 
-     save_embedding(embeddings, f'embedding/{num}.json')
-     return jsonify({'mergedHeadersDescriptions': merged_headers_descriptions, 'embeddings': embeddings})
+#      save_embedding(embeddings, f'embedding/{num}.json')
+#      return jsonify({'mergedHeadersDescriptions': merged_headers_descriptions, 'embeddings': embeddings})
 
-@app.route('/makeDes/<num>', methods=['GET'])
-def make_des(num):
-     num = int(num)
-     nums = [num]
-     for num in nums:
-         headers = get_header_row(f'./sheets/{num}.csv')
-         #descriptions = get_descriptions(f'./json-des/{num}.json')
-         descriptions = get_descriptions(f'./json-des/{num}.json')
-         header_descriptions = match_headers_with_descriptions(headers, descriptions)
-         merged_headers_descriptions = merge_headers_with_descriptions(headers, header_descriptions)
-         save_embedding_other(merged_headers_descriptions, f'newHeader/{num}.json')
-     return jsonify({'processed': "All done!"})
+# @app.route('/makeDes/<num>', methods=['GET'])
+# def make_des(num):
+#      num = int(num)
+#      nums = [num]
+#      for num in nums:
+#          headers = get_header_row(f'./sheets/{num}.csv')
+#          #descriptions = get_descriptions(f'./json-des/{num}.json')
+#          descriptions = get_descriptions(f'./json-des/{num}.json')
+#          header_descriptions = match_headers_with_descriptions(headers, descriptions)
+#          merged_headers_descriptions = merge_headers_with_descriptions(headers, header_descriptions)
+#          save_embedding_other(merged_headers_descriptions, f'newHeader/{num}.json')
+#      return jsonify({'processed': "All done!"})
 
 @app.route('/chat', methods=['POST'])
 def chat():
@@ -863,53 +863,53 @@ def get_state_id():
     else:
         return jsonify({'error': 'State not found'}), 404
 
-@app.route('/update_state_column', methods=['GET'])
-def update_state_column():
-    state_data = read_csv_file('states.csv')
-    state_data = [line.split(',') for line in state_data if line]
-    state_dict = {row[0].strip(): row[1].strip().title() for row in state_data}  # Ensure state names are title-cased
+# @app.route('/update_state_column', methods=['GET'])
+# def update_state_column():
+#     state_data = read_csv_file('states.csv')
+#     state_data = [line.split(',') for line in state_data if line]
+#     state_dict = {row[0].strip(): row[1].strip().title() for row in state_data}  # Ensure state names are title-cased
 
-    sheet_numbers = [4]
-    for i in sheet_numbers:
-        file_path = f'./sheets/{i}.csv'
-        df = pd.read_csv(file_path)
-        if 'state' in df.columns:
-            df['state'] = df['state'].astype(str).str.strip()  # Ensure state codes are strings and stripped of whitespace
-            df['state_name'] = df['state'].map(state_dict)
+#     sheet_numbers = [4]
+#     for i in sheet_numbers:
+#         file_path = f'./sheets/{i}.csv'
+#         df = pd.read_csv(file_path)
+#         if 'state' in df.columns:
+#             df['state'] = df['state'].astype(str).str.strip()  # Ensure state codes are strings and stripped of whitespace
+#             df['state_name'] = df['state'].map(state_dict)
                 
-            if df['state_name'].isnull().any():
-                missing_states = df[df['state_name'].isnull()]['state'].unique()
-                print(f"Missing state mappings for sheet {i}: {missing_states}")
-            else:
-                print(f"State mappings updated successfully for sheet {i}.")
-        else:
-            print(f"Sheet {i} does not have 'state' column.")
-        df.to_csv(file_path, index=False)
+#             if df['state_name'].isnull().any():
+#                 missing_states = df[df['state_name'].isnull()]['state'].unique()
+#                 print(f"Missing state mappings for sheet {i}: {missing_states}")
+#             else:
+#                 print(f"State mappings updated successfully for sheet {i}.")
+#         else:
+#             print(f"Sheet {i} does not have 'state' column.")
+#         df.to_csv(file_path, index=False)
 
-    return jsonify({'status': 'State columns updated successfully'})
+#     return jsonify({'status': 'State columns updated successfully'})
 
-@app.route('/update_county_column', methods=['GET'])
-def update_county_column():
-    county_data = read_csv_file('countycode-countyname.csv')
-    county_data = [line.split(',') for line in county_data if line]
-    county_dict = {row[0]: row[1].strip() for row in county_data}
-    print("County data loaded successfully.")
+# @app.route('/update_county_column', methods=['GET'])
+# def update_county_column():
+#     county_data = read_csv_file('countycode-countyname.csv')
+#     county_data = [line.split(',') for line in county_data if line]
+#     county_dict = {row[0]: row[1].strip() for row in county_data}
+#     print("County data loaded successfully.")
 
-    sheet_numbers = [1, 2, 3, 4, 5, 6, 9, 10, 11]
-    for I in sheet_numbers:
-        file_path = f'./sheets/{I}.csv'
-        df = pd.read_csv(file_path)
-        print(f"Processing file: {file_path}")
-        if 'county' in df.columns and 'state' in df.columns:
-            df['county_code'] = df.apply(lambda x: str(x['state']) + str(x['county']).zfill(3), axis=1)
-            print(f"County codes generated for file: {file_path}")
-            df['county_name'] = df['county_code'].map(county_dict)
-            print(f"County names mapped for file: {file_path}")
-            df.drop(columns=['county_code'], inplace=True)
-        df.to_csv(file_path, index=False)
-        print(f"File saved: {file_path}")
+#     sheet_numbers = [1, 2, 3, 4, 5, 6, 9, 10, 11]
+#     for I in sheet_numbers:
+#         file_path = f'./sheets/{I}.csv'
+#         df = pd.read_csv(file_path)
+#         print(f"Processing file: {file_path}")
+#         if 'county' in df.columns and 'state' in df.columns:
+#             df['county_code'] = df.apply(lambda x: str(x['state']) + str(x['county']).zfill(3), axis=1)
+#             print(f"County codes generated for file: {file_path}")
+#             df['county_name'] = df['county_code'].map(county_dict)
+#             print(f"County names mapped for file: {file_path}")
+#             df.drop(columns=['county_code'], inplace=True)
+#         df.to_csv(file_path, index=False)
+#         print(f"File saved: {file_path}")
 
-    return jsonify({'status': 'County columns updated successfully'})
+#     return jsonify({'status': 'County columns updated successfully'})
 
 @app.route('/save_report', methods=['POST'])
 def save_report():
@@ -931,57 +931,57 @@ def save_report():
 
     return jsonify({'status': 'Report saved successfully'})
 
-@app.route('/create_unique_sheet', methods=['GET'])
-def create_unique_sheet():
-    # Read both CSV files
-    df4 = pd.read_csv('./sheets/4.csv')
-    df5 = pd.read_csv('./sheets/5.csv')
+# @app.route('/create_unique_sheet', methods=['GET'])
+# def create_unique_sheet():
+#     # Read both CSV files
+#     df4 = pd.read_csv('./sheets/4.csv')
+#     df5 = pd.read_csv('./sheets/5.csv')
     
-    print("Sheets 4 and 5 loaded successfully.")
+#     print("Sheets 4 and 5 loaded successfully.")
 
-    # Get the column names from both DataFrames
-    columns_4 = set(df4.columns)
-    columns_5 = set(df5.columns)
+#     # Get the column names from both DataFrames
+#     columns_4 = set(df4.columns)
+#     columns_5 = set(df5.columns)
     
-    # Define the columns to exclude
-    exclude_columns = {"tract"}
+#     # Define the columns to exclude
+#     exclude_columns = {"tract"}
 
-    # Find the columns that are in sheet 5 but not in sheet 4, excluding specified columns
-    unique_columns = columns_5 - columns_4 - exclude_columns
+#     # Find the columns that are in sheet 5 but not in sheet 4, excluding specified columns
+#     unique_columns = columns_5 - columns_4 - exclude_columns
 
-    # Columns to copy over from sheet 5
-    additional_columns = ["state_name", "state", "county_name", "county", "cz", "czname"]
+#     # Columns to copy over from sheet 5
+#     additional_columns = ["state_name", "state", "county_name", "county", "cz", "czname"]
 
-    # Ensure the additional columns come first
-    new_df = df5[additional_columns + list(unique_columns)]
+#     # Ensure the additional columns come first
+#     new_df = df5[additional_columns + list(unique_columns)]
 
-    # Save the new DataFrame to a new CSV file
-    new_file_path = './sheets/unique_columns.csv'
-    new_df.to_csv(new_file_path, index=False)
-    print(f"New sheet created with unique columns and saved to {new_file_path}")
+#     # Save the new DataFrame to a new CSV file
+#     new_file_path = './sheets/unique_columns.csv'
+#     new_df.to_csv(new_file_path, index=False)
+#     print(f"New sheet created with unique columns and saved to {new_file_path}")
 
-    return jsonify({
-        'status': 'New sheet created successfully',
-        'file_path': new_file_path
-    })
+#     return jsonify({
+#         'status': 'New sheet created successfully',
+#         'file_path': new_file_path
+#     })
 
-@app.route('/edit_cz_columns', methods=['GET'])
-def edit_cz_columns():
-    # Directory containing the CSV files
-    sheets_dir = './sheets'
-    csv_files = [f for f in os.listdir(sheets_dir) if f.endswith('.csv')]
+# @app.route('/edit_cz_columns', methods=['GET'])
+# def edit_cz_columns():
+#     # Directory containing the CSV files
+#     sheets_dir = './sheets'
+#     csv_files = [f for f in os.listdir(sheets_dir) if f.endswith('.csv')]
 
-    for csv_file in csv_files:
-        file_path = os.path.join(sheets_dir, csv_file)
-        df = pd.read_csv(file_path)
+#     for csv_file in csv_files:
+#         file_path = os.path.join(sheets_dir, csv_file)
+#         df = pd.read_csv(file_path)
         
-        if 'cz' in df.columns:
-            # Remove .0 from all cells in the cz column
-            df['cz'] = df['cz'].astype(str).str.replace(r'\.0$', '', regex=True)
-            df.to_csv(file_path, index=False)
-            print(f"Processed file: {file_path}")
+#         if 'cz' in df.columns:
+#             # Remove .0 from all cells in the cz column
+#             df['cz'] = df['cz'].astype(str).str.replace(r'\.0$', '', regex=True)
+#             df.to_csv(file_path, index=False)
+#             print(f"Processed file: {file_path}")
 
-    return jsonify({'status': 'CZ column cells edited successfully'})
+#     return jsonify({'status': 'CZ column cells edited successfully'})
 
 def create_folium_choropleth(gdf, data_column, map_title, state_center, centroids):
     print("DataFrame columns in create_folium_choropleth:\n", gdf.head())
@@ -1329,35 +1329,43 @@ def parse_function_call_string(string: str) -> ChatCompletionMessage:
 #             print("\n\n")
 
 # new flask endpoint
-@app.route('/remakeDes', methods=['GET'])
-def remake_des():
-    names = ['1', '4', '9', '12']
-    for name in names:
-        data = read_json_file(f"newHeader/{name}.json")
-        variables = data['embedding']
-        for variable in variables:
-            messages = [
-                {"role": "system", "content": "You are rewriting these descriptions as examples queries that a user might use when asking for this variable. Do not include the variable name in the query and do not just copy the description."},
-                {"role": "user", "content": f"Please remake the following description as queries. \n\n{variable}"}
-            ]
+# @app.route('/remakeDes', methods=['GET'])
+# def remake_des():
+#     names = ['1', '4', '9', '12']
+#     for name in names:
+#         data = read_json_file(f"newHeader/{name}.json")
+#         variables = data['embedding']
+#         for variable in variables:
+#             messages = [
+#                 {"role": "system", "content": "You are rewriting these descriptions as examples queries that a user might use when asking for this variable. Do not include the variable name in the query and do not just copy the description."},
+#                 {"role": "user", "content": f"Please remake the following description as queries. \n\n{variable}"}
+#             ]
 
-            function = {
-                "name": "remake_description",
-                "description": "A function to get the query.",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "query": {"type": "string", "description": "The rewritten description rewritten as a query. This should not just be a copy of the description. It should be rewritten to feel human and natural. It should feel like a real human being who is not an expert in the field would ask for this variable. Make sure to include race, gender, and percentile information from the variable name. For example, if the name includes asian, make sure to include asian in the query."},
-                    },
-                     "required": ["description"]
-                }
-            }
+#             function = {
+#                 "name": "remake_description",
+#                 "description": "A function to get the query.",
+#                 "parameters": {
+#                     "type": "object",
+#                     "properties": {
+#                         "query": {"type": "string", "description": "The rewritten description rewritten as a query. This should not just be a copy of the description. It should be rewritten to feel human and natural. It should feel like a real human being who is not an expert in the field would ask for this variable. Make sure to include race, gender, and percentile information from the variable name. For example, if the name includes asian, make sure to include asian in the query."},
+#                     },
+#                      "required": ["description"]
+#                 }
+#             }
 
-            response = function_langchain(messages, function, 1, "remake_description")
+#             response = function_langchain(messages, function, 1, "remake_description")
 
-            print(variable)
-            print(response)
-            print("\n\n")
+#             print(variable)
+#             print(response)
+#             print("\n\n")
+
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+@app.route('/viewData')
+def new_data():
+    return render_template('viewData.html')
 
 if __name__ == '__main__':
     app.run(port=3000)

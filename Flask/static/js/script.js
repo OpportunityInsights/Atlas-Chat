@@ -1231,7 +1231,7 @@ function linkRows(table) {
 }
 
 function answerQuestion(variableText, table) {
-    messages.push({ role: 'assistant', content: variableText });
+    messages.push({ role: 'assistant', content: variableText, id : table.id });
     messages.push({ role: 'assistant', content: "THE USER DOES NOT SEE THIS MESSAGE: Variables with _n in their names do not refer to the number of people who have a certain outcome or did a certain thing. Instead, these variables refer to the number of people used to make a estimate in another variable. Almost never give a variable ending in _n to the user. Variable with pSOMENUMBER like p50 in them only refer to people with parents in a specific income bracet. Make sure to mention this to the user in descriptions." });
     if (locationTypeQ != null) {
         appendMessage('error', 'Looking for location specific data <span class="animate-ellipsis"></span>');
@@ -1547,7 +1547,7 @@ async function getLocationData(table) {
         default:
           throw new Error('Invalid location type');
       }
-  
+
       if (filteredRows.length > 0) {
         removeLastMessage();
         if (locationNameQ == undefined) {
@@ -1954,13 +1954,7 @@ function makeDropDown(options) {
     </select>`;
 }
 
-function update(choices, options, descriptions, links, row) {
-    
-    
-    
-    
-    
-
+function update(choices, options, descriptions, links, row, tableID) {
     options = options.filter(option => option.length !== 0);
 
     let index = -1;
@@ -1970,11 +1964,33 @@ function update(choices, options, descriptions, links, row) {
             break;
         }
     }
-
+    let oldVar;
     row.querySelectorAll('table tr td:nth-child(1) a').forEach(link => {
+        let url1 = new URL(link.href);
+        oldVar = url1.searchParams.get('var');
         link.href = links[index];
     });
     row.querySelector('td:nth-child(2)').textContent = descriptions[index];
+
+    let url = new URL(links[index]);
+    let newVar = url.searchParams.get('var');
+
+    // search through messages looking for a message with a id field that is equal to the tableID
+    let message = messages.find(message => message.id === tableID);
+    try {
+        message.content = "VARIABLE NAME: " + newVar + " VARIABLE DESCRIPTION: " + descriptions[index];
+        // get the text of the next message
+        let nextMessage = messages[messages.indexOf(message) + 2].content;
+        // make new text with the old name replaced with the new name
+        // the new name is newVar, the old name is oldVar
+        let newMessageEdited = nextMessage.replace(oldVar, newVar);
+        console.log(newMessageEdited);
+        console.log(nextMessage);
+        console.log(oldVar);
+        console.log(newVar);
+        // updates messages
+        messages[messages.indexOf(message) + 2].content = newMessageEdited;
+    } catch (error) {}
 }
 
 function onUpdate(event) {
@@ -2010,7 +2026,7 @@ function onUpdate(event) {
     const rowIndex = Array.from(row.parentNode.children).indexOf(row);
     const values = Array.from(row.querySelectorAll('select')).map(selector => selector.value);
 
-    update(values, allOptions[index][rowIndex], allDescriptions[index][rowIndex], allLinks[index][rowIndex], row);
+    update(values, allOptions[index][rowIndex], allDescriptions[index][rowIndex], allLinks[index][rowIndex], row, table.id);
 }
 
 function makeGraph(distances) {

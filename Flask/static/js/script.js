@@ -508,8 +508,8 @@ async function requestSingleStatVar(operation) {
 
         if (varToStat == null) {
             removeLastMessage();
-            appendMessage('error', "I'm having trouble calculating that statistic.");
-            messages.push({ role: 'assistant', content: "I'm having trouble calculating that statistic." });
+            appendMessage('error', "I'm having trouble calculating that statistic.\n\nI can only work with data that we have already pulled from the database. This means that if you want to make a map, calculate a statistic, or graph, you first have to ask me something like \"Get me median income for all counties in Texas.\"");
+            messages.push({ role: 'assistant', content: "I'm having trouble calculating that statistic.\n\nI can only work with data that we have already pulled from the database. This means that if you want to make a map, calculate a statistic, or graph, you first have to ask me something like \"Get me median income for all counties in Texas.\"" });
             return;
         }
 
@@ -603,8 +603,8 @@ async function requestDoubleStatVars() {
 
         if (varToStat1 == null || varToStat2 == null) {
             removeLastMessage();
-            appendMessage('error', "I'm having trouble calculating that statistic.");
-            messages.push({ role: 'assistant', content: "I'm having trouble calculating that statistic." });
+            appendMessage('error', "I'm having trouble calculating that statistic.\n\nI can only work with data that we have already pulled from the database. This means that if you want to make a map, calculate a statistic, or graph, you first have to ask me something like \"Get me median income for all counties in Texas.\"");
+            messages.push({ role: 'assistant', content: "I'm having trouble calculating that statistic.\n\nI can only work with data that we have already pulled from the database. This means that if you want to make a map, calculate a statistic, or graph, you first have to ask me something like \"Get me median income for all counties in Texas.\"" });
             return;
         }
 
@@ -704,8 +704,8 @@ async function requestMapVars() {
 
         if (varToMap == null) {
             removeLastMessage();
-            appendMessage('error', "I'm having trouble making that map.");
-            messages.push({ role: 'assistant', content: "I'm having trouble making that map." });
+            appendMessage('error', "I'm having trouble making that map.\n\nI can only work with data that we have already pulled from the database. This means that if you want to make a map, calculate a statistic, or graph, you first have to ask me something like \"Get me median income for all counties in Texas.\"");
+            messages.push({ role: 'assistant', content: "I'm having trouble making that map.\n\nI can only work with data that we have already pulled from the database. This means that if you want to make a map, calculate a statistic, or graph, you first have to ask me something like \"Get me median income for all counties in Texas.\"" });
             return;
         }
 
@@ -817,8 +817,8 @@ async function requestGraphVars() {
 
         if (xKey == null || yKey == null) {
             removeLastMessage();
-            appendMessage('error', "I'm having trouble making that plot.");
-            messages.push({ role: 'assistant', content: "I'm having trouble making that plot" });
+            appendMessage('error', "I'm having trouble making that plot.\n\nI can only work with data that we have already pulled from the database. This means that if you want to make a map, calculate a statistic, or graph, you first have to ask me something like \"Get me median income for all counties in Texas.\"");
+            messages.push({ role: 'assistant', content: "I'm having trouble making that plot.\n\nI can only work with data that we have already pulled from the database. This means that if you want to make a map, calculate a statistic, or graph, you first have to ask me something like \"Get me median income for all counties in Texas.\"" });
             return;
         }
 
@@ -1211,7 +1211,7 @@ function linkRows(table) {
         console.log(parseVarName);
     }
 
-    alert("NOT BEST");
+    alert("NOT BEST. set to 2 should be set to 10");
     // should be set to 10
     for (let i = 0; i < linkedRows.length && processedCount < 2; i++) {
         let url = new URL(rows[linkedRows[i]].querySelector('td:nth-child(1) a').href).searchParams.get('var');

@@ -1142,9 +1142,8 @@ function condense(table) {
                 }
             }
         }
-        if (ti.length != 0) {
-            remakeLink(rows[i].querySelector('td:nth-child(1) a'), des, lin, ti, options);
-        }
+        console.log("RUNNING REMAKE LIJNK")
+        remakeLink(rows[i].querySelector('td:nth-child(1) a'), des, lin, ti, options);
         allOptions[index].push(options);
         allDescriptions[index].push(des);
         allLinks[index].push(lin);
@@ -1212,7 +1211,9 @@ function linkRows(table) {
         console.log(parseVarName);
     }
 
-    for (let i = 0; i < linkedRows.length && processedCount < 10; i++) {
+    alert("NOT BEST");
+    // should be set to 10
+    for (let i = 0; i < linkedRows.length && processedCount < 2; i++) {
         let url = new URL(rows[linkedRows[i]].querySelector('td:nth-child(1) a').href).searchParams.get('var');
         const parseVarName = url.split('_').filter(part => !addOns.includes(part)).join('_');
         if (variable.includes(parseVarName) && locations[variable.indexOf(parseVarName)] == locationNameQ) continue;
@@ -1942,19 +1943,27 @@ function remakeLink(link, des, lin, ti, options) {
     let newOptions = options.map(opt => [...new Set(opt)]);
     let newLink = '<div>';
 
-    ti[0].forEach((_, i) => {
-        if (newOptions[i].length === 0) {
-            newLink += `<a target="_blank" disabled class="broken" onclick="clickLink(event)" href="${lin[0]}">${ti[0][i]}</a>`;
-        } else {
-            newLink += makeDropDown(newOptions[i], lin[0]);
-        }
-        if (i !== ti[0].length - 1) {
-            newLink += '<a target="_blank" disabled class="broken" onclick="clickLink(event)" href="${lin[0]}">_</a>';
-        }
-    });
-    newLink += "</div>";
 
-    link.outerHTML = newLink;
+    if (ti.length !== 0) {
+        ti[0].forEach((_, i) => {
+            if (newOptions[i].length === 0) {
+                newLink += `<a target="_blank" disabled class="broken" onclick="clickLink(event)" href="${lin[0]}">${ti[0][i]}</a>`;
+            } else {
+                newLink += makeDropDown(newOptions[i], lin[0]);
+            }
+            if (i !== ti[0].length - 1) {
+                newLink += '<a target="_blank" disabled class="broken" onclick="clickLink(event)" href="${lin[0]}">_</a>';
+            }
+        });
+        newLink += "</div>";
+        link.outerHTML = newLink;
+    }
+
+    if (ti.length === 0) {
+        link.disabled = true;
+        link.classList.add('broken');
+        link.setAttribute('onclick', 'clickLink(event)');
+    }
 }
 
 function makeDropDown(options) {

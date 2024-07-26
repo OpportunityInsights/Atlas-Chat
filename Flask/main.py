@@ -25,6 +25,9 @@ from flask import Flask, request, jsonify
 import pandas as pd
 from typing import List, Optional
 
+# TOREMOVE
+import ollama
+
 # Load environment variable from .env file for OpenAI and initialize OpenAI API
 load_dotenv()
 api_key = os.getenv('OPENAI_API_KEY')
@@ -339,69 +342,12 @@ def handle_chat_request_no_sheets(user_message):
 
     return {"headers": headers_and_descriptions, "distances": all_distances}
 
-def combine_consecutive_messages(messages):
-    if not messages:
-        return []
-
-    combined = []
-    current_role = messages[0]['role']
-    current_content = messages[0]['content']
-
-    for message in messages[1:]:
-        if message['role'] == current_role:
-            current_content += '\n\n' + message['content']
-        else:
-            combined.append({'role': current_role, 'content': current_content})
-            current_role = message['role']
-            current_content = message['content']
-
-    combined.append({'role': current_role, 'content': current_content})
-
-    return combined
-
+# Sends a list of message dictionaries to the OpenAI API and returns the response
 def ask_GPT(prompt):
-    # completion = openai.chat.completions.create(
-    #     model=model,
-    #     messages=prompt
-    # )
-    # return completion.choices[0].message.content
     return chat_completion_request(prompt).content
-    
 
-def ask_ollama(prompt):
-    response = ollama.chat(model="llama3", messages=prompt)
-    return response['message']['content']
-
-# def ask_ollamaf(prompt):
-#     response = ollama.chat(model="llama3-groq-tool-use", messages=prompt)
-#     return response
-
-# def function_ollama(prompt, function, requiredFunction=None):
-#     prompt.append({"role": "assistant", "content": "To respond to the users message, you have access to the following function:\n"})
-#     prompt.append({"role": "assistant", "content": json.dumps(function) + "\n"})
-#     if (requiredFunction):
-#         prompt.append({"role": "assistant", "content": "You must call the function named: " + json.dumps(requiredFunction) + "\n"})
-
-#     print(prompt)
-#     print(ask_ollamaf(prompt))
-
-def function_langchain(prompt, function, temperature, requiredFunction=None):
-    llm = OllamaFunctions(model="llama3-groq-tool-use", format="json", temperature=temperature)
-    llm_with_tools = llm.bind_tools([function])
-    tools = [{"type": "function", "function": function}]
-    if requiredFunction:
-        tool_choice = {"type": "function", "function": {"name": requiredFunction}}
-    else:
-        tool_choice = None
-    
-    try:
-        response = llm_with_tools.invoke(prompt, tools=tools, tool_choice=tool_choice)
-        return response
-    except Exception as e:
-        print("Unable to generate ChatCompletion response")
-        print(f"Exception: {e}")
-        return str(e)
-
+# Sends a list of message dictionaries to the OpenAI API along with a function dictionary and any information on specific functions that must be called
+# Returns the response
 def function_GPT(prompt, function, requiredFunction=None):
     tools = [{"type": "function", "function": function}]
     if not requiredFunction:
@@ -414,31 +360,6 @@ def function_GPT(prompt, function, requiredFunction=None):
         )
     print(chat_response)
     return chat_response
-
-# def chat_completion_request(messages, tools=None, tool_choice=None, model=model):
-#     try:
-#         response = openai.chat.completions.create(
-#             model=model,
-#             messages=messages,
-#             tools=tools,
-#             tool_choice=tool_choice,
-#         )
-#         return response
-#     except Exception as e:
-#         print("Unable to generate ChatCompletion response")
-#         print(f"Exception: {e}")
-#         return e
-
-def ask_Anthropic(prompt):
-    # add a message to the front of the prompt array
-    prompt.insert(0, {"role": "user", "content": "Hello!"})
-    prompt = combine_consecutive_messages(prompt)
-    message = anthropic.Anthropic(api_key="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").messages.create(
-        model="claude-3-5-sonnet-20240620",
-        max_tokens=1024,
-        messages=prompt
-    )
-    return message.content[0].text
 
 def get_table_data(sheet, variable):
     index = titles.index(sheet)
@@ -520,7 +441,7 @@ def get_stripped_names_and_descriptions(sheetName):
         header["header"] = '_'.join(header["header"])
     merged_headers_descriptions = [f"VARIABLE NAME: {matched_headers[i]["header"]} - VARIABLE DESCRIPTION: {matched_headers[i]["description"]}" for i in range(len(headers))]
     #unit = read_json_file(f"json-des/{num}.json")['units']
-    unit = read_json_file(f"json-des/{num}.json")['units']
+    unit = read_json_file(f"json-des/{sheetName}.json")['units']
     merged_headers_descriptions = [f"{desc} - UNIT: {unit}" for desc in merged_headers_descriptions]
     return {"merged_headers_descriptions": merged_headers_descriptions, "matched_headers": matched_headers}
 

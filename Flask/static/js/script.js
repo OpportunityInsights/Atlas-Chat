@@ -456,6 +456,9 @@ async function sendMessage() {
                 locationTypeQ = "counties in state";
             }
             locationNameQ = pars["location name"];
+            if (locationTypeQ == "all US counties") {
+                locationNameQ = "";
+            }
             
             await fetchData();
         } catch (error) {
@@ -687,6 +690,8 @@ async function requestMapVars() {
     if (longString === "") {
         longString = "None";
     }
+    console.log("long string");
+    console.log(longString);
     mgs.push({ role: 'user', content: "PROVIDED VARIABLES: " + longString });
 
     const vars = await fetch('https://j2ssg7q1-3000.use.devtunnels.ms/pickMapVars', {   
@@ -837,6 +842,8 @@ async function requestGraphVars() {
 }
 
 function getVariableId(variableName, variableType) {
+    console.log("variableName:" + variableName + "END");
+    console.log("variableType:" + variableType + "END");
     for (let key in storedData) {
         let table = document.getElementById("t" + key);
         if (table) {
@@ -844,6 +851,16 @@ function getVariableId(variableName, variableType) {
             if (rows.length > 0 && rows[0].cells.length > 0) {
                 let currentVariableName = rows[0].cells[rows[0].cells.length - 1].textContent;
                 let currentVariableType = `${storedData[key][0]} ${storedData[key][1]}`;
+                // if the last character of the type is a space, remove it
+                if (currentVariableType[currentVariableType.length - 1] === ' ') {
+                    currentVariableType = currentVariableType.substring(0, currentVariableType.length - 1);
+                }
+                // also does it for the front
+                if (currentVariableType[0] === ' ') {
+                    currentVariableType = currentVariableType.substring(1, currentVariableType.length);
+                }
+                console.log("currentVariableName:" + currentVariableName + "END");
+                console.log("currentVariableType:" + currentVariableType + "END");
                 
                 if (currentVariableName === variableName && currentVariableType === variableType) {
                     return key;
@@ -1142,7 +1159,6 @@ function condense(table) {
                 }
             }
         }
-        console.log("RUNNING REMAKE LIJNK")
         remakeLink(rows[i].querySelector('td:nth-child(1) a'), des, lin, ti, options);
         allOptions[index].push(options);
         allDescriptions[index].push(des);
@@ -1203,8 +1219,6 @@ function linkRows(table) {
     console.log("new one");
     for (let i = 0; i < 20; i++) {
         let url = new URL(rows[linkedRows[i]].querySelector('td:nth-child(1) a').href).searchParams.get('var');
-        console.log(url);
-        console.log(rows[linkedRows[i]].querySelector('td:nth-child(1) a'));
         const parseVarName = url.split('_').filter(part => !addOns.includes(part)).join('_');
 
         url = new URL(rows[linkedRows[i]].querySelector('td:nth-child(1) a').href).searchParams.get('var');
@@ -2004,10 +2018,6 @@ function update(choices, options, descriptions, links, row, tableID) {
         // make new text with the old name replaced with the new name
         // the new name is newVar, the old name is oldVar
         let newMessageEdited = nextMessage.replace(oldVar, newVar);
-        console.log(newMessageEdited);
-        console.log(nextMessage);
-        console.log(oldVar);
-        console.log(newVar);
         // updates messages
         messages[messages.indexOf(message) + 2].content = newMessageEdited;
     } catch (error) {}

@@ -191,6 +191,9 @@ document.getElementsByClassName("cart-button")[0].addEventListener("click", func
                 // Convert each select element to a multi-select
                 selectElements.forEach(select => {
                     select.multiple = true;
+                    select.disabled = false;
+                    select.onclick = "";
+                    select.classList.remove('notDropDown');
                 });
 
                 // Push the modified table HTML and select values to the tables array
@@ -262,7 +265,6 @@ document.getElementsByClassName("cart-button")[0].addEventListener("click", func
             Array.from(tempDiv.getElementsByTagName('a')).forEach(link => {
                 link.addEventListener('click', event => event.preventDefault());
                 link.style.pointerEvents = 'none'; // Optional: visually indicate that the link is disabled
-                link.style.color = '#916800'; // Optional: visually indicate that the link is disabled
             });
 
             // Update the text in the 2nd column
@@ -438,7 +440,7 @@ async function sendMessage() {
             }
             percentileQ = pars["percentile"];
             if (percentileQ == null) {
-                percentileQ = "p50";
+                percentileQ = "p25";
             }
             queryQ = pars["query"];
             if (queryQ == null) {
@@ -1187,6 +1189,9 @@ function linkRows(table) {
         if (tableTitles[i].includes('_p50')) {
             descriptions[i] += "This variable refers to people specifically who grew up in the 50th percentile of the income distribution. Make sure to mention this.";
         }
+        if (tableTitles[i].includes('_p25')) {
+            descriptions[i] += "This variable refers to people specifically who grew up in the 25th percentile of the income distribution. Make sure to mention this.";
+        }
     }
 
     let text = "";
@@ -1931,16 +1936,16 @@ function displayFilteredTable(headers, rows, id, units) {
 
 function remakeLink(link, des, lin, ti, options) {
     let newOptions = options.map(opt => [...new Set(opt)]);
-    let newLink = "<div>";
+    let newLink = '<div>';
 
     ti[0].forEach((_, i) => {
         if (newOptions[i].length === 0) {
-            newLink += `<a target="_blank" class="broken" href="${lin[0]}">${ti[0][i]}</a>`;
+            newLink += `<a target="_blank" disabled class="broken" onclick="clickLink(event)" href="${lin[0]}">${ti[0][i]}</a>`;
         } else {
-            newLink += makeDropDown(newOptions[i]);
+            newLink += makeDropDown(newOptions[i], lin[0]);
         }
         if (i !== ti[0].length - 1) {
-            newLink += '<a target="_blank" class="broken" href="${lin[0]}">_</a>';
+            newLink += '<a target="_blank" disabled class="broken" onclick="clickLink(event)" href="${lin[0]}">_</a>';
         }
     });
     newLink += "</div>";
@@ -1949,9 +1954,11 @@ function remakeLink(link, des, lin, ti, options) {
 }
 
 function makeDropDown(options) {
-    return `<select onchange="onUpdate(event)">
-        ${options.map(option => `<option value="${option}">${option}</option>`).join('')}
-    </select>`;
+    return `
+            <select class="notDropDown" disabled>
+                ${options.map(option => `<option value="${option}">${option}</option>`).join('')}
+            </select>
+    `;
 }
 
 function update(choices, options, descriptions, links, row, tableID) {
@@ -2325,4 +2332,8 @@ function downloadAll(event) {
         }
       }
     }
+}
+
+function clickLink(event) {
+    event.preventDefault();
 }

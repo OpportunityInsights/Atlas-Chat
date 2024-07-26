@@ -742,7 +742,7 @@ def get_des():
 @app.route('/pickMapVars', methods=['POST'])
 def pick_map_vars():
     messages = request.json['messages']
-    messages.append({"role": "assistant", "content": "I will look at the variables listed under \"PROVIDED VARIABLES\" (if there are any) to see if I a variable to map. If I do not have the right variable I will tell the user why not. I will never make up a variable name that I was not explicitly given. If I can not find the right variables I will let the user know that they need to first ask for specific variables and get data tables for those variables. I will tell them to say things like \"Get me median household income for all counties in Texas.\""})
+    messages.append({"role": "assistant", "content": "I will look at the variables listed under \"PROVIDED VARIABLES\" (if there are any) to see if I a variable to map. If we have not pulled the right variable from the database yet I will tell the user why not. I will never make up a variable name that I was not explicitly given. If I can not find the right variables I will let the user know that they need to first ask for specific variables and get data tables for those variables. I will tell them to say things like \"Get me median household income for all counties in Texas.\""})
     function = {"name": "pick_map_vars",
                 "description": "Makes a map if there is a variable to map provided under \"PROVIDED VARIABLES\". Otherwise, this function does not run. This function can only graph data for counties in a state.",
                 "parameters": {"type": "object",

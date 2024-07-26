@@ -320,7 +320,12 @@ button {
 
 .broken:hover, .broken:active {
     text-decoration: none;
-    color: rgb(38, 99, 91);
+    color: #0e5c00 !important;
+}
+
+.broken {
+    cursor: default;
+    color: #0e5c00 !important;
 }
 
 .bar {
@@ -412,4 +417,12 @@ button {
     justify-content: center;
     margin-top: 7px;
     margin-bottom: 2em;
+}
+
+.notDropDown {
+    word-wrap: normal;
+    -webkit-appearance: none;
+    color: #0e5c00 !important;
+    border: none;
+    opacity: 1;
 }

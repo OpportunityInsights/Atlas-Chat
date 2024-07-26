@@ -72,7 +72,7 @@
 2020,Anchorage Borough
 2050,Bethel Census Area
 2060,Bristol Bay Borough
-2068,Denali Borough                         (created after 1990)
+2068,Denali Borough
 2070,Dillingham Census Area
 2090,Fairbanks North Star Borough
 2100,Haines Borough
@@ -87,13 +87,13 @@
 2188,Northwest Arctic Borough
 2201,Prince of Wales-Outer Ketchikan Census Area
 2220,Sitka Borough
-2231,Skagway-Yakutat-Angoon Census Area         (1990 Census Area)
-2232,Skagway-Hoonah-Angoon Census Area          (created after 1990)
+2231,Skagway-Yakutat-Angoon Census Area
+2232,Skagway-Hoonah-Angoon Census Area
 2240,Southeast Fairbanks Census Area
 2261,Valdez-Cordova Census Area
 2270,Wade Hampton Census Area
 2280,Wrangell-Petersburg Census Area
-2282,Yakutat Borough                       (created after 1990)
+2282,Yakutat Borough
 2290,Yukon-Koyukuk Census Area
 4000,Arizona
 4001,Apache County
@@ -2993,7 +2993,7 @@
 51760,Richmond city
 51770,Roanoke city
 51775,Salem city
-51780,"South Boston city                (After 1990, part of Halifax County)"
+51780,South Boston city
 51790,Staunton city
 51800,Suffolk city
 51810,Virginia Beach city

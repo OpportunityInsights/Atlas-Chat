@@ -386,7 +386,7 @@ let gotName = false;
 
 messages.push({
     role: 'assistant',
-    content: "Only I have the ability to browse the database. You, the user, does not have the ability to use it. I will NEVER use equation formatting because this application can not parse it. I promise to use varying emojis and formatting VERY OFTEN. Data is only available for commuting zones, addresses (census tracts), counties, counties by state, and census tracts by state. If you are given data, never use specific numeric examples or refer to specific locations, just talk about the variable names."
+    content: "Only I have the ability to browse the database. You, the user, does not have the ability to use it. I will NEVER use equation formatting because this application can not parse it. I promise to use varying emojis and formatting VERY OFTEN. Data is only available for commuting zones, addresses (census tracts), counties, counties by state, all US counties, and census tracts by state. If you are given data, never use specific numeric examples or refer to specific locations, just talk about the variable names. Also, you have the ability to make scatter plots, calculate statistics, and make maps. To do these things, the user first has to ask for location specific data. After they do this, in their next message, they can then ask for a map, scatter, or statistic."
 });
 
 appendMessage('error topMessage', "Hello! I'm a bot designed to help you find data! Please ask me anything and I will do my best to find some related data from the Opportunity Atlas paper.");

@@ -148,7 +148,9 @@ document.getElementsByClassName("cart-button")[0].addEventListener("click", func
         if (option) {
             dropdown.value = targetValue;
             // Set the onchange event handler to onUpdate(event)
+            dropdown.disabled = false;
             dropdown.dispatchEvent(new Event('change'));
+            dropdown.disabled = true;
         }
     }
 
@@ -1202,13 +1204,15 @@ function linkRows(table) {
     console.log("new one");
     for (let i = 0; i < 20; i++) {
         let url = new URL(rows[linkedRows[i]].querySelector('td:nth-child(1) a').href).searchParams.get('var');
+        console.log(url);
+        console.log(rows[linkedRows[i]].querySelector('td:nth-child(1) a'));
         const parseVarName = url.split('_').filter(part => !addOns.includes(part)).join('_');
 
         url = new URL(rows[linkedRows[i]].querySelector('td:nth-child(1) a').href).searchParams.get('var');
         console.log(parseVarName);
     }
 
-    for (let i = 0; i < linkedRows.length && processedCount < 6; i++) {
+    for (let i = 0; i < linkedRows.length && processedCount < 10; i++) {
         let url = new URL(rows[linkedRows[i]].querySelector('td:nth-child(1) a').href).searchParams.get('var');
         const parseVarName = url.split('_').filter(part => !addOns.includes(part)).join('_');
         if (variable.includes(parseVarName) && locations[variable.indexOf(parseVarName)] == locationNameQ) continue;
@@ -1955,7 +1959,7 @@ function remakeLink(link, des, lin, ti, options) {
 
 function makeDropDown(options) {
     return `
-            <select class="notDropDown" disabled>
+            <select class="notDropDown" onchange="onUpdate(event)" disabled>
                 ${options.map(option => `<option value="${option}">${option}</option>`).join('')}
             </select>
     `;

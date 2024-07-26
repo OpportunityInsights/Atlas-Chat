@@ -276,6 +276,20 @@ def handle_chat_request_no_sheets(user_message):
     distances = [[similarity(embedding[0].data[0].embedding, emb[j]) for j in range(len(emb))] for emb in embeddings]
     all_distances = [dist for sublist in distances for dist in sublist]
 
+    # Parse user_message by spaces
+    user_words = user_message.split()
+
+    # Calculate dumb_distance for each string in all_merged_headers_and_descriptions
+    dumb_distance = []
+
+    for text in all_merged_headers_and_description:
+        text_words = text.split()
+        match_count = sum(1 for word in user_words if any(text_word.find(word) != -1 for text_word in text_words))
+        proportion = match_count / len(user_words)
+        dumb_distance.append(proportion)
+
+    all_distances = [(0.5 * old + 0.5 * dumb) for old, dumb in zip(all_distances, dumb_distance)]
+
     rawForIndex = {}
     processedForIndex = {}
     allHeaders = []
@@ -326,7 +340,7 @@ def handle_chat_request_no_sheets(user_message):
 
     sorted_headers = sort_distances_with_headers(all_distances, allCols)
 
-    if sorted_headers[0][0] < 0.2:
+    if sorted_headers[0][0] < 0.1:
         return {"headers": ["NO"], "distances": all_distances}
 
     allColsSorted = sorted_headers[1]

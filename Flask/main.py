@@ -271,8 +271,8 @@ def handle_chat_request_no_sheets(user_message):
         proportion = match_count / len(user_words)
         dumb_distance.append(proportion)
 
-    # Combines the two distance metrics, weighting them equally
-    all_distances = [(0.5 * old + 0.5 * dumb) for old, dumb in zip(all_distances, dumb_distance)]
+    # Combines the two distance metrics, weighting them differently
+    all_distances = [(0.8 * old + 0.25 * dumb) for old, dumb in zip(all_distances, dumb_distance)]
 
     rawForIndex = {}
     processedForIndex = {}
@@ -951,7 +951,7 @@ def create_folium_choropleth(gdf, data_column, map_title, state_center, centroid
         data=gdf,
         columns=["GEOID", data_column],
         key_on='feature.properties.GEOID',
-        fill_color='YlGnBu',
+        fill_color='RdYlBu',
         fill_opacity=0.7,
         line_opacity=0.2,
     ).add_to(m)

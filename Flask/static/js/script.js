@@ -27,7 +27,7 @@
     // Function to send data to the server
     async function sendData(data) {
         
-        const response = await fetch('https://j2ssg7q1-3000.use.devtunnels.ms/save_report', {
+        const response = await fetch('http://127.0.0.1:3000/save_report', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -424,7 +424,7 @@ async function sendMessage() {
     }
 
     try {
-        const response = await fetch('https://j2ssg7q1-3000.use.devtunnels.ms/des', {
+        const response = await fetch('http://127.0.0.1:3000/des', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ messages }),
@@ -498,7 +498,7 @@ async function requestSingleStatVar(operation) {
     }
     mgs.push({ role: 'user', content: "PROVIDED VARIABLES: " + longString});
 
-    const vars = await fetch('https://j2ssg7q1-3000.use.devtunnels.ms/pickSingleStatVar', {   
+    const vars = await fetch('http://127.0.0.1:3000/pickSingleStatVar', {   
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ "messages": mgs }),
@@ -592,7 +592,7 @@ async function requestDoubleStatVars() {
     }
     mgs.push({ role: 'user', content: "PROVIDED VARIABLES: " + longString});
 
-    const vars = await fetch('https://j2ssg7q1-3000.use.devtunnels.ms/pickDoubleStatVars', {   
+    const vars = await fetch('http://127.0.0.1:3000/pickDoubleStatVars', {   
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ "messages": mgs }),
@@ -694,7 +694,7 @@ async function requestMapVars() {
     console.log(longString);
     mgs.push({ role: 'user', content: "PROVIDED VARIABLES: " + longString });
 
-    const vars = await fetch('https://j2ssg7q1-3000.use.devtunnels.ms/pickMapVars', {   
+    const vars = await fetch('http://127.0.0.1:3000/pickMapVars', {   
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ "messages": mgs }),
@@ -743,7 +743,7 @@ async function requestMapVars() {
         d.style.display = 'none';
         d.style.width = '100%';
         appendMessage('error toDelete', 'Making your map <span class="animate-ellipsis"></span>');
-        fetch('https://j2ssg7q1-3000.use.devtunnels.ms/generate_map', {
+        fetch('http://127.0.0.1:3000/generate_map', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -806,7 +806,7 @@ async function requestGraphVars() {
     }
     mgs.push({ role: 'user', content: "PROVIDED VARIABLES: " + longString});
 
-    const vars = await fetch('https://j2ssg7q1-3000.use.devtunnels.ms/pickGraphVars', {   
+    const vars = await fetch('http://127.0.0.1:3000/pickGraphVars', {   
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ "messages": mgs }),
@@ -873,7 +873,7 @@ function getVariableId(variableName, variableType) {
 
 async function graphQM(message) {
     mgs = [{ role: 'user', content: message }];
-    const gQM = await fetch('https://j2ssg7q1-3000.use.devtunnels.ms/useCase', {
+    const gQM = await fetch('http://127.0.0.1:3000/useCase', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ "message": mgs }),
@@ -899,7 +899,7 @@ async function fetchData() {
         
         // DO THIS AGAIN
         console.log("queryQ: " + queryQ);
-        const chatResponse = await fetch('https://j2ssg7q1-3000.use.devtunnels.ms/chat', {
+        const chatResponse = await fetch('http://127.0.0.1:3000/chat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ "message": queryQ }),
@@ -957,7 +957,7 @@ function processChatData(data) {
         let cells = row.split("SPECIAL").map((cell, index) => {
             if (index === 0) {
                 let [sheet, varName] = cell.split("LINK");
-                return `<td><a href="https://j2ssg7q1-3000.use.devtunnels.ms/viewData?sheet=${sheet}&var=${varName}" target="_blank">${varName}</a></td>`;
+                return `<td><a href="http://127.0.0.1:3000/viewData?sheet=${sheet}&var=${varName}" target="_blank">${varName}</a></td>`;
             } else {
                 return `<td>${cell}</td>`;
             }
@@ -1267,7 +1267,7 @@ function answerQuestion(variableText, table) {
 
 function answerQuestionContinued(table) {
     appendMessage('error', 'Generating a response <span class="animate-ellipsis"></span>');
-    fetch('https://j2ssg7q1-3000.use.devtunnels.ms/pickVarAndDescribe', {
+    fetch('http://127.0.0.1:3000/pickVarAndDescribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ messages }),
@@ -1363,7 +1363,7 @@ function replaceVariableContent() {
 }
 
 function answerQuestionContinuedLoc(table) {
-    fetch('https://j2ssg7q1-3000.use.devtunnels.ms/pickVarAndDescribe', {
+    fetch('http://127.0.0.1:3000/pickVarAndDescribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ messages }),
@@ -1420,7 +1420,7 @@ function answerQuestionContinuedLoc(table) {
 function answerQuestionContinuedLocDes() {
     replaceVariableContent();
         appendMessage('error', 'Generating a response <span class="animate-ellipsis"></span>');
-        fetch('https://j2ssg7q1-3000.use.devtunnels.ms/chatData', {
+        fetch('http://127.0.0.1:3000/chatData', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ messages }),
@@ -1574,7 +1574,7 @@ async function getLocationData(table) {
 
       if (filteredRows.length > 0) {
         removeLastMessage();
-        if (locationNameQ == undefined) {
+        if (locationNameQ == "all US counties") {
             locationNameQ = "the full US";
         }
         displayLocationData(locationNameQ, data.units, data.tableData[0], filteredRows);
@@ -1618,7 +1618,7 @@ function selectVarLink(linkData) {
 }
   
 async function fetchDataLoc(variable, sheet) {
-    const response = await fetch('https://j2ssg7q1-3000.use.devtunnels.ms/getData', {
+    const response = await fetch('http://127.0.0.1:3000/getData', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ variable, sheet }),
@@ -1627,7 +1627,7 @@ async function fetchDataLoc(variable, sheet) {
 }
   
 async function getTractIdFromAddress(address) {
-    const response = await fetch('https://j2ssg7q1-3000.use.devtunnels.ms/geocode', {
+    const response = await fetch('http://127.0.0.1:3000/geocode', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ address })
@@ -1641,7 +1641,7 @@ async function getTractIdFromAddress(address) {
 }
 
 async function getCountyIdFromName(countyName) {
-    const response = await fetch(`https://j2ssg7q1-3000.use.devtunnels.ms/get_county_code?county=${encodeURIComponent(countyName)}`, {
+    const response = await fetch(`http://127.0.0.1:3000/get_county_code?county=${encodeURIComponent(countyName)}`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' }
     });
@@ -1655,7 +1655,7 @@ async function getCountyIdFromName(countyName) {
 }
 
 async function getStateIdFromName(stateName) {
-    const response = await fetch(`https://j2ssg7q1-3000.use.devtunnels.ms/get_state_id?state=${encodeURIComponent(stateName)}`, {
+    const response = await fetch(`http://127.0.0.1:3000/get_state_id?state=${encodeURIComponent(stateName)}`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' }
     });
@@ -1670,7 +1670,7 @@ async function getStateIdFromName(stateName) {
 
 async function readCSVColumns() {
     try {
-        const response = await fetch('https://j2ssg7q1-3000.use.devtunnels.ms/read_state_csv');
+        const response = await fetch('http://127.0.0.1:3000/read_state_csv');
         if (!response.ok) {
             throw new Error('Failed to fetch CSV data');
         }
@@ -2085,7 +2085,7 @@ function makeGraph(distances) {
 
 async function getCityData(cityName) {
     try {
-        const response = await fetch(`https://j2ssg7q1-3000.use.devtunnels.ms/get_city_data?city=${encodeURIComponent(cityName)}`);
+        const response = await fetch(`http://127.0.0.1:3000/get_city_data?city=${encodeURIComponent(cityName)}`);
         const data = await response.json();
         if (response.ok) {
             return [data.county_name, data.county_fips];

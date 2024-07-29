@@ -564,11 +564,12 @@ def pick_var_and_describe():
 @app.route('/useCase', methods=['POST'])
 def use_case():
     messages = request.json['message']
+    messages.append({"role": "assistant", "content": "When it is unclear I will always pick the \"answer question or get data\" option. I will not make a map, calculate a statistic, or make a graph unless the user uses very specific language. I will not make a map unless they use the word \"map\"."})
     function = {"name": "pick_use_case",
                 "description": "Decides what the chat should do.",
                 "parameters": {"type": "object",
                                "properties": 
-                               {"action": {"type": "string", "enum":["create graph", "create map", "calculate mean", "calculate median", "calculate standard deviation", "calculate correlation" "answer question or fetch data"], "description": "Decides if the user has asked for a graph to be created or not. This is only create graph if the user explicitly asks for a graph. The \"answer question or fetch data\" is often the user asking for data. Do not confuse asked for data with asking for a graph or plot or asking for a variable to be calculated. Also, sees if the user wants various statistics to be calculated about data. If the user does not explicitly ask for one of the other ones, always say \"answer question or fetch data\". Do not choose map if the user does not explicitly use the word \"map\"."},
+                               {"action": {"type": "string", "enum":["create scatter plot", "create map", "calculate mean", "calculate median", "calculate standard deviation", "calculate correlation" "answer question or get data"], "description": "Decides if the user has asked for a graph to be created or not. This is only create graph if the user explicitly asks for a graph. The \"answer question or fetch data\" is often the user asking for data. Do not confuse asked for data with asking for a graph or plot or asking for a variable to be calculated. Also, sees if the user wants various statistics to be calculated about data. If the user does not explicitly ask for one of the other ones, always say \"answer question or fetch data\". Do not choose map if the user does not explicitly use the word \"map\"."},
                                 }},
                 "required": ["action"]
                 }
@@ -1108,16 +1109,6 @@ def read_csv(sheet_name):
             data.append(converted_row)
     return data
 
-def reorder(sheet_name):
-    data = read_csv(sheet_name)
-    sorted_data = sorted(data, key=lambda x: float(x[0]), reverse=True)
-    save_as_csv(sheet_name, sorted_data)
-    print(f"Data in {sheet_name} sorted by the first column")
-
-def embed(text):
-    response = ollama.embeddings(model='mxbai-embed-large', prompt=f'Represent this sentence for searching relevant passages: {text}')
-    return response['embedding']
-
 def cosine_similarity(vec1, vec2):
     vec1 = np.array(vec1)
     vec2 = np.array(vec2)
@@ -1128,53 +1119,8 @@ def cosine_similarity(vec1, vec2):
 
 def search(sheet_name, search_term):
     return None
-    data = read_csv(sheet_name)
-    search_embedding = embed(search_term)
-    for row in data:
-        if len(row) > 2 and isinstance(row[2], list):
-            row_embedding = row[2]
-            print(cosine_similarity(search_embedding, row_embedding))
-            if cosine_similarity(search_embedding, row_embedding) >= 0.999:
-                return row
-    return None
-
-def add(sheet_name, obj, response_text):
-    data = read_csv(sheet_name)
-    obj_str = json.dumps(obj)
-    obj_embedding = embed(obj_str)
-    
-    new_row = [0, obj_str, obj_embedding, response_text]
-    data.append(new_row)
-    save_as_csv(sheet_name, data)
-    reorder(sheet_name)
-    return response_text
 
 def chat_completion_request(messages, tools=None, tool_choice=None, model=model):
-    # Check if the message already has an embedding and a stored response
-    sheet_name = 'responses.csv'
-    user_message = json.dumps(messages)
-    
-    #found_row = search(sheet_name, user_message)
-    found_row = False
-    
-    if found_row:
-        found_row[0] = str(int(found_row[0]) + 1)
-        data = read_csv(sheet_name)
-        for i, row in enumerate(data):
-            if row[1] == found_row[1]:
-                data[i][0] = found_row[0]
-                break
-        save_as_csv(sheet_name, data)
-        reorder(sheet_name)
-        print("Response found in database")
-
-        d1 = read_csv("savedReqs.csv")
-        d1[0][0] = str(int(d1[0][0]) + 1)
-        save_as_csv("savedReqs.csv", d1)
-
-        print(found_row[-1])
-
-        return parse_function_call_string(found_row[-1])  # Return the value from the response column
     
     try:
         response = openai.chat.completions.create(
@@ -1194,7 +1140,6 @@ def chat_completion_request(messages, tools=None, tool_choice=None, model=model)
         # )
         response_text = response.choices[0].message
         # Save the new response
-        add(sheet_name, messages, response_text)
         return response_text
     except Exception as e:
         print("Unable to generate ChatCompletion response")

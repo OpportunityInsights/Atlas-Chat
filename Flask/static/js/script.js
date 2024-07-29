@@ -403,7 +403,7 @@ async function sendMessage() {
     appendMessage('error', 'Thinking <span class="animate-ellipsis"></span>');
 
     let wTD = await graphQM(message);
-    if(wTD == "create graph") {
+    if(wTD == "create scatter plot") {
         requestGraphVars();
         return
     } else if (wTD == "create map") {

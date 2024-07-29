@@ -705,6 +705,10 @@ async function requestMapVars() {
 
         const result = pars["variableType"].replace(' in state', '');
 
+        if (result == "the ful US all US counties") {
+            result = "all US counties";
+        }
+
         let varToMap = getVariableId(pars["variable"], pars["variableType"]);
 
         if (varToMap == null) {
@@ -1291,6 +1295,7 @@ function answerQuestionContinued(table) {
             }
 
             if (variable.includes(toShow) && locations[variable.indexOf(toShow)] != locationNameQ) display = false;
+            if (variable.includes(toShow.replace(/_mean$/, '')) && locations[variable.indexOf(toShow.replace(/_mean$/, ''))] != locationNameQ) display = false;
             
             variableNameGlobal = toShow;
             for (let I = rows.length - 1; I >= 0; I--) {
@@ -1398,6 +1403,7 @@ function answerQuestionContinuedLoc(table) {
             }
 
             if (variable.includes(toShow) && locations[variable.indexOf(toShow)] != locationNameQ) display = false;
+            if (variable.includes(toShow.replace(/_mean$/, '')) && locations[variable.indexOf(toShow.replace(/_mean$/, ''))] != locationNameQ) display = false;
 
             // this one there is no longer a table
             getLocationData(table);
@@ -1574,7 +1580,7 @@ async function getLocationData(table) {
 
       if (filteredRows.length > 0) {
         removeLastMessage();
-        if (locationNameQ == "all US counties") {
+        if (locationNameQ == "") {
             locationNameQ = "the full US";
         }
         displayLocationData(locationNameQ, data.units, data.tableData[0], filteredRows);

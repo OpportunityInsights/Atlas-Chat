@@ -24,6 +24,7 @@ import concurrent.futures
 from flask import Flask, request, jsonify
 import pandas as pd
 from typing import List, Optional
+import branca.colormap as cm
 
 # TOREMOVE
 import ollama
@@ -945,16 +946,45 @@ def create_folium_choropleth(gdf, data_column, map_title, state_center, centroid
     m = folium.Map(location=state_center, zoom_start=zoom, scrollWheelZoom=False)
     print("Center of the map:", state_center)
     print("Data column for choropleth:", data_column)
+
+    # Clip the data values to avoid outliers skewing the color map
+    lower_bound = np.percentile(gdf[data_column].dropna(), 5)
+    upper_bound = np.percentile(gdf[data_column].dropna(), 95)
+    gdf[data_column] = np.clip(gdf[data_column], lower_bound, upper_bound)
+
+    # Create a linear color map with white in the middle
+    min_value = gdf[data_column].min()
+    max_value = gdf[data_column].max()
+    # linear = cm.LinearColormap(['#872c9b', '#ffffff', '#de7356', '#7e1727', '#ffffc8', '#2b5371'], vmin=min_value, vmax=max_value)
+    linear = cm.LinearColormap(['#7e1727', '#ffffc8', '#2b5371'], vmin=min_value, vmax=max_value)
+    
     # Add the choropleth layer
-    folium.Choropleth(
-        geo_data=geo_json_data,
-        data=gdf,
-        columns=["GEOID", data_column],
-        key_on='feature.properties.GEOID',
-        fill_color='RdYlBu',
-        fill_opacity=0.7,
-        line_opacity=0.2,
+    def style_function(feature):
+        value = feature['properties'].get(data_column)
+        if value is None:
+            return {
+                'fillColor': 'gray',  # Default color for missing values
+                'color': 'black',
+                'weight': 0.2,  # Thinner line
+                'fillOpacity': 0.7,
+                'lineOpacity': 1,
+            }
+        else:
+            return {
+                'fillColor': linear(value),
+                'color': 'black',
+                'weight': 0.2,  # Thinner line
+                'fillOpacity': 0.7,
+                'lineOpacity': 1,
+            }
+    
+    folium.GeoJson(
+        geo_json_data,
+        style_function=style_function
     ).add_to(m)
+    
+    # Add the color map to the map
+    m.add_child(linear)
 
     return m
 

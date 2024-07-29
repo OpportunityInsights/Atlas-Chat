@@ -1229,9 +1229,9 @@ function linkRows(table) {
         console.log(parseVarName);
     }
 
-    alert("NOT BEST. set to 2 should be set to 10");
+    //alert("NOT BEST. set to 2 should be set to 10");
     // should be set to 10
-    for (let i = 0; i < linkedRows.length && processedCount < 2; i++) {
+    for (let i = 0; i < linkedRows.length && processedCount < 10; i++) {
         let url = new URL(rows[linkedRows[i]].querySelector('td:nth-child(1) a').href).searchParams.get('var');
         const parseVarName = url.split('_').filter(part => !addOns.includes(part)).join('_');
         if (variable.includes(parseVarName) && locations[variable.indexOf(parseVarName)] == locationNameQ) continue;
@@ -2087,22 +2087,6 @@ function makeGraph(distances) {
       };
       
       Plotly.newPlot(`myDiv${randomNumber}`, [trace], layout);
-}
-
-async function getCityData(cityName) {
-    try {
-        const response = await fetch(`http://127.0.0.1:3000/get_city_data?city=${encodeURIComponent(cityName)}`);
-        const data = await response.json();
-        if (response.ok) {
-            return [data.county_name, data.county_fips];
-        } else {
-            throw new Error(data.error || 'Failed to fetch city data');
-        }
-    } catch (error) {
-        console.error('Error:', error);
-        displayResult('An error occurred while fetching data.');
-        return null; // Return null in case of error
-    }
 }
 
 async function fetchCSS(file) {

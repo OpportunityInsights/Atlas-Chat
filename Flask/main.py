@@ -23,11 +23,7 @@ import re
 import concurrent.futures
 from flask import Flask, request, jsonify
 import pandas as pd
-from typing import List, Optional
 import branca.colormap as cm
-
-# TOREMOVE
-import ollama
 
 # Load environment variable from .env file for OpenAI and initialize OpenAI API
 load_dotenv()
@@ -239,7 +235,7 @@ def ensure_ending(value):
         return value
 
 # Takes in a query from the user consisting of key words separated by spaces
-# Returns a PUT HERE
+# Returns a list of strings where each string represents a variable. The strings with the lower indexes are more likely to match the search
 def handle_chat_request_no_sheets(user_message):
     # Gets a list of all the information that was embedded in the same order that it appears in the embeddings files
     # The files are ordered by numerical value
@@ -362,6 +358,10 @@ def function_GPT(prompt, function, requiredFunction=None):
     print(chat_response)
     return chat_response
 
+# Takes in the name of a variable and the string title of a sheet that that variable is from
+# Returns a list of lists representing a table with that variable on the far right and the label columns for that variable on the far left
+# Also padding the table to give it uniform dimensions
+# Label columns generally refer to locations. Examples of label columns include state id, state name, county id, county name, etc.
 def get_table_data(sheet, variable):
     index = titles.index(sheet)
     label_cols = read_json_file(f"label-col-des/{index}.json")['labelCols']
@@ -372,10 +372,12 @@ def get_table_data(sheet, variable):
     rows = np.array(cols).T.tolist()
     return rows
 
+# Takes in a string title of a sheet and returns a string containing what each row in that sheet represents
 def get_units(sheet):
     index = titles.index(sheet)
     return read_json_file(f"json-des/{index}.json")['units']
 
+# Takes in a string representing a variable name and removes any placeholders from it along with any suffixes at the end like mean, n, se, etc.
 def simplify_name(name):
     # Remove placeholders except [year]
     simplified = re.sub(r'\[race\]|\[gender\]|\[age\]', '', name)
@@ -384,6 +386,9 @@ def simplify_name(name):
     # Remove any resulting double underscores and trim
     return re.sub(r'_{2,}', '_', simplified).strip('_')
 
+# Takes in header, a list of strings representing a variable name, and desc_name, a string representing a variable name
+# First extracts the year from the header if present and replaces [year] in desc_name with the actual year if found in the header
+# Then calculates the match score between the header and desc_name, the fraction of words in the header that are also in desc_name
 def match_score(header, desc_name):
     # Extract year from header if present
     header_year = re.search(r'\d{4}', ''.join(header))
@@ -398,7 +403,11 @@ def match_score(header, desc_name):
     
     return len(header_parts.intersection(desc_parts)) / len(header_parts)
 
+# Takes in the integer name of a sheet
+# Returns a list of strings where each string contains the variable name, description, and unit
+# All variables are unique after having things like p1, white, and mean removed from them
 def get_stripped_names_and_descriptions(sheetName):
+    # Gets the values in the header row of the sheet
     headers = get_header_row(f'./sheets/{sheetName}.csv')
     toRemove = ["p1", "p10", "p25", "p50", "p75", "p100", "n", "mean", "se", "s", "imp", "white", "black", "hisp", "asian", "natam", "other", "pooled", "male", "female", "2010", "2000", "2016", "1990", "24", "26", "29", "32"]
     # Split headers and remove unwanted words
@@ -416,8 +425,9 @@ def get_stripped_names_and_descriptions(sheetName):
             seen.add(header_tuple)
             unique_headers.append(header)
     headers = unique_headers
-    #descriptions = get_descriptions(f'./json-des/{num}.json')
+    # Gets the descriptions that belong to the variables in the sheet
     descriptions = get_descriptions(f'./json-des/{sheetName}.json')
+    # Matches the headers with the description with a variable name that most closely matches the header
     matched_headers = []
     for header in headers:
         best_match = {"header": header, "description": "", "score": 0}
@@ -440,50 +450,15 @@ def get_stripped_names_and_descriptions(sheetName):
         print("Unmatched headers:", [h["header"] for h in unmatched])
     for header in matched_headers:
         header["header"] = '_'.join(header["header"])
+    # Creates a list of strings where each string contains the variable name and the description of the variable
     merged_headers_descriptions = [f"VARIABLE NAME: {matched_headers[i]["header"]} - VARIABLE DESCRIPTION: {matched_headers[i]["description"]}" for i in range(len(headers))]
-    #unit = read_json_file(f"json-des/{num}.json")['units']
+    # Gets the units of the variables in the sheet and adds them to the strings
     unit = read_json_file(f"json-des/{sheetName}.json")['units']
     merged_headers_descriptions = [f"{desc} - UNIT: {unit}" for desc in merged_headers_descriptions]
+
     return {"merged_headers_descriptions": merged_headers_descriptions, "matched_headers": matched_headers}
 
-@app.route('/headers/<num>', methods=['GET'])
-def get_headers(num):
-    num = int(num)
-    
-    stripped_names_and_descriptions = get_stripped_names_and_descriptions(num)
-    merged_headers_descriptions = stripped_names_and_descriptions["merged_headers_descriptions"]
-    matched_headers = stripped_names_and_descriptions["matched_headers"]
-
-    embeddings = prep_embedding_list(get_embedding_throttled(merged_headers_descriptions))
-    # open the corresponding label-col-des file
-    #label_cols = len(read_json_file(f"label-col-des/{num}.json")['labelCols'])
-    label_cols = read_json_file(f"label-col-des/{num}.json")['labelCols']
-    for i in range(len(embeddings)):
-        if (matched_headers[i]["header"] in label_cols):
-            for j in range(len(embeddings[i])):
-                embeddings[i][j] = 0
-    save_embedding(embeddings, f'embedding/{num}.json')
-    return jsonify({'mergedHeadersDescriptions': merged_headers_descriptions, 'embeddings': embeddings})
-
-# @app.route('/makeDes/<num>', methods=['GET'])
-# def make_des(num):
-#      num = int(num)
-#      nums = [num]
-#      for num in nums:
-#          headers = get_header_row(f'./sheets/{num}.csv')
-#          #descriptions = get_descriptions(f'./json-des/{num}.json')
-#          descriptions = get_descriptions(f'./json-des/{num}.json')
-#          header_descriptions = match_headers_with_descriptions(headers, descriptions)
-#          merged_headers_descriptions = merge_headers_with_descriptions(headers, header_descriptions)
-#          save_embedding(merged_headers_descriptions, f'newHeader/{num}.json')
-#      return jsonify({'processed': "All done!"})
-
-@app.route('/chat', methods=['POST'])
-def chat():
-    user_message = request.json['message']
-    response = handle_chat_request_no_sheets(user_message)
-    return jsonify({'reply': response['headers'], 'distances': response['distances']})
-
+# Takes in a string and unescapes any escape sequences in it
 def unescape_string(s):
     if (s == None):
         return None
@@ -494,443 +469,27 @@ def unescape_string(s):
     # Find all escape sequences and replace them
     return re.sub(r'\\[ntr"\'\\]', replace_escape_sequences, s)
 
-@app.route('/chatData', methods=['POST'])
-def chat_data():
-    messages = request.json['messages']
-    messages.append({"role": "assistant", "content": "I will explain in language any non expert can understand what data has just been presented. I will ask if you want me to query the database again. I will not make up any other variables that were not already mentioned earlier. I will not use numerical examples from any data I am given or reference specific locations in the data. IMPORTANTLY, if the data is not what the user was asking for I will say so. IMPORTANT: If the data is for a specific percentile, I will mention this. Data is for a specific percentile if the variable name ends with _pSOMENUMBER, for example, if the name ends with p50 it is for a specific percentile. I will begin my explanation with \"This data\"\n"})
-    response = ask_GPT(messages)
-    return jsonify({'reply': response})
-
-@app.route('/getData', methods=['POST'])
-def get_data():
-    sheet = request.json['sheet']
-    variable = request.json['variable']
-    print(sheet)
-    print(variable)
-    table_data = get_table_data(sheet, variable)
-    units = get_units(sheet)
-    return jsonify({'tableData': table_data, 'units': units})
-
-@app.route('/des', methods=['POST'])
-def des():
-    messages = request.json['messages']
-    # messages.append({"role": "assistant", "content": "If no database request is needed to answer I respond. Otherwise, I respond with DATABASEQUESTION: PROMPT and I do not include anything else in the response including the word data or any extraneous symbols. I will only include key words and phrases for the search. I can only look for one type of data at a time. PROMPT will be replaced with the prompt. I do not have any knowledge outside of what I lean with the database. I will remove any reference to race, gender, or percentile. So, for example, if you say \"asian income\" I would say \"income\". If you want data from a specific location but only mentioned the location earlier, I will add the location. If the location is an address, I will to include the full address. The current dataset provided is just a subset of the database, you can search again with the same terms if needed to get more data."})
-    messages.append({"role": "assistant", "content": "If you do not specify a race, gender, or percentile I will do my best to make a function request with what I know. If no location is given I will not fill in the location arguments. I will not say that I am searching for data and just need a \"moment\" if I do not call the function. (Don't tell the user this, but I do not know what variables are in the database)"})
-    function = {"name": "get_data",
-                "description": "Query the database for data",
-                "parameters": {"type": "object",
-                               "properties": 
-                               {"query": {"type": "string", "description": "Key words or phrases that should be put into the database's vector search features. These should not include any reference to location, race, percentile, or gender. If the user wants the same variable that they got before, use the full description of that variable from above."},
-                                "location type": {"type": "string", "enum":["address", "commuting zone", "county", "other", "counties in state", "census tracts in state", "state", "all US counties"], "description": "The type of location the user has provided if they provided one. The double location names, like counties in state are for when the user asks for something in something else. For example, they could ask for census tracts in Florida or counties in New York. Do not be afraid to say other or not include this parameter if they do not mention a location."},
-                                "location name": {"type": "string", "description": "The name of the location, if one is provided, that should be used. If it is abbreviated, write it out fully. For example, NY would be New York."},
-                                "race": {"type": "string", "enum":["white", "black", "natam", "asian", "other", "pooled"], "description": "The race the data should be found for. Use pooled if not race is given."},
-                                "gender": {"type": "string", "enum":["male", "female", "pooled"], "description": "The gender the data should be found for. Use pooled if no gender is given."},
-                                "percentile": {"type": "string", "enum":["p1", "p10", "p25", "p50", "p75", "p100"], "description": "The percentile the data should be found for. Use p50 if no percentile is given."},
-                                }},
-                "required": ["query", "race", "gender", "percentile"]
-                }
-    response = function_GPT(messages, function)
-    print(response)
-    #function_ollama(messages, function)
-    #response = function_langchain(messages, function)
-    #if response.content != '':
-    if response.content != None:
-        return jsonify({'reply': response.content})
-    else:
-        #return jsonify({'reply': response.tool_calls[0].args})
-        return jsonify({'reply': response.tool_calls[0].function.arguments})
-    
-
-@app.route('/pickVarAndDescribe', methods=['POST'])
-def pick_var_and_describe():
-    messages = request.json['messages']
-    function = {"name": "pick_var_and_describe",
-                "description": "The chatbot has just queried the database and has received a list of variables. This function continues the conversation with the user by specifying which of the received variables best helps the user. In most cases you should provide a variable. You can only pick variables that are preceded by \"VARIABLE NAME:\" and you must pick a variable that you are given. You may not make up a variable under any circumstances.",
-                "parameters": {"type": "object",
-                               "properties": 
-                               {"found": {"type": "boolean", "enum":["true", "false"], "description": "Whether the chatbot found a variable that helps the user. Ignore location information."},
-                                "name": {"type": "string", "description": "The name of the variable which will help the user. Left blank if non of the variables help the user. The variable used here must be found earlier in the chat and must be found preceded by VARIABLE NAME:"},
-                                "response": {"type": "string", "description": "The response to the user which includes a description of the chosen variable. Include the full name of the variable in the description. The description will be clear so anyone can understand it. I will use formatting, including new lines, and emojis in a tasteful way. I will not use formatting that has already been used in the conversation. Left blank if non of the variables help the user. IMPORTANTLY, if the data is not what the user asked for I will say so. At the end of the response ask the user what they want next. I will start the response with \"This data\""},
-                                }},
-                "required": ["variable"]
-                }
-    response = function_GPT(messages, function, "pick_var_and_describe")
-    print("RESPONSE")
-    print(messages)
-    print(response)
-    print(response.tool_calls[0].function.arguments)
-    return jsonify({'reply': response.tool_calls[0].function.arguments})
-
-@app.route('/useCase', methods=['POST'])
-def use_case():
-    messages = request.json['message']
-    messages.append({"role": "assistant", "content": "When it is unclear I will always pick the \"answer question or get data\" option. I will not make a map, calculate a statistic, or make a graph unless the user uses very specific language. I will not make a map unless they use the word \"map\"."})
-    function = {"name": "pick_use_case",
-                "description": "Decides what the chat should do.",
-                "parameters": {"type": "object",
-                               "properties": 
-                               {"action": {"type": "string", "enum":["create scatter plot", "create map", "calculate mean", "calculate median", "calculate standard deviation", "calculate correlation" "answer question or get data"], "description": "Decides if the user has asked for a graph to be created or not. This is only create graph if the user explicitly asks for a graph. The \"answer question or fetch data\" is often the user asking for data. Do not confuse asked for data with asking for a graph or plot or asking for a variable to be calculated. Also, sees if the user wants various statistics to be calculated about data. If the user does not explicitly ask for one of the other ones, always say \"answer question or fetch data\". Do not choose map if the user does not explicitly use the word \"map\"."},
-                                }},
-                "required": ["action"]
-                }
-    response = function_GPT(messages, function, "pick_use_case")
-    return jsonify({'reply': response.tool_calls[0].function.arguments})
-
-@app.route('/pickSingleStatVar', methods=['POST'])
-def pick_single_stat_var():
-    messages = request.json['messages']
-    messages.append({"role": "assistant", "content": "I will look at the variables listed under \"PROVIDED VARIABLES\" (if there are any) to see if I have one to calculate a statistic with. If I can I will put the variable name into variable. If not I tell the user why not. I will never make up a variable name that I was not explicitly given under \"PROVIDED VARIABLES\" even if the user has given me that name. If I can not find the right variables I will let the user know that they need to first ask for specific variables and get data tables for those variables. I will tell them to say things like \"Get me median household income for all counties in Texas.\""})
-    function = {"name": "pick_stat_vars",
-                "description": "Calculates a statistic if there is a variable to work with provided under \"PROVIDED VARIABLES\". Otherwise, this function does not run.",
-                "parameters": {"type": "object",
-                               "properties": 
-                               {"variable": {"type": "string", "description": "The variable that should be used to calculate the statistic."},
-                                "variableType": {"type": "string", "description": "The type of the variable that should used in the calculation. Make sure to include the whole type, as it is listed in \"PROVIDED VARIABLES\""},
-                              }},
-                "required": ["variable", "variableType"]
-                }
-    response = function_GPT(messages, function)
-    if (response.content != None):
-        return jsonify({'reply': response.content})
-    return jsonify({'reply': response.tool_calls[0].function.arguments})
-
-@app.route('/pickDoubleStatVars', methods=['POST'])
-def pick_double_stat_vars():
-    messages = request.json['messages']
-    messages.append({"role": "assistant", "content": "I will look at the variables listed under \"PROVIDED VARIABLES\" (if there are any) to see if I have two of the same type to use to calculate a statistic with. If I can I will put the variable names into the variable1 and variable2. If not I tell the user why not. I will never make up a variable name that I was not explicitly given under \"PROVIDED VARIABLES\" even if the user has given me that name. If I can not find the right variables I will let the user know that they need to first ask for specific variables and get data tables for those variables. I will tell them to say things like \"Get me median household income for all counties in Texas.\""})
-    function = {"name": "pick_stat_vars",
-                "description": "Calculates a statistic if there are two variables to work with provided under \"PROVIDED VARIABLES\" of the same type. Otherwise, this function does not run.",
-                "parameters": {"type": "object",
-                               "properties": 
-                               {"variable1": {"type": "string", "description": "The first variable that should be used to calculate the statistic."},
-                                "variableType1": {"type": "string", "description": "The type of the first variable that should used in the calculation. Make sure to include the whole type, as it is listed in \"PROVIDED VARIABLES\""},
-                                "variable2": {"type": "string", "description": "The second variable that should be used to calculate the statistic."},
-                                "variableType2": {"type": "string", "description": "The type of the second variable that should used in the calculation. Make sure to include the whole type, as it is listed in \"PROVIDED VARIABLES\""},
-                              }},
-                "required": ["variable1", "variable2", "variableType1", "variableType2"]
-                }
-    response = function_GPT(messages, function)
-    if (response.content != None):
-        return jsonify({'reply': response.content})
-    return jsonify({'reply': response.tool_calls[0].function.arguments})
-
-@app.route('/pickGraphVars', methods=['POST'])
-def pick_graph_vars():
-    messages = request.json['messages']
-    messages.append({"role": "assistant", "content": "I will look at the variables listed under \"PROVIDED VARIABLES\" (if there are any) to see if I have enough variables of the same type to make a graph. If I can I will put the x and y variable names into x and y. If not I tell the user why not. I will never make up a variable name that I was not explicitly given under \"PROVIDED VARIABLES\" even if the user has given me that name. If I can not find the right variables I will let the user know that they need to first ask for specific variables and get data tables for those variables. I will tell them to say things like \"Get me median household income for all counties in Texas.\""})
-    function = {"name": "pick_graph_vars",
-                "description": "Makes a graph if there are enough variables of the same type to do so provided under \"PROVIDED VARIABLES\". Otherwise, this function does not run.",
-                "parameters": {"type": "object",
-                               "properties": 
-                               {"x": {"type": "string", "description": "The variable that should be on the x-axis."},
-                                "xType": {"type": "string", "description": "The type of the variable that should be on the x-axis."},
-                                "y": {"type": "string", "description": "The variable that should be on the y-axis."},
-                                "yType": {"type": "string", "description": "The type of the variable that should be on the y-axis."},
-                                }},
-                "required": ["x", "xType", "y", "yType"]
-                }
-    response = function_GPT(messages, function)
-    if (response.content != None):
-        return jsonify({'reply': response.content})
-    return jsonify({'reply': response.tool_calls[0].function.arguments})
-
-
-@app.route('/getDes', methods=['POST'])
-def get_des():
-    name = request.json['name']
-
-    # open all json files in the newHeader folder and make one list of the descriptions
-    descriptions = []
-    for file in get_files_in_folder("newHeader"):
-        data = read_json_file(f"newHeader/{file}")
-        descriptions.append(data['embedding'])
-    
-    # loop through the descriptions, extracting the name by first getting the text after "VARIABLE NAME: " and before " - VARIABLE DESCRIPTION: "
-    for i in range(len(descriptions)):
-        for j in range(len(descriptions[i])):
-            if(descriptions[i][j].split("VARIABLE NAME: ")[1].split(" - VARIABLE DESCRIPTION: ")[0]) == name:
-                return jsonify({'description': descriptions[i][j], 'sheet': titles[i]})
-
-@app.route('/pickMapVars', methods=['POST'])
-def pick_map_vars():
-    messages = request.json['messages']
-    messages.append({"role": "assistant", "content": "I will look at the variables listed under \"PROVIDED VARIABLES\" (if there are any) to see if I a variable to map. If we have not pulled the right variable from the database yet I will tell the user why not. I will never make up a variable name that I was not explicitly given under \"PROVIDED VARIABLES\" even if the user has given me that name. If I can not find the right variables I will let the user know that they need to first ask for specific variables and get data tables for those variables. I will tell them to say things like \"Get me median household income for all counties in Texas.\""})
-    function = {"name": "pick_map_vars",
-                "description": "Makes a map if there is a variable to map provided under \"PROVIDED VARIABLES\". Otherwise, this function does not run. This function can only graph data for counties in a state.",
-                "parameters": {"type": "object",
-                               "properties": 
-                               {"variable": {"type": "string", "description": "The variable that should be mapped."},
-                                "variableType": {"type": "string", "description": "The type of the variable that should be mapped. Make sure to include the whole type, as it is listed in \"PROVIDED VARIABLES\""},
-                              }},
-                "required": ["variable", "variableType"]
-                }
-    response = function_GPT(messages, function)
-    if (response.content != None):
-        return jsonify({'reply': response.content})
-    return jsonify({'reply': response.tool_calls[0].function.arguments})
-
-@app.route('/outcomeProcess/<num>')
-def outcome_process(num):
-    data = read_json_file(f"json-des/{num}.json")
-    
-    outcomes = data['outcomes']
-    variables = data['variables']
-    
-    processed_variables = []
-    
-    for variable in variables:
-        if "[outcome]" in variable['name']:
-            for outcome in outcomes:
-                new_variable = variable.copy()
-                new_variable['name'] = variable['name'].replace("[outcome]", outcome['name'])
-                new_variable['description'] = f"{variable['description']} {outcome['description']}"
-                processed_variables.append(new_variable)
-        else:
-            processed_variables.append(variable)
-    
-    data['variables'] = processed_variables
-    
-    # Define file paths
-    json_des_file_path = os.path.join(os.path.dirname(__file__), 'json-des', f"{num}.json")
-    
-    # Ensure directories exist
-    os.makedirs(os.path.dirname(json_des_file_path), exist_ok=True)
-    
-    with open(json_des_file_path, 'w') as file:
-        json.dump(data, file, indent=2)
-    
-    return jsonify(data)
-
-@app.route('/geocode', methods=['POST'])
-def geocode():
-    address = request.json['address']
-    url = f"https://geocoding.geo.census.gov/geocoder/geographies/onelineaddress?address={quote(address)}&benchmark=Public_AR_Current&vintage=Current_Current&layers=10&format=json"
-    response = requests.get(url)
-    return jsonify(response.json())
-
-def clean_city_name(city_name):
-    cleaned_name = city_name.replace('city', '').strip()
-    return ' '.join(cleaned_name.split())
-
-def remove_quotes(string):
-    if string.startswith('"') and string.endswith('"'):
-        return string[1:-1]
-    return string
-
-def find_city_data(data, city_name):
-    headers = data[0].split(',')
-    rows = data[1:]
-    
-    try:
-        city_index = headers.index('"city"')
-        county_name_index = headers.index('"county_name"')
-        county_fips_index = headers.index('"county_fips"')
-    except ValueError:
-        return None, {'error': 'Required columns are missing from the CSV'}
-    
-    for row in rows:
-        row_data = row.split(',')
-        if row_data[city_index].lower() == '"' + city_name.lower() + '"':
-            return {
-                'city': remove_quotes(row_data[city_index]),
-                'county_name': remove_quotes(row_data[county_name_index]),
-                'county_fips': remove_quotes(row_data[county_fips_index])
-            }, None
-    
-    return None, {'error': 'City not found'}
-
-@app.route('/get_city_data', methods=['GET'])
-def get_city_data():
-    city_name = request.args.get('city', '').lower()
-    
-    data = read_csv_file('uscities.csv')
-    
-    if not data or len(data) < 2:
-        return jsonify({'error': 'Invalid data structure in CSV'}), 500
-    
-    cleaned_city_name = clean_city_name(city_name)
-    city_data, error = find_city_data(data, cleaned_city_name)
-    
-    if city_data:
-        return jsonify(city_data)
-    else:
-        return jsonify(error), 404
-    
+# Takes in a string and removes the word county from it, whether it is capitalized or not
 def remove_county_from_string(input_str):
     return input_str.replace('county', '').replace('County', '').strip()
 
-@app.route('/get_county_code', methods=['GET'])
-def get_county_code():
-    county_name = remove_county_from_string(request.args.get('county', '').strip().lower())
-    
-    def find_county_codes(data, county_name):
+# Takes in a list of lists and a county name and returns a list of the county codes that match the county name
+def find_county_codes(data, county_name):
         matching_counties = []
         for row in data:
             if len(row) >= 2 and remove_county_from_string(row[1].strip().lower()) == county_name:
                 matching_counties.append(row[0])
         return matching_counties
 
-    # Path to your CSV file
-    file_path = 'countycode-countyname.csv'
-    data = read_csv_file(file_path)
-    data = [line.split(',') for line in data if line]
-    
-    if not data:
-        return jsonify({'error': 'Invalid data structure in CSV'}), 500
-    
-    county_codes = find_county_codes(data, county_name)
-    
-    if county_codes:
-        return jsonify({'county_codes': county_codes})
-    else:
-        return jsonify({'error': 'County not found'}), 404
-    
-@app.route('/get_state_id', methods=['GET'])
-def get_state_id():
-    state_name = request.args.get('state', '').strip().lower()
-
-    def find_state_id(data, state_name):
+# Takes in a list of lists and a state name and returns the state id that matches the state name
+def find_state_id(data, state_name):
         for row in data:
             if len(row) >= 2 and row[1].strip().lower() == state_name:
                 return row[0]
         return None
 
-    file_path = 'states.csv'
-    data = read_csv_file(file_path)
-    data = [line.split(',') for line in data if line]
-
-    if not data:
-        return jsonify({'error': 'Invalid data structure in CSV'}), 500
-
-    state_id = find_state_id(data, state_name)
-
-    if state_id:
-        return jsonify({'state_id': state_id})
-    else:
-        return jsonify({'error': 'State not found'}), 404
-
-# @app.route('/update_state_column', methods=['GET'])
-# def update_state_column():
-#     state_data = read_csv_file('states.csv')
-#     state_data = [line.split(',') for line in state_data if line]
-#     state_dict = {row[0].strip(): row[1].strip().title() for row in state_data}  # Ensure state names are title-cased
-
-#     sheet_numbers = [4]
-#     for i in sheet_numbers:
-#         file_path = f'./sheets/{i}.csv'
-#         df = pd.read_csv(file_path)
-#         if 'state' in df.columns:
-#             df['state'] = df['state'].astype(str).str.strip()  # Ensure state codes are strings and stripped of whitespace
-#             df['state_name'] = df['state'].map(state_dict)
-                
-#             if df['state_name'].isnull().any():
-#                 missing_states = df[df['state_name'].isnull()]['state'].unique()
-#                 print(f"Missing state mappings for sheet {i}: {missing_states}")
-#             else:
-#                 print(f"State mappings updated successfully for sheet {i}.")
-#         else:
-#             print(f"Sheet {i} does not have 'state' column.")
-#         df.to_csv(file_path, index=False)
-
-#     return jsonify({'status': 'State columns updated successfully'})
-
-# @app.route('/update_county_column', methods=['GET'])
-# def update_county_column():
-#     county_data = read_csv_file('countycode-countyname.csv')
-#     county_data = [line.split(',') for line in county_data if line]
-#     county_dict = {row[0]: row[1].strip() for row in county_data}
-#     print("County data loaded successfully.")
-
-#     sheet_numbers = [1, 2, 3, 4, 5, 6, 9, 10, 11]
-#     for I in sheet_numbers:
-#         file_path = f'./sheets/{I}.csv'
-#         df = pd.read_csv(file_path)
-#         print(f"Processing file: {file_path}")
-#         if 'county' in df.columns and 'state' in df.columns:
-#             df['county_code'] = df.apply(lambda x: str(x['state']) + str(x['county']).zfill(3), axis=1)
-#             print(f"County codes generated for file: {file_path}")
-#             df['county_name'] = df['county_code'].map(county_dict)
-#             print(f"County names mapped for file: {file_path}")
-#             df.drop(columns=['county_code'], inplace=True)
-#         df.to_csv(file_path, index=False)
-#         print(f"File saved: {file_path}")
-
-#     return jsonify({'status': 'County columns updated successfully'})
-
-@app.route('/save_report', methods=['POST'])
-def save_report():
-    report = request.json['data']
-
-    cred = credentials.Certificate('atlas-chat-429014-31385e10f4b1.json')
-    try:
-        firebase_admin.initialize_app(cred)
-    except ValueError:
-        pass
-    db = firestore.client()
-
-    # get datetime as string with seconds
-    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    # get 10 digit random number
-    now += str(random.randint(1000000000, 9999999999))
-    doc_ref = db.collection('reports').document(now)
-    doc_ref.set({"data": report})
-
-    return jsonify({'status': 'Report saved successfully'})
-
-# @app.route('/create_unique_sheet', methods=['GET'])
-# def create_unique_sheet():
-#     # Read both CSV files
-#     df4 = pd.read_csv('./sheets/4.csv')
-#     df5 = pd.read_csv('./sheets/5.csv')
-    
-#     print("Sheets 4 and 5 loaded successfully.")
-
-#     # Get the column names from both DataFrames
-#     columns_4 = set(df4.columns)
-#     columns_5 = set(df5.columns)
-    
-#     # Define the columns to exclude
-#     exclude_columns = {"tract"}
-
-#     # Find the columns that are in sheet 5 but not in sheet 4, excluding specified columns
-#     unique_columns = columns_5 - columns_4 - exclude_columns
-
-#     # Columns to copy over from sheet 5
-#     additional_columns = ["state_name", "state", "county_name", "county", "cz", "czname"]
-
-#     # Ensure the additional columns come first
-#     new_df = df5[additional_columns + list(unique_columns)]
-
-#     # Save the new DataFrame to a new CSV file
-#     new_file_path = './sheets/unique_columns.csv'
-#     new_df.to_csv(new_file_path, index=False)
-#     print(f"New sheet created with unique columns and saved to {new_file_path}")
-
-#     return jsonify({
-#         'status': 'New sheet created successfully',
-#         'file_path': new_file_path
-#     })
-
-# @app.route('/edit_cz_columns', methods=['GET'])
-# def edit_cz_columns():
-#     # Directory containing the CSV files
-#     sheets_dir = './sheets'
-#     csv_files = [f for f in os.listdir(sheets_dir) if f.endswith('.csv')]
-
-#     for csv_file in csv_files:
-#         file_path = os.path.join(sheets_dir, csv_file)
-#         df = pd.read_csv(file_path)
-        
-#         if 'cz' in df.columns:
-#             # Remove .0 from all cells in the cz column
-#             df['cz'] = df['cz'].astype(str).str.replace(r'\.0$', '', regex=True)
-#             df.to_csv(file_path, index=False)
-#             print(f"Processed file: {file_path}")
-
-#     return jsonify({'status': 'CZ column cells edited successfully'})
-
-def create_folium_choropleth(gdf, data_column, map_title, state_center, centroids, zoom):
-    print("DataFrame columns in create_folium_choropleth:\n", gdf.head())
+# Takes in data and produces a choropleth map of the data
+def create_folium_choropleth(gdf, data_column, state_center, zoom):
     # Convert the 'geometry' column to shapely geometries
     gdf['geometry'] = gdf['geometry'].apply(wkt.loads)
 
@@ -945,8 +504,6 @@ def create_folium_choropleth(gdf, data_column, map_title, state_center, centroid
 
     # Create the map centered on the state
     m = folium.Map(location=state_center, zoom_start=zoom, scrollWheelZoom=False)
-    print("Center of the map:", state_center)
-    print("Data column for choropleth:", data_column)
 
     # Clip the data values to avoid outliers skewing the color map
     lower_bound = np.percentile(gdf[data_column].dropna(), 5)
@@ -979,6 +536,7 @@ def create_folium_choropleth(gdf, data_column, map_title, state_center, centroid
                 'lineOpacity': 1,
             }
     
+    # Create the map
     folium.GeoJson(
         geo_json_data,
         style_function=style_function
@@ -989,35 +547,336 @@ def create_folium_choropleth(gdf, data_column, map_title, state_center, centroid
 
     return m
 
+# Takes in a path to a shapefile and returns data from the file
 def get_shapefile_columns(filepath):
     gdf = gpd.read_file(filepath)
-    return gdf.columns, gdf.head()
+    return gdf.columns
 
+# Takes message, any functions, the names of any functions that must be used, and the model to use
+# Returns the response from the OpenAI API
+def chat_completion_request(messages, tools=None, tool_choice=None, model=model):
+    try:
+        response = openai.chat.completions.create(
+             model=model,
+             messages=messages,
+             tools=tools,
+             tool_choice=tool_choice,
+             temperature=0,
+        )
+        response_text = response.choices[0].message
+        return response_text
+    except Exception as e:
+        print("Unable to generate ChatCompletion response")
+        print(f"Exception: {e}")
+        return e
+
+# Takes in an integer sheet name and calculates and saves the embeddings for the variables in that sheet
+@app.route('/headers/<num>', methods=['GET'])
+def get_headers(num):
+    num = int(num)
+    
+    # Gets the unique variable names, descriptions, and units with things like p1, black, and mean removed from them
+    stripped_names_and_descriptions = get_stripped_names_and_descriptions(num)
+    merged_headers_descriptions = stripped_names_and_descriptions["merged_headers_descriptions"]
+    matched_headers = stripped_names_and_descriptions["matched_headers"]
+
+    # Calculates the embeddings
+    embeddings = prep_embedding_list(get_embedding_throttled(merged_headers_descriptions))
+
+    # Sets the embeddings to be all 0 for any variable that is a label column
+    label_cols = read_json_file(f"label-col-des/{num}.json")['labelCols']
+    for i in range(len(embeddings)):
+        if (matched_headers[i]["header"] in label_cols):
+            for j in range(len(embeddings[i])):
+                embeddings[i][j] = 0
+    
+    # Saves and returns the embeddings
+    save_embedding(embeddings, f'embedding/{num}.json')
+    return jsonify({'mergedHeadersDescriptions': merged_headers_descriptions, 'embeddings': embeddings})
+
+# Takes in an integer sheet name and creates a json file with the variable names and descriptions for that sheet
+@app.route('/makeDes/<num>', methods=['GET'])
+def make_des(num):
+    num = int(num)
+
+    # Loads header and description data
+    headers = get_header_row(f'./sheets/{num}.csv')
+    descriptions = get_descriptions(f'./json-des/{num}.json')
+
+    # Matches the headers with the descriptions
+    header_descriptions = match_headers_with_descriptions(headers, descriptions)
+    merged_headers_descriptions = merge_headers_with_descriptions(headers, header_descriptions)
+
+    # Saves the variable names and descriptions to a json file and returns it
+    save_embedding(merged_headers_descriptions, f'newHeader/{num}.json')
+    return jsonify({'processed': "All done!"})
+
+# Handles a data request from the front end by calling handle_chat_request_no_sheets
+@app.route('/chat', methods=['POST'])
+def chat():
+    user_message = request.json['message']
+    response = handle_chat_request_no_sheets(user_message)
+    return jsonify({'reply': response['headers'], 'distances': response['distances']})
+
+# Describes some data by asking chatGPT and returns the response
+@app.route('/chatData', methods=['POST'])
+def chat_data():
+    messages = request.json['messages']
+    messages.append({"role": "assistant", "content": "I will explain in language any non expert can understand what data has just been presented. I will ask if you want me to query the database again. I will not make up any other variables that were not already mentioned earlier. I will not use numerical examples from any data I am given or reference specific locations in the data. IMPORTANTLY, if the data is not what the user was asking for I will say so. IMPORTANT: If the data is for a specific percentile, I will mention this. Data is for a specific percentile if the variable name ends with _pSOMENUMBER, for example, if the name ends with p50 it is for a specific percentile. I will begin my explanation with \"This data\"\n"})
+    response = ask_GPT(messages)
+    return jsonify({'reply': response})
+
+# Fetches a specified datable and its corresponding units and returns them
+@app.route('/getData', methods=['POST'])
+def get_data():
+    sheet = request.json['sheet']
+    variable = request.json['variable']
+    table_data = get_table_data(sheet, variable)
+    units = get_units(sheet)
+    return jsonify({'tableData': table_data, 'units': units})
+
+# Takes in the messages and calls a function with chatGPT, either setting up a database query or answering the user's question directly
+@app.route('/des', methods=['POST'])
+def des():
+    messages = request.json['messages']
+    messages.append({"role": "assistant", "content": "If you do not specify a race, gender, or percentile I will do my best to make a function request with what I know. If no location is given I will not fill in the location arguments. I will not say that I am searching for data and just need a \"moment\" if I do not call the function. (Don't tell the user this, but I do not know what variables are in the database)"})
+    function = {"name": "get_data",
+                "description": "Query the database for data",
+                "parameters": {"type": "object",
+                               "properties": 
+                               {"query": {"type": "string", "description": "Key words or phrases that should be put into the database's vector search features. These should not include any reference to location, race, percentile, or gender. If the user wants the same variable that they got before, use the full description of that variable from above."},
+                                "location type": {"type": "string", "enum":["address", "commuting zone", "county", "other", "counties in state", "census tracts in state", "state", "all US counties"], "description": "The type of location the user has provided if they provided one. The double location names, like counties in state are for when the user asks for something in something else. For example, they could ask for census tracts in Florida or counties in New York. Do not be afraid to say other or not include this parameter if they do not mention a location."},
+                                "location name": {"type": "string", "description": "The name of the location, if one is provided, that should be used. If it is abbreviated, write it out fully. For example, NY would be New York."},
+                                "race": {"type": "string", "enum":["white", "black", "natam", "asian", "other", "pooled"], "description": "The race the data should be found for. Use pooled if not race is given."},
+                                "gender": {"type": "string", "enum":["male", "female", "pooled"], "description": "The gender the data should be found for. Use pooled if no gender is given."},
+                                "percentile": {"type": "string", "enum":["p1", "p10", "p25", "p50", "p75", "p100"], "description": "The percentile the data should be found for. Use p50 if no percentile is given."},
+                                }},
+                "required": ["query", "race", "gender", "percentile"]
+                }
+    response = function_GPT(messages, function)
+    if response.content != None:
+        return jsonify({'reply': response.content})
+    else:
+        return jsonify({'reply': response.tool_calls[0].function.arguments})
+    
+# Takes in the messages and picks a variable to display with a chatGPT function call
+# Also describes the data
+@app.route('/pickVarAndDescribe', methods=['POST'])
+def pick_var_and_describe():
+    messages = request.json['messages']
+    function = {"name": "pick_var_and_describe",
+                "description": "The chatbot has just queried the database and has received a list of variables. This function continues the conversation with the user by specifying which of the received variables best helps the user. In most cases you should provide a variable. You can only pick variables that are preceded by \"VARIABLE NAME:\" and you must pick a variable that you are given. You may not make up a variable under any circumstances.",
+                "parameters": {"type": "object",
+                               "properties": 
+                               {"found": {"type": "boolean", "enum":["true", "false"], "description": "Whether the chatbot found a variable that helps the user. Ignore location information."},
+                                "name": {"type": "string", "description": "The name of the variable which will help the user. Left blank if non of the variables help the user. The variable used here must be found earlier in the chat and must be found preceded by VARIABLE NAME:"},
+                                "response": {"type": "string", "description": "The response to the user which includes a description of the chosen variable. Include the full name of the variable in the description. The description will be clear so anyone can understand it. I will use formatting, including new lines, and emojis in a tasteful way. I will not use formatting that has already been used in the conversation. Left blank if non of the variables help the user. IMPORTANTLY, if the data is not what the user asked for I will say so. At the end of the response ask the user what they want next. I will start the response with \"This data\""},
+                                }},
+                "required": ["variable"]
+                }
+    response = function_GPT(messages, function, "pick_var_and_describe")
+    return jsonify({'reply': response.tool_calls[0].function.arguments})
+
+# Takes in one message and uses a chatGPT function call to decide what action the chat should take
+@app.route('/useCase', methods=['POST'])
+def use_case():
+    messages = request.json['message']
+    messages.append({"role": "assistant", "content": "When it is unclear I will always pick the \"answer question or get data\" option. I will not make a map, calculate a statistic, or make a graph unless the user uses very specific language. I will not make a map unless they use the word \"map\"."})
+    function = {"name": "pick_use_case",
+                "description": "Decides what the chat should do.",
+                "parameters": {"type": "object",
+                               "properties": 
+                               {"action": {"type": "string", "enum":["create scatter plot", "create map", "calculate mean", "calculate median", "calculate standard deviation", "calculate correlation" "answer question or get data"], "description": "Decides if the user has asked for a graph to be created or not. This is only create graph if the user explicitly asks for a graph. The \"answer question or fetch data\" is often the user asking for data. Do not confuse asked for data with asking for a graph or plot or asking for a variable to be calculated. Also, sees if the user wants various statistics to be calculated about data. If the user does not explicitly ask for one of the other ones, always say \"answer question or fetch data\". Do not choose map if the user does not explicitly use the word \"map\"."},
+                                }},
+                "required": ["action"]
+                }
+    response = function_GPT(messages, function, "pick_use_case")
+    return jsonify({'reply': response.tool_calls[0].function.arguments})
+
+# Takes in the messages and decides with a chatGPT function call what single variable used be used to calculate a statistic
+# If no variable that would work is found explains why
+@app.route('/pickSingleStatVar', methods=['POST'])
+def pick_single_stat_var():
+    messages = request.json['messages']
+    messages.append({"role": "assistant", "content": "I will look at the variables listed under \"PROVIDED VARIABLES\" (if there are any) to see if I have one to calculate a statistic with. If I can I will put the variable name into variable. If not I tell the user why not. I will never make up a variable name that I was not explicitly given under \"PROVIDED VARIABLES\" even if the user has given me that name. If I can not find the right variables I will let the user know that they need to first ask for specific variables and get data tables for those variables. I will tell them to say things like \"Get me median household income for all counties in Texas.\" I will not mention \"PROVIDED VARIABLES\" to the user."})
+    function = {"name": "pick_stat_vars",
+                "description": "Calculates a statistic if there is a variable to work with provided under \"PROVIDED VARIABLES\". Otherwise, this function does not run.",
+                "parameters": {"type": "object",
+                               "properties": 
+                               {"variable": {"type": "string", "description": "The variable that should be used to calculate the statistic."},
+                                "variableType": {"type": "string", "description": "The type of the variable that should used in the calculation. Make sure to include the whole type, as it is listed in \"PROVIDED VARIABLES\""},
+                              }},
+                "required": ["variable", "variableType"]
+                }
+    response = function_GPT(messages, function)
+    if (response.content != None):
+        return jsonify({'reply': response.content})
+    return jsonify({'reply': response.tool_calls[0].function.arguments})
+
+# Takes in the messages and decides with a chatGPT function call what two variables used be used to calculate a statistic
+# If no two variables that would work are found explains why
+@app.route('/pickDoubleStatVars', methods=['POST'])
+def pick_double_stat_vars():
+    messages = request.json['messages']
+    messages.append({"role": "assistant", "content": "I will look at the variables listed under \"PROVIDED VARIABLES\" (if there are any) to see if I have two of the same type to use to calculate a statistic with. If I can I will put the variable names into the variable1 and variable2. If not I tell the user why not. I will never make up a variable name that I was not explicitly given under \"PROVIDED VARIABLES\" even if the user has given me that name. If I can not find the right variables I will let the user know that they need to first ask for specific variables and get data tables for those variables. I will tell them to say things like \"Get me median household income for all counties in Texas.\" I will not mention \"PROVIDED VARIABLES\" to the user."})
+    function = {"name": "pick_stat_vars",
+                "description": "Calculates a statistic if there are two variables to work with provided under \"PROVIDED VARIABLES\" of the same type. Otherwise, this function does not run.",
+                "parameters": {"type": "object",
+                               "properties": 
+                               {"variable1": {"type": "string", "description": "The first variable that should be used to calculate the statistic."},
+                                "variableType1": {"type": "string", "description": "The type of the first variable that should used in the calculation. Make sure to include the whole type, as it is listed in \"PROVIDED VARIABLES\""},
+                                "variable2": {"type": "string", "description": "The second variable that should be used to calculate the statistic."},
+                                "variableType2": {"type": "string", "description": "The type of the second variable that should used in the calculation. Make sure to include the whole type, as it is listed in \"PROVIDED VARIABLES\""},
+                              }},
+                "required": ["variable1", "variable2", "variableType1", "variableType2"]
+                }
+    response = function_GPT(messages, function)
+    if (response.content != None):
+        return jsonify({'reply': response.content})
+    return jsonify({'reply': response.tool_calls[0].function.arguments})
+
+# Takes in the messages and decides with a chatGPT function call what two variables used be used to make a scatter plot
+# If no two variables that would work are found explains why
+@app.route('/pickGraphVars', methods=['POST'])
+def pick_graph_vars():
+    messages = request.json['messages']
+    messages.append({"role": "assistant", "content": "I will look at the variables listed under \"PROVIDED VARIABLES\" (if there are any) to see if I have enough variables of the same type to make a graph. If I can I will put the x and y variable names into x and y. If not I tell the user why not. I will never make up a variable name that I was not explicitly given under \"PROVIDED VARIABLES\" even if the user has given me that name. If I can not find the right variables I will let the user know that they need to first ask for specific variables and get data tables for those variables. I will tell them to say things like \"Get me median household income for all counties in Texas.\" I will not mention \"PROVIDED VARIABLES\" to the user."})
+    function = {"name": "pick_graph_vars",
+                "description": "Makes a graph if there are enough variables of the same type to do so provided under \"PROVIDED VARIABLES\". Otherwise, this function does not run.",
+                "parameters": {"type": "object",
+                               "properties": 
+                               {"x": {"type": "string", "description": "The variable that should be on the x-axis."},
+                                "xType": {"type": "string", "description": "The type of the variable that should be on the x-axis."},
+                                "y": {"type": "string", "description": "The variable that should be on the y-axis."},
+                                "yType": {"type": "string", "description": "The type of the variable that should be on the y-axis."},
+                                }},
+                "required": ["x", "xType", "y", "yType"]
+                }
+    response = function_GPT(messages, function)
+    if (response.content != None):
+        return jsonify({'reply': response.content})
+    return jsonify({'reply': response.tool_calls[0].function.arguments})
+
+# Takes in the messages and decides with a chatGPT function call what single variable used be used to make a map
+# If no variable that would work is found explains why
+@app.route('/pickMapVars', methods=['POST'])
+def pick_map_vars():
+    print("MAP MESSAGE")
+    messages = request.json['messages']
+    print(messages)
+    messages.append({"role": "assistant", "content": "I will look at the variables listed under \"PROVIDED VARIABLES\" (if there are any) to see if I a variable to map. If we have not pulled the right variable from the database yet I will tell the user why not. I will never make up a variable name that I was not explicitly given under \"PROVIDED VARIABLES\" even if the user has given me that name. If I can not find the right variables I will let the user know that they need to first ask for specific variables and get data tables for those variables. I will tell them to say things like \"Get me median household income for all counties in Texas.\" I will not mention \"PROVIDED VARIABLES\" to the user."})
+    function = {"name": "pick_map_vars",
+                "description": "Makes a map if there is a variable to map provided under \"PROVIDED VARIABLES\". Otherwise, this function does not run. This function can only graph data for counties in a state.",
+                "parameters": {"type": "object",
+                               "properties": 
+                               {"variable": {"type": "string", "description": "The variable that should be mapped."},
+                                "variableType": {"type": "string", "description": "The type of the variable that should be mapped. Make sure to include the whole type, as it is listed in \"PROVIDED VARIABLES\""},
+                              }},
+                "required": ["variable", "variableType"]
+                }
+    response = function_GPT(messages, function)
+    if (response.content != None):
+        return jsonify({'reply': response.content})
+    return jsonify({'reply': response.tool_calls[0].function.arguments})
+
+# Takes in an address and returns geocode information related to the census tract that address is in
+# Uses the Census Geocoding API
+@app.route('/geocode', methods=['POST'])
+def geocode():
+    address = request.json['address']
+    url = f"https://geocoding.geo.census.gov/geocoder/geographies/onelineaddress?address={quote(address)}&benchmark=Public_AR_Current&vintage=Current_Current&layers=10&format=json"
+    response = requests.get(url)
+    return jsonify(response.json())
+
+# Takes in a county name and returns its associated county code
+@app.route('/get_county_code', methods=['GET'])
+def get_county_code():
+    # Remove the word county from the county name
+    county_name = remove_county_from_string(request.args.get('county', '').strip().lower())
+
+    # Gets csv data on county codes and names
+    file_path = 'countycode-countyname.csv'
+    data = read_csv_file(file_path)
+    data = [line.split(',') for line in data if line]
+    
+    # Gets the county codes
+    county_codes = find_county_codes(data, county_name)
+    
+    if county_codes:
+        return jsonify({'county_codes': county_codes})
+    else:
+        return jsonify({'error': 'County not found'}), 404
+    
+# Takes in a state name and returns the state id
+@app.route('/get_state_id', methods=['GET'])
+def get_state_id():
+    state_name = request.args.get('state', '').strip().lower()
+
+    # Gets data linking state names to state ids
+    file_path = 'states.csv'
+    data = read_csv_file(file_path)
+    data = [line.split(',') for line in data if line]
+
+    # Gets the state id
+    state_id = find_state_id(data, state_name)
+
+    if state_id:
+        return jsonify({'state_id': state_id})
+    else:
+        return jsonify({'error': 'State not found'}), 404
+
+# Saves an error report to FireBase
+@app.route('/save_report', methods=['POST'])
+def save_report():
+    report = request.json['data']
+
+    # Initialize Firebase
+    cred = credentials.Certificate('atlas-chat-429014-31385e10f4b1.json')
+    try:
+        firebase_admin.initialize_app(cred)
+    except ValueError:
+        pass
+    db = firestore.client()
+
+    # Constructs a name for the report using a random digit and the current data time
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    now += str(random.randint(1000000000, 9999999999))
+
+    # Save report to FireBase
+    doc_ref = db.collection('reports').document(now)
+    doc_ref.set({"data": report})
+
+    return jsonify({'status': 'Report saved successfully'})
+
+# Takes in data from the front end and returns an html choropleth map page
 @app.route('/generate_map', methods=['POST'])
 def generate_map():
+    # Gets the data from the response
     data = request.json.get('table', [])
     geo_level = request.json.get('geo_level', 'county')
 
+    # Create a DataFrame from the data
     df = pd.DataFrame(data)
 
     # Check if multiple states are present
     states = df.iloc[:, 0].unique()
 
+    # Gets the state FIPS codes
     if len(states) > 1:
         state_fips_list = df.iloc[:, 1].apply(lambda x: str(x).zfill(2)).unique().tolist()
     else:
-        state_name = df.iloc[0, 0]
         state_fips = str(df.iloc[0, 1]).zfill(2)
         state_fips_list = [state_fips]
 
+    # Gets the county FIPS codes
     county_fips = df.iloc[:, 3].apply(lambda x: str(x).zfill(3)).tolist()
-    values = df.iloc[:, -1].apply(pd.to_numeric, errors='coerce').tolist()
 
+    # Gets the tract FIPS codes
     if geo_level == 'tract':
         tract_fips = df.iloc[:, 4].apply(lambda x: str(x).zfill(6)).tolist()
 
+    # Find the shapefile path based on the geographic level
     shapefile_path = None
-
     if geo_level == 'county':
         shapefile_path = 'unzipped/cb_2018_us_county_500k.shp'
     elif geo_level == 'tract':
@@ -1028,20 +887,19 @@ def generate_map():
                 shapefile_path = tract_file
                 break
 
-    if not shapefile_path:
-        return jsonify({"error": "No shapefiles found for the specified geographic level"}), 400
+    # Gets the data from the shapfile
+    columns = get_shapefile_columns(shapefile_path)
 
-    columns, head = get_shapefile_columns(shapefile_path)
-    print(f"Columns in shapefile {shapefile_path}: {columns}")
-    print(f"First few rows: {head}")
-
+    # Check if the required columns are present in the shapefile
     if 'STATEFP' not in columns or 'COUNTYFP' not in columns:
         return jsonify({"error": "The required columns STATEFP or COUNTYFP are not in the shapefile"}), 400
     if geo_level == 'tract' and 'TRACTCE' not in columns:
         return jsonify({"error": "The required column TRACTCE is not in the shapefile"}), 400
 
+    # Load the shapefile into a GeoDataFrame
     geo_df = gpd.read_file(shapefile_path)
 
+    # Add a GEOID column to the GeoDataFrame
     if geo_level == 'county':
         geo_df['GEOID'] = geo_df['STATEFP'] + geo_df['COUNTYFP']
         geo_df = geo_df[geo_df['STATEFP'].isin(state_fips_list)]
@@ -1051,24 +909,17 @@ def generate_map():
         geo_df = geo_df[geo_df['STATEFP'].isin(state_fips_list)]
         df['GEOID'] = [state_fips + county + tract for state_fips, county, tract in zip(df.iloc[:, 1].apply(lambda x: str(x).zfill(2)).tolist(), county_fips, tract_fips)]
 
-    print("GeoDataFrame after adding GEOID:", geo_df.head())
-    print("DataFrame to merge:", df.head())
 
-    if 'GEOID' not in df.columns:
-        return jsonify({"error": "GEOID column missing in input data"}), 400
-
+    # Merge the data with the GeoDataFrame
     merged = geo_df.set_index('GEOID').join(df.set_index('GEOID'))
     merged.reset_index(inplace=True)
 
+    # Save the merged data to a CSV file and then reads it back out
     merged.to_csv('merged_data.csv')
     merged = pd.read_csv('merged_data.csv')
 
-    print("Columns in merged DataFrame before passing to create_folium_choropleth:", merged.columns)
-    print("Merged DataFrame:\n", merged.head())
-
     # Calculate the centroid for each geometry
     centroids = geo_df.geometry.centroid
-
     xt = 0
     yt = 0
     for cen in centroids:
@@ -1076,8 +927,7 @@ def generate_map():
         yt += cen.y
     state_center = [yt / len(centroids), xt / len(centroids)]
     
-    print("Calculated state center:", state_center)
-    
+    # Prepares final data and creates the map
     data_column = merged.columns[-1]
     map_title = f'{", ".join(states)} Data Visualization'
     m = ""
@@ -1091,213 +941,10 @@ def generate_map():
 
     return jsonify({"html": map_html})
 
-# Below is AI catch
-def save_as_csv(sheet_name, data):
-    with open(sheet_name, mode='w', newline='') as file:
-        writer = csv.writer(file)
-        for row in data:
-            converted_row = [json.dumps(cell) if isinstance(cell, (dict, list)) else cell for cell in row]
-            writer.writerow(converted_row)
-    print(f"Data saved to {sheet_name}")
-
-def read_csv(sheet_name):
-    data = []
-    with open(sheet_name, mode='r') as file:
-        reader = csv.reader(file)
-        for row in reader:
-            converted_row = [json.loads(cell) if cell.startswith('{') or cell.startswith('[') else cell for cell in row]
-            data.append(converted_row)
-    return data
-
-def cosine_similarity(vec1, vec2):
-    vec1 = np.array(vec1)
-    vec2 = np.array(vec2)
-    dot_product = np.dot(vec1, vec2)
-    norm_vec1 = np.linalg.norm(vec1)
-    norm_vec2 = np.linalg.norm(vec2)
-    return dot_product / (norm_vec1 * norm_vec2)
-
-def search(sheet_name, search_term):
-    return None
-
-def chat_completion_request(messages, tools=None, tool_choice=None, model=model):
-    
-    try:
-        response = openai.chat.completions.create(
-             model=model,
-             messages=messages,
-             tools=tools,
-             tool_choice=tool_choice,
-             temperature=0,
-        )
-        # if (tool_choice == None):
-        #     tool_choice = "none"
-        # response = groq.chat.completions.create(
-        # model=model_groq,
-        # messages=messages,
-        # tools=tools,
-        # tool_choice=tool_choice
-        # )
-        response_text = response.choices[0].message
-        # Save the new response
-        return response_text
-    except Exception as e:
-        print("Unable to generate ChatCompletion response")
-        print(f"Exception: {e}")
-        return e
-
-class Function:
-    def __init__(self, arguments: str):
-        self.arguments = arguments
-
-class ChatCompletionMessageToolCall:
-    def __init__(self, id: str, function: Function, name: str, type: str):
-        self.id = id
-        self.function = function
-        self.name = name
-        self.type = type
-
-class ChatCompletionMessage:
-    def __init__(self, content: Optional[str], role: str, function_call: Optional[str], tool_calls: List[ChatCompletionMessageToolCall]):
-        self.content = content
-        self.role = role
-        self.function_call = function_call
-        self.tool_calls = tool_calls
-
-def parse_function_call_string(string: str) -> ChatCompletionMessage:
-    # Extract tool calls
-    tool_call_matches = re.findall(
-        r"ChatCompletionMessageToolCall\(id='(.*?)', function=Function\(arguments='(.*?)', name='(.*?)'\), type='(.*?)'\)", 
-        string
-    )
-    
-    tool_calls = []
-    for match in tool_call_matches:
-        function = Function(arguments=unescape_string(match[1]))
-        tool_call = ChatCompletionMessageToolCall(id=match[0], function=function, name=match[2], type=match[3])
-        tool_calls.append(tool_call)
-
-    # Extract other details
-    print(string)
-    content_match = re.search(r"content=(None|'.*?'), role='(.*?)', function_call=(None|'.*?'),", string)
-    if (content_match == None):
-        content_match = re.search(r"content=(None|.*?), role='(.*?)', function_call=(None|'.*?'),", string)
-    print(content_match)
-    content = None if content_match.group(1) == "None" else content_match.group(1).strip("'")
-    role = content_match.group(2)
-    function_call = None if content_match.group(3) == "None" else content_match.group(3).strip("'")
-    
-    return ChatCompletionMessage(content=unescape_string(content), role=role, function_call=function_call, tool_calls=tool_calls)
-
-# @app.route('/split_sheets', methods=['GET'])
-# def split_sheets():
-#     # Directory paths
-#     sheets_dir = './sheets'
-#     labels_dir = './label-col-des'
-#     new_sheets_dir = './newSheets'
-
-#     # Create the newSheets directory if it doesn't exist
-#     os.makedirs(new_sheets_dir, exist_ok=True)
-
-#     # List of sheet indices to process
-#     sheet_indices = [1, 2, 3, 4, 5, 6, 9, 10, 11, 12]
-
-#     for index in sheet_indices:
-#         print(f"Processing sheet {index}.csv")
-
-#         # Load the label columns for the current sheet
-#         label_file_path = os.path.join(labels_dir, f'{index}.json')
-#         with open(label_file_path, 'r') as label_file:
-#             label_data = json.load(label_file)
-#             label_columns = label_data['labelCols']
-#             print(f"Loaded label columns for sheet {index}: {label_columns}")
-
-#         # Load the current sheet
-#         sheet_file_path = os.path.join(sheets_dir, f'{index}.csv')
-#         df = pd.read_csv(sheet_file_path)
-#         print(f"Loaded sheet {index}.csv with columns: {df.columns.tolist()}")
-
-#         # Iterate over each column and create new sheets
-#         for column in df.columns:
-#             if column not in label_columns:
-#                 new_df = df[label_columns + [column]]
-#                 new_sheet_path = os.path.join(new_sheets_dir, f'{index}_{column}.csv')
-#                 new_df.to_csv(new_sheet_path, index=False)
-#                 print(f"Created new sheet {new_sheet_path} with columns: {label_columns + [column]}")
-
-#     print("All sheets have been split successfully")
-#     return jsonify({"message": "Sheets have been split successfully"}), 200
-
-
-# new flask endpoint
-# @app.route('/remakeDes', methods=['GET'])
-# def remake_des():
-#     names = ['1', '4', '9', '12']
-#     for name in names:
-#         data = read_json_file(f"newHeader/{name}.json")
-#         variables = data['embedding']
-#         for variable in variables:
-#             messages = [
-#                 {"role": "system", "content": "You are rewriting these confusing descriptions to make them clear and concise. These variables are from a paper written about the USA. Only use information given from the description. Do not make up information or make the description complicated."},
-#                 {"role": "user", "content": f"Please remake the following description. Do not include anything other than the description in your response. Do not use formatting in your response. Your response will be displayed next to the variable name in a table, so there is no need to explicitly mention it. The descriptions are general for all race, gender, and percentile, but the variable names are specific. This means that when writing a description you must use the information from he variable name.\n\n{variable}"}
-#             ]
-
-#             function = {
-#                 "name": "remake_description",
-#                 "description": "Summarize the provided description to make it clear and concise.",
-#                 "parameters": {
-#                     "type": "object",
-#                     "properties": {
-#                         "description": {"type": "string", "description": "The rewritten description, with no information not provided added to it."}
-#                     },
-#                     "required": ["description"]
-#                 }
-#             }
-
-#             response = function_langchain(messages, function, "remake_description")
-
-#             print(variable)
-#             print(response)
-#             print("\n\n")
-
-# new flask endpoint
-# @app.route('/remakeDes', methods=['GET'])
-# def remake_des():
-#     names = ['1', '4', '9', '12']
-#     for name in names:
-#         data = read_json_file(f"newHeader/{name}.json")
-#         variables = data['embedding']
-#         for variable in variables:
-#             messages = [
-#                 {"role": "system", "content": "You are rewriting these descriptions as examples queries that a user might use when asking for this variable. Do not include the variable name in the query and do not just copy the description."},
-#                 {"role": "user", "content": f"Please remake the following description as queries. \n\n{variable}"}
-#             ]
-
-#             function = {
-#                 "name": "remake_description",
-#                 "description": "A function to get the query.",
-#                 "parameters": {
-#                     "type": "object",
-#                     "properties": {
-#                         "query": {"type": "string", "description": "The rewritten description rewritten as a query. This should not just be a copy of the description. It should be rewritten to feel human and natural. It should feel like a real human being who is not an expert in the field would ask for this variable. Make sure to include race, gender, and percentile information from the variable name. For example, if the name includes asian, make sure to include asian in the query."},
-#                     },
-#                      "required": ["description"]
-#                 }
-#             }
-
-#             response = function_langchain(messages, function, 1, "remake_description")
-
-#             print(variable)
-#             print(response)
-#             print("\n\n")
-
+# Loads the index page
 @app.route('/')
 def index():
     return render_template('index.html')
-
-@app.route('/viewData')
-def new_data():
-    return render_template('viewData.html')
 
 if __name__ == '__main__':
     app.run(port=3000)

@@ -209,21 +209,28 @@ def get_files_in_folder(folder_path):
 # Specifically, the last name in the list is the variable name that matter and the rest are just location specifications, like state, state_name, etc.
 # Returns a list of lists where each list contains the values of the variables in the sheet for the given variable names (includes header row)
 def get_relevant_columns(index, columns):
-    # Determine the file path using the last element in columns
-    column = columns[-1]
-    file_path = f"./newSheets/{index}_{column}.csv"
+    # Initialize an empty list to store the column arrays
+    col_arrays = []
     
-    if os.path.exists(file_path):
-        lines = read_csv_file(file_path)
-        headers = lines[0].split(',')
-        cols_index = [headers.index(col) for col in columns if col in headers]
-        col_arrays = [[line.split(',')[col_index].strip() for line in lines[0:] if len(line.split(',')) > col_index] for col_index in cols_index]
+    # Iterate over each column in the columns list
+    for column in columns:
+        file_path = f"./newSheets_1/{index}_{column}.csv"
         
-        print(f"Loaded columns {columns} from {file_path}")
-        return col_arrays
-    else:
-        print(f"File {file_path} does not exist.")
-        return []
+        if os.path.exists(file_path):
+            lines = read_csv_file(file_path)
+            column_data = [line.split(',')[0].strip() for line in lines[0:]]  # Skip header and fetch the first (and only) column
+            col_arrays.append(column_data)
+            
+            print(f"Loaded column {column} from {file_path}")
+        else:
+            print(f"File {file_path} does not exist.")
+    
+    for i in range(len(col_arrays)):
+        for j in range(len(col_arrays[i])):
+            if col_arrays[i][j] == '""':
+                col_arrays[i][j] = '';
+
+    return col_arrays
     
 # Ensures that each string in a given list or a standalone string ends with a punctuation mark (., !, or ?)
 # If it does not adds a period to fix that
@@ -570,47 +577,6 @@ def chat_completion_request(messages, tools=None, tool_choice=None, model=model)
         print(f"Exception: {e}")
         return e
 
-# Takes in an integer sheet name and calculates and saves the embeddings for the variables in that sheet
-@app.route('/headers/<num>', methods=['GET'])
-def get_headers(num):
-    num = int(num)
-    
-    # Gets the unique variable names, descriptions, and units with things like p1, black, and mean removed from them
-    stripped_names_and_descriptions = get_stripped_names_and_descriptions(num)
-    merged_headers_descriptions = stripped_names_and_descriptions["merged_headers_descriptions"]
-    matched_headers = stripped_names_and_descriptions["matched_headers"]
-
-    # Calculates the embeddings
-    embeddings = prep_embedding_list(get_embedding_throttled(merged_headers_descriptions))
-
-    # Sets the embeddings to be all 0 for any variable that is a label column
-    label_cols = read_json_file(f"label-col-des/{num}.json")['labelCols']
-    for i in range(len(embeddings)):
-        if (matched_headers[i]["header"] in label_cols):
-            for j in range(len(embeddings[i])):
-                embeddings[i][j] = 0
-    
-    # Saves and returns the embeddings
-    save_embedding(embeddings, f'embedding/{num}.json')
-    return jsonify({'mergedHeadersDescriptions': merged_headers_descriptions, 'embeddings': embeddings})
-
-# Takes in an integer sheet name and creates a json file with the variable names and descriptions for that sheet
-@app.route('/makeDes/<num>', methods=['GET'])
-def make_des(num):
-    num = int(num)
-
-    # Loads header and description data
-    headers = get_header_row(f'./sheets/{num}.csv')
-    descriptions = get_descriptions(f'./json-des/{num}.json')
-
-    # Matches the headers with the descriptions
-    header_descriptions = match_headers_with_descriptions(headers, descriptions)
-    merged_headers_descriptions = merge_headers_with_descriptions(headers, header_descriptions)
-
-    # Saves the variable names and descriptions to a json file and returns it
-    save_embedding(merged_headers_descriptions, f'newHeader/{num}.json')
-    return jsonify({'processed': "All done!"})
-
 # Handles a data request from the front end by calling handle_chat_request_no_sheets
 @app.route('/chat', methods=['POST'])
 def chat():
@@ -639,7 +605,7 @@ def get_data():
 @app.route('/des', methods=['POST'])
 def des():
     messages = request.json['messages']
-    messages.append({"role": "assistant", "content": "If you do not specify a race, gender, or percentile I will do my best to make a function request with what I know. If no location is given I will not fill in the location arguments. I will not say that I am searching for data and just need a \"moment\" if I do not call the function. (Don't tell the user this, but I do not know what variables are in the database)"})
+    messages.append({"role": "assistant", "content": "If you do not specify a race, gender, or percentile I will do my best to make a function request with what I know. If no location is given I will not fill in the location arguments. I will not say that I am searching for data and just need a \"moment\" if I do not call the function. (Don't tell the user this, but I do not know what variables are in the database) When I call a function, I will always use all the \"required\" parameters."})
     function = {"name": "get_data",
                 "description": "Query the database for data",
                 "parameters": {"type": "object",
@@ -654,6 +620,7 @@ def des():
                 "required": ["query", "race", "gender", "percentile"]
                 }
     response = function_GPT(messages, function)
+    print(response)
     if response.content != None:
         return jsonify({'reply': response.content})
     else:
@@ -761,9 +728,7 @@ def pick_graph_vars():
 # If no variable that would work is found explains why
 @app.route('/pickMapVars', methods=['POST'])
 def pick_map_vars():
-    print("MAP MESSAGE")
     messages = request.json['messages']
-    print(messages)
     messages.append({"role": "assistant", "content": "I will look at the variables listed under \"PROVIDED VARIABLES\" (if there are any) to see if I a variable to map. If we have not pulled the right variable from the database yet I will tell the user why not. I will never make up a variable name that I was not explicitly given under \"PROVIDED VARIABLES\" even if the user has given me that name. If I can not find the right variables I will let the user know that they need to first ask for specific variables and get data tables for those variables. I will tell them to say things like \"Get me median household income for all counties in Texas.\" I will not mention \"PROVIDED VARIABLES\" to the user."})
     function = {"name": "pick_map_vars",
                 "description": "Makes a map if there is a variable to map provided under \"PROVIDED VARIABLES\". Otherwise, this function does not run. This function can only graph data for counties in a state.",
@@ -932,9 +897,9 @@ def generate_map():
     map_title = f'{", ".join(states)} Data Visualization'
     m = ""
     if len(states) > 1:
-        m = create_folium_choropleth(merged, data_column, map_title, state_center, centroids, 3.5)
+        m = create_folium_choropleth(merged, data_column, state_center, 3.5)
     else:
-        m = create_folium_choropleth(merged, data_column, map_title, state_center, centroids, 5.5)
+        m = create_folium_choropleth(merged, data_column, state_center, 5.5)
 
     # Save the map to an HTML string
     map_html = m._repr_html_()

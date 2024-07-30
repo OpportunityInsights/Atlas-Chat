@@ -1,3 +1,6 @@
+# This file contains functions that were used to construct the database and calculate the embeddings
+
+"""
 @app.route('/outcomeProcess/<num>')
 def outcome_process(num):
     data = read_json_file(f"json-des/{num}.json")
@@ -168,3 +171,101 @@ def split_sheets():
 
     print("All sheets have been split successfully")
     return jsonify({"message": "Sheets have been split successfully"}), 200
+
+@app.route('/split_sheets', methods=['GET'])
+def split_sheets():
+    # Directory paths
+    sheets_dir = './sheets'
+    new_sheets_dir = './newSheets_1'
+
+    # Create the newSheets directory if it doesn't exist
+    os.makedirs(new_sheets_dir, exist_ok=True)
+
+    # List of sheet indices to process
+    sheet_indices = [1, 2, 3, 4, 5, 6, 9, 10, 11, 12]
+
+    for index in sheet_indices:
+        print(f"Processing sheet {index}.csv")
+
+        # Load the current sheet
+        sheet_file_path = os.path.join(sheets_dir, f'{index}.csv')
+        df = pd.read_csv(sheet_file_path)
+        print(f"Loaded sheet {index}.csv with columns: {df.columns.tolist()}")
+
+        # Iterate over each column and create new sheets
+        for column in df.columns:
+            new_df = df[[column]]
+            new_sheet_path = os.path.join(new_sheets_dir, f'{index}_{column}.csv')
+            new_df.to_csv(new_sheet_path, index=False)
+            print(f"Created new sheet {new_sheet_path} with column: {column}")
+
+    print("All sheets have been split successfully")
+    return jsonify({"message": "Sheets have been split successfully"}), 200
+
+@app.route('/truncate_sheets', methods=['GET'])
+def truncate_sheets():
+    # Directory path
+    sheets_dir = './sheets'
+
+    # List all CSV files in the directory
+    for filename in os.listdir(sheets_dir):
+        if filename.endswith('.csv'):
+            file_path = os.path.join(sheets_dir, filename)
+
+            # Load the CSV file
+            df = pd.read_csv(file_path)
+
+            # Get the header row (column names)
+            header = df.columns
+
+            # Create a new DataFrame with only the header
+            truncated_df = pd.DataFrame(columns=header)
+
+            # Save the truncated DataFrame back to the same file
+            truncated_df.to_csv(file_path, index=False)
+
+            print(f"Truncated file: {filename}")
+
+    return jsonify({"message": "All sheets have been truncated successfully"}), 200
+
+# Takes in an integer sheet name and creates a json file with the variable names and descriptions for that sheet
+@app.route('/makeDes/<num>', methods=['GET'])
+def make_des(num):
+    num = int(num)
+
+    # Loads header and description data
+    headers = get_header_row(f'./sheets/{num}.csv')
+    descriptions = get_descriptions(f'./json-des/{num}.json')
+
+    # Matches the headers with the descriptions
+    header_descriptions = match_headers_with_descriptions(headers, descriptions)
+    merged_headers_descriptions = merge_headers_with_descriptions(headers, header_descriptions)
+
+    # Saves the variable names and descriptions to a json file and returns it
+    save_embedding(merged_headers_descriptions, f'newHeader/{num}.json')
+    return jsonify({'processed': "All done!"})
+
+# Takes in an integer sheet name and calculates and saves the embeddings for the variables in that sheet
+@app.route('/headers/<num>', methods=['GET'])
+def get_headers(num):
+    num = int(num)
+    
+    # Gets the unique variable names, descriptions, and units with things like p1, black, and mean removed from them
+    stripped_names_and_descriptions = get_stripped_names_and_descriptions(num)
+    merged_headers_descriptions = stripped_names_and_descriptions["merged_headers_descriptions"]
+    matched_headers = stripped_names_and_descriptions["matched_headers"]
+
+    # Calculates the embeddings
+    embeddings = prep_embedding_list(get_embedding_throttled(merged_headers_descriptions))
+
+    # Sets the embeddings to be all 0 for any variable that is a label column
+    label_cols = read_json_file(f"label-col-des/{num}.json")['labelCols']
+    for i in range(len(embeddings)):
+        if (matched_headers[i]["header"] in label_cols):
+            for j in range(len(embeddings[i])):
+                embeddings[i][j] = 0
+    
+    # Saves and returns the embeddings
+    save_embedding(embeddings, f'embedding/{num}.json')
+    return jsonify({'mergedHeadersDescriptions': merged_headers_descriptions, 'embeddings': embeddings})
+"""

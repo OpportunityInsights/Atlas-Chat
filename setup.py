@@ -268,4 +268,49 @@ def get_headers(num):
     # Saves and returns the embeddings
     save_embedding(embeddings, f'embedding/{num}.json')
     return jsonify({'mergedHeadersDescriptions': merged_headers_descriptions, 'embeddings': embeddings})
+
+@app.route('/rename_files', methods=['GET'])
+def rename_files():
+    directory = 'unzipped'
+    shapefiles = [f for f in os.listdir(directory) if f.endswith('.shp')]
+
+    renamed_files = {}
+    for shapefile in shapefiles:
+        try:
+            # Load the shapefile
+            gdf = gpd.read_file(os.path.join(directory, shapefile))
+            
+            # Skip county files
+            if shapefile == 'cb_2018_us_county_500k.shp':
+                print(f"Skipping county file: {shapefile}")
+                continue
+
+            # Determine FIPS code for tract files
+            if 'STATEFP' in gdf.columns:
+                fips_code = gdf['STATEFP'].iloc[0]
+            else:
+                continue  # Skip files that do not match expected structure
+
+            # Create new base name based on FIPS code
+            base_name = f"{fips_code}"
+            old_base_name = os.path.splitext(shapefile)[0]
+
+            # Get all related files (shp, shx, dbf, prj, etc.)
+            related_files = [f for f in os.listdir(directory) if f.startswith(old_base_name)]
+            for file in related_files:
+                old_path = os.path.join(directory, file)
+                new_filename = file.replace(old_base_name, base_name)
+                new_path = os.path.join(directory, new_filename)
+
+                # Rename file
+                os.rename(old_path, new_path)
+                print(f"Renamed {old_path} to {new_path}")
+
+            renamed_files[base_name] = [file.replace(old_base_name, base_name) for file in related_files]
+
+        except Exception as e:
+            print(f"Error processing {shapefile}: {e}")
+            continue
+
+    return jsonify({'renamed_files': renamed_files}), 200
 """

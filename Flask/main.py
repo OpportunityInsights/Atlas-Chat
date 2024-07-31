@@ -5,7 +5,7 @@ import csv
 import time
 import numpy as np
 import pandas as pd
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, send_from_directory
 from flask_cors import CORS
 from dotenv import load_dotenv
 import requests
@@ -823,6 +823,8 @@ def generate_map():
     # Create a DataFrame from the data
     df = pd.DataFrame(data)
 
+    print("PASSED HERE 0")
+
     # Check if multiple states are present
     states = df.iloc[:, 0].unique()
 
@@ -833,6 +835,8 @@ def generate_map():
         state_fips = str(df.iloc[0, 1]).zfill(2)
         state_fips_list = [state_fips]
 
+    print("PASSED HERE 0.5")
+
     # Gets the county FIPS codes
     county_fips = df.iloc[:, 3].apply(lambda x: str(x).zfill(3)).tolist()
 
@@ -840,29 +844,34 @@ def generate_map():
     if geo_level == 'tract':
         tract_fips = df.iloc[:, 4].apply(lambda x: str(x).zfill(6)).tolist()
 
+    print("PASSED HERE 0.75")
+
     # Find the shapefile path based on the geographic level
     shapefile_path = None
     if geo_level == 'county':
         shapefile_path = 'unzipped/cb_2018_us_county_500k.shp'
     elif geo_level == 'tract':
-        tract_files = [os.path.join('unzipped', f) for f in os.listdir('unzipped') if f.endswith('_tract.shp')]
-        for tract_file in tract_files:
-            gdf = gpd.read_file(tract_file)
-            if 'STATEFP' in gdf.columns and gdf['STATEFP'].iloc[0] in state_fips_list:
-                shapefile_path = tract_file
-                break
+        shapefile_path = 'unzipped/' + state_fips_list[0] + '.shp'
+
+    print("PASSED HERE 0.9")
 
     # Gets the data from the shapfile
     columns = get_shapefile_columns(shapefile_path)
 
+    print("PASSED HERE")
+
     # Check if the required columns are present in the shapefile
     if 'STATEFP' not in columns or 'COUNTYFP' not in columns:
+        print("error")
         return jsonify({"error": "The required columns STATEFP or COUNTYFP are not in the shapefile"}), 400
     if geo_level == 'tract' and 'TRACTCE' not in columns:
+        print("error")
         return jsonify({"error": "The required column TRACTCE is not in the shapefile"}), 400
 
+    print("Loading")
     # Load the shapefile into a GeoDataFrame
     geo_df = gpd.read_file(shapefile_path)
+    print("Loaded")
 
     # Add a GEOID column to the GeoDataFrame
     if geo_level == 'county':
@@ -884,7 +893,16 @@ def generate_map():
     merged = pd.read_csv('merged_data.csv')
 
     # Calculate the centroid for each geometry
-    centroids = geo_df.geometry.centroid
+    projected_crs = 'EPSG:3857'
+
+    # Re-project the GeoDataFrame to the projected CRS
+    geo_df_projected = geo_df.to_crs(projected_crs)
+
+    # Calculate centroids on the projected GeoDataFrame
+    centroids = geo_df_projected.geometry.centroid
+
+    # If needed, you can re-project centroids back to the original CRS
+    centroids = centroids.to_crs(geo_df.crs)
     xt = 0
     yt = 0
     for cen in centroids:
@@ -892,17 +910,22 @@ def generate_map():
         yt += cen.y
     state_center = [yt / len(centroids), xt / len(centroids)]
     
+    print("PASSED HERE 1")
+
     # Prepares final data and creates the map
     data_column = merged.columns[-1]
-    map_title = f'{", ".join(states)} Data Visualization'
     m = ""
     if len(states) > 1:
         m = create_folium_choropleth(merged, data_column, state_center, 3.5)
     else:
         m = create_folium_choropleth(merged, data_column, state_center, 5.5)
 
+    print("PASSED HERE 2")
+
     # Save the map to an HTML string
     map_html = m._repr_html_()
+
+    print("PASSED HERE 3")
 
     return jsonify({"html": map_html})
 

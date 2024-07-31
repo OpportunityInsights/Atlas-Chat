@@ -739,7 +739,7 @@ async function requestMapVars() {
 
         // Set up timeout for the second fetch
         const controller2 = new AbortController();
-        const timeoutId2 = setTimeout(() => controller2.abort(), 300000); // 30 seconds timeout
+        const timeoutId2 = setTimeout(() => controller2.abort(), 600000); // 60 seconds timeout
 
         let d = document.createElement('div');
         let randomNum = Math.floor(Math.random() * 1000000);
@@ -1593,8 +1593,8 @@ async function getLocationData(table) {
     } catch (error) {
        
       removeLastMessage();
-      appendMessage('showLatter1 hidden error', `Data is only available for commuting zones, addresses (census tracts), counties, counties by state, and census tracts by state. I don't think ${locationNameQ} falls into any of these categories.`)
-    messages.push({ role: 'assistant', content: `Data is only available for commuting zones, addresses (census tracts), counties, counties by state, and census tracts by state. I don't think ${locationNameQ} falls into any of these categories.` });
+      appendMessage('showLatter1 hidden error', `Data is only available for commuting zones, addresses (census tracts), counties, counties by state, all US counties, and census tracts by state. I don't think ${locationNameQ} falls into any of these categories.`)
+    messages.push({ role: 'assistant', content: `Data is only available for commuting zones, addresses (census tracts), counties, counties by state, all US counties, and census tracts by state. I don't think ${locationNameQ} falls into any of these categories.` });
       answerQuestionContinuedLocDes();
     }
 }

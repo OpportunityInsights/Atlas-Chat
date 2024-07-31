@@ -472,6 +472,7 @@ async function sendMessage() {
         console.error('Error:', error);
         removeLastMessage();
         appendMessage('error', "Sorry, there was an error processing your request.");
+        Array.from(document.getElementsByClassName('toDelete')).forEach(element => element.classList.add('hidden'));
     }
 }
 
@@ -927,6 +928,7 @@ async function fetchData() {
         console.error('Error:', error);
         removeLastMessage();
         appendMessage('error', "Sorry, there was an error processing your request.");
+        Array.from(document.getElementsByClassName('toDelete')).forEach(element => element.classList.add('hidden'));
     }
 }
 
@@ -950,6 +952,7 @@ function processChatData(data) {
     if (data.reply === "ERROR") {
         removeLastMessage();
         appendMessage('error', "Sorry, there was an error processing your request.");
+        Array.from(document.getElementsByClassName('toDelete')).forEach(element => element.classList.add('hidden'));
         return;
     }
 
@@ -1222,6 +1225,7 @@ function linkRows(table) {
 
     console.log("new one");
     for (let i = 0; i < 20; i++) {
+        console.log(rows[linkedRows[i]]);
         let url = new URL(rows[linkedRows[i]].querySelector('td:nth-child(1) a').href).searchParams.get('var');
         const parseVarName = url.split('_').filter(part => !addOns.includes(part)).join('_');
 

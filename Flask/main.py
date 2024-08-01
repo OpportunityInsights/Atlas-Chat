@@ -5,7 +5,7 @@ import csv
 import time
 import numpy as np
 import pandas as pd
-from flask import Flask, request, jsonify, render_template, send_from_directory
+from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 from dotenv import load_dotenv
 import requests

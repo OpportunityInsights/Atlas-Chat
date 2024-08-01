@@ -1,6 +1,22 @@
 # This file contains functions that were used to construct the database and calculate the embeddings
 
-"""
+# Import statements
+from flask import Flask, jsonify
+from flask_cors import CORS
+import json
+import os
+import pandas as pd
+
+# Imports functions from main
+from Flask.main import *
+
+# Configures Flask app, disabling CORS
+app = Flask(__name__)
+CORS(app)  # Enable CORS for all routes
+
+# Takes in a number corresponding to a sheet
+# Reads in the json file continuing the descriptions for the variables in that sheet along with the outcomes and their descriptions
+# Replaces the [outcome] tag in the variable names with the outcome names and saves the new json file over the old one
 @app.route('/outcomeProcess/<num>')
 def outcome_process(num):
     data = read_json_file(f"json-des/{num}.json")
@@ -33,54 +49,57 @@ def outcome_process(num):
     
     return jsonify(data)
 
-@app.route('/update_state_column', methods=['GET'])
-def update_state_column():
+# Takes in a number corresponding to a sheet
+# Adds a new colum to that sheet with the name of the state that each row corresponds too
+@app.route('/update_state_column/<num>', methods=['GET'])
+def update_state_column(num):
     state_data = read_csv_file('states.csv')
     state_data = [line.split(',') for line in state_data if line]
     state_dict = {row[0].strip(): row[1].strip().title() for row in state_data}  # Ensure state names are title-cased
 
-    sheet_numbers = [4]
-    for i in sheet_numbers:
-        file_path = f'./sheets/{i}.csv'
-        df = pd.read_csv(file_path)
-        if 'state' in df.columns:
-            df['state'] = df['state'].astype(str).str.strip()  # Ensure state codes are strings and stripped of whitespace
-            df['state_name'] = df['state'].map(state_dict)
-                
-            if df['state_name'].isnull().any():
-                missing_states = df[df['state_name'].isnull()]['state'].unique()
-                print(f"Missing state mappings for sheet {i}: {missing_states}")
-            else:
-                print(f"State mappings updated successfully for sheet {i}.")
+    file_path = f'./sheets/{num}.csv'
+    df = pd.read_csv(file_path)
+    if 'state' in df.columns:
+        df['state'] = df['state'].astype(str).str.strip()  # Ensure state codes are strings and stripped of whitespace
+        df['state_name'] = df['state'].map(state_dict)
+            
+        if df['state_name'].isnull().any():
+            missing_states = df[df['state_name'].isnull()]['state'].unique()
+            print(f"Missing state mappings for sheet {num}: {missing_states}")
         else:
-            print(f"Sheet {i} does not have 'state' column.")
-        df.to_csv(file_path, index=False)
+            print(f"State mappings updated successfully for sheet {num}.")
+    else:
+        print(f"Sheet {num} does not have 'state' column.")
+    df.to_csv(file_path, index=False)
 
     return jsonify({'status': 'State columns updated successfully'})
 
-@app.route('/update_county_column', methods=['GET'])
-def update_county_column():
+# Takes in a number corresponding to a sheet
+# Adds a new colum to that sheet with the name of the county that each row corresponds too
+@app.route('/update_county_column/<num>', methods=['GET'])
+def update_county_column(num):
     county_data = read_csv_file('countycode-countyname.csv')
     county_data = [line.split(',') for line in county_data if line]
     county_dict = {row[0]: row[1].strip() for row in county_data}
     print("County data loaded successfully.")
 
-    sheet_numbers = [1, 2, 3, 4, 5, 6, 9, 10, 11]
-    for I in sheet_numbers:
-        file_path = f'./sheets/{I}.csv'
-        df = pd.read_csv(file_path)
-        print(f"Processing file: {file_path}")
-        if 'county' in df.columns and 'state' in df.columns:
-            df['county_code'] = df.apply(lambda x: str(x['state']) + str(x['county']).zfill(3), axis=1)
-            print(f"County codes generated for file: {file_path}")
-            df['county_name'] = df['county_code'].map(county_dict)
-            print(f"County names mapped for file: {file_path}")
-            df.drop(columns=['county_code'], inplace=True)
-        df.to_csv(file_path, index=False)
-        print(f"File saved: {file_path}")
+    file_path = f'./sheets/{num}.csv'
+    df = pd.read_csv(file_path)
+    print(f"Processing file: {file_path}")
+    if 'county' in df.columns and 'state' in df.columns:
+        df['county_code'] = df.apply(lambda x: str(x['state']) + str(x['county']).zfill(3), axis=1)
+        print(f"County codes generated for file: {file_path}")
+        df['county_name'] = df['county_code'].map(county_dict)
+        print(f"County names mapped for file: {file_path}")
+        df.drop(columns=['county_code'], inplace=True)
+    df.to_csv(file_path, index=False)
+    print(f"File saved: {file_path}")
 
     return jsonify({'status': 'County columns updated successfully'})
 
+# Creates a new sheet that represents all the columns in sheet 5 that are not in sheet 4
+# This is important because 4 and 5 generally have the same variables in them, but sheet 5 has a few more
+# In sheet 4 each row is a census tract. In sheet 5 each row is a county
 @app.route('/create_unique_sheet', methods=['GET'])
 def create_unique_sheet():
     # Read both CSV files
@@ -115,6 +134,7 @@ def create_unique_sheet():
         'file_path': new_file_path
     })
 
+# Reads through the cz column of all sheets in the sheets folder and remove the .0 from all cells if it is their
 @app.route('/edit_cz_columns', methods=['GET'])
 def edit_cz_columns():
     # Directory containing the CSV files
@@ -133,45 +153,9 @@ def edit_cz_columns():
 
     return jsonify({'status': 'CZ column cells edited successfully'})
 
-@app.route('/split_sheets', methods=['GET'])
-def split_sheets():
-    # Directory paths
-    sheets_dir = './sheets'
-    labels_dir = './label-col-des'
-    new_sheets_dir = './newSheets'
-
-    # Create the newSheets directory if it doesn't exist
-    os.makedirs(new_sheets_dir, exist_ok=True)
-
-    # List of sheet indices to process
-    sheet_indices = [1, 2, 3, 4, 5, 6, 9, 10, 11, 12]
-
-    for index in sheet_indices:
-        print(f"Processing sheet {index}.csv")
-
-        # Load the label columns for the current sheet
-        label_file_path = os.path.join(labels_dir, f'{index}.json')
-        with open(label_file_path, 'r') as label_file:
-            label_data = json.load(label_file)
-            label_columns = label_data['labelCols']
-            print(f"Loaded label columns for sheet {index}: {label_columns}")
-
-        # Load the current sheet
-        sheet_file_path = os.path.join(sheets_dir, f'{index}.csv')
-        df = pd.read_csv(sheet_file_path)
-        print(f"Loaded sheet {index}.csv with columns: {df.columns.tolist()}")
-
-        # Iterate over each column and create new sheets
-        for column in df.columns:
-            if column not in label_columns:
-                new_df = df[label_columns + [column]]
-                new_sheet_path = os.path.join(new_sheets_dir, f'{index}_{column}.csv')
-                new_df.to_csv(new_sheet_path, index=False)
-                print(f"Created new sheet {new_sheet_path} with columns: {label_columns + [column]}")
-
-    print("All sheets have been split successfully")
-    return jsonify({"message": "Sheets have been split successfully"}), 200
-
+# Goes through all the sheets in the sheets folder
+# For each sheet breaks the sheet down into multiple sheets with only one column each
+# Saves the new sheets in the newSheets_1 folder
 @app.route('/split_sheets', methods=['GET'])
 def split_sheets():
     # Directory paths
@@ -202,6 +186,7 @@ def split_sheets():
     print("All sheets have been split successfully")
     return jsonify({"message": "Sheets have been split successfully"}), 200
 
+# Removes all the data from all the sheets in the sheets folder, leaving only the headers
 @app.route('/truncate_sheets', methods=['GET'])
 def truncate_sheets():
     # Directory path
@@ -269,6 +254,8 @@ def get_headers(num):
     save_embedding(embeddings, f'embedding/{num}.json')
     return jsonify({'mergedHeadersDescriptions': merged_headers_descriptions, 'embeddings': embeddings})
 
+# Renames all the files in the unzipped folder that relate to census tracts in a state
+# Gives all files for each state the same name, which is the state's FIPS code
 @app.route('/rename_files', methods=['GET'])
 def rename_files():
     directory = 'unzipped'
@@ -313,4 +300,6 @@ def rename_files():
             continue
 
     return jsonify({'renamed_files': renamed_files}), 200
-"""
+
+if __name__ == '__main__':
+    app.run(port=3000)

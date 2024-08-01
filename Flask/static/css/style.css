@@ -216,15 +216,6 @@ textarea.report {
     margin-bottom: 1em;
 }
 
-.hoverDownload {
-    cursor: pointer;
-    transition: background 0.3s ease;
-}
-
-.hoverDownload:hover {
-    background:rgb(161, 207, 234);
-}
-
 .message.bot {
     overflow: auto;
 }
@@ -308,16 +299,6 @@ button {
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.25) !important;
 }
 
-
-
-#download-btn {
-    width: 100%;
-}
-
-.duplicate {
-    display: none;
-}
-
 .broken:hover, .broken:active {
     text-decoration: none;
     color: #0e5c00 !important;
@@ -328,31 +309,12 @@ button {
     color: #0e5c00 !important;
 }
 
-.bar {
-    width: 30px;
-    margin: 2px;
-    display: inline-block;
-    background-color: rgb(27, 87, 79);
-}
-
 .table {
     margin-bottom: 0 !important;
 }
 
-.botBig.scroll {
-    max-height: 200px;
-}
-
 .hidden {
     display: none;
-}
-
-#myDiv {
-    width: 90%;
-}
-
-.last {
-    margin-bottom: 1em !important;
 }
 
 @keyframes ellipsis-animation {
@@ -383,12 +345,6 @@ button {
 
 .graph-link {
     color: rgb(95, 158, 0);
-}
-
-.load-more-link {
-    display: block;
-    text-align: center;
-    margin: 5px auto;
 }
 
 .load-more-link1 {

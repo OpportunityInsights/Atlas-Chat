@@ -1,10 +1,71 @@
+// Sets a variable to represent the mode of the chat: "Learner", "Normal", or "Expert"
+let chatbotMode = '';
+
+// Gets variables referring to the message input
+const messageInput = document.getElementById('message-input');
+
+// Makes lists of the options for different fields within variables
+const race = ["white", "black", "hisp", "asian", "natam", "other", "pooled"];
+const gender = ["male", "female", "pooled"];
+const percentile = ["p1", "p25", "p10", "p50", "p75", "p100"];
+
+// Creates a list of all the options above
+const all = [...race, ...gender, ...percentile];
+// Creates a list of all addons that denote different statistics calculated for each variable
+const addOns = ["n", "mean", "se", "s", "imp", "mean_se"];
+
+// A list to hold all the messages for the chatbot
+// Starts with some generic instructions
+let messages = [{
+    role: 'assistant',
+    content: "Only I have the ability to browse the database and provide data. You, the user, does not have the ability to use it or provide data. I will NEVER use equation formatting because this application can not parse it. I promise to use varying emojis and formatting VERY OFTEN. Data is only available for commuting zones, addresses (census tracts), counties, counties by state, all US counties, and census tracts by state. If you are given data, never use specific numeric examples or refer to specific locations, just talk about the variable names. Also, you have the ability to make scatter plots, calculate statistics, and make maps. To do these things, the user first has to ask for location specific data. After they do this, in their next message, they can then ask for a map, scatter, or statistic."
+}];
+
+// A list to hold all the variables that the chatbot returns
+let variable = [];
+// A list to hold the names of the locations that each variable in variable was found for (always the same length as variable)
+let locations = [];
+// A variable to count the number of variables added to variables each time a set of additions is made
+let added = 0;
+
+// A list that contains all the variable names in the order that they were returned from the server after a data fetch
+// It is reset every time new data is requested
+// The names are added before the dropdowns are selected
+let titles = [];
+
+// A dictionary where each key is the id of a table with the t removed form the beginning
+// Each value is a list where the first element is the location name and the second element is the location type
+let storedData = {};
+
+// A list where each element in the html of a table that holds a variable
+let tables = [];
+
+// The values specified by a function call for the variable the user is currently looking for
+let genderQ;
+let raceQ;
+let percentileQ;
+let queryQ;
+let locationTypeQ;
+let locationNameQ;
+
+// True if the table with the description should be displayed with the data, false otherwise
+let display = true;
+
+// Adds the first message to the chat
+appendMessage('error topMessage', "Hello! I'm a bot designed to help you find data! Please ask me anything and I will do my best to find some related data from the Opportunity Atlas paper.");
+messages.push({ role: 'assistant', content: "Hello! I'm a bot designed to help you find data! Please ask me anything and I will do my best to find some related data from the Opportunity Atlas paper." });
+
+// This function deals with the error flagging feature
 (function() {
+    // Variables storing references to different ways that stuff enters the console
     var originalLog = console.log;
     var originalError = console.error;
     var originalWarn = console.warn;
 
+    // Content of the console to be send with the error
     var consoleContent = "";
 
+    // Overwrite the console.log function to store the content and then log it
     console.log = function(message) {
         try {
             consoleContent += message + "\n";
@@ -14,11 +75,13 @@
         originalLog.apply(console, arguments);
     };
 
+    // Overwrite the console.error function to store the content and then log it
     console.error = function(message) {
         consoleContent += message + "\n";
         originalError.apply(console, arguments);
     };
 
+    // Overwrite the console.warn function to store the content and then log it
     console.warn = function(message) {
         consoleContent += message + "\n";
         originalWarn.apply(console, arguments);
@@ -44,6 +107,7 @@
 
     // Function to gather and send data
     async function gatherAndSendData() {
+        // Gets the data
         const htmlContent = getHTMLContent();
         const comment = document.getElementsByTagName('textarea')[0].value;
         const data = {
@@ -51,12 +115,18 @@
             console: consoleContent,
             comment: comment
         };
+
+        // Disables the buttons and changes the text in the error flagging area
         document.getElementById("rb1").disabled = true;
         document.getElementById("rb2").disabled = true;
         document.getElementById("rb1").classList.add('disabled');
         document.getElementById("rb2").classList.add('disabled');
         document.getElementById("rt").innerHTML = 'Saving your report <span class="animate-ellipsis"></span>';
-        const response = await sendData(data);
+
+        // Sends the data to the server
+        await sendData(data);
+
+        // Reverses the changes to the error flagging area and hides it
         document.getElementById("rb1").disabled = false;
         document.getElementById("rb2").disabled = false;
         document.getElementById("rb1").classList.remove('disabled');
@@ -67,10 +137,10 @@
 
     // Expose gatherAndSendData to global scope
     window.gatherAndSendData = gatherAndSendData;
-
 })();
 
-function downloadAsXLSX(data, sheetName) {
+// Takes in an object with a data table enclosed and downloads the data as a xlsx file
+function downloadAsXLSX(data) {
     data = data.tableData;
     const ws = XLSX.utils.aoa_to_sheet(data);
     const wb = XLSX.utils.book_new();
@@ -78,13 +148,16 @@ function downloadAsXLSX(data, sheetName) {
     XLSX.writeFile(wb, `table.xlsx`);
 }
 
-// Function to fetch data for Census Tract
+// Takes in the name of a sheet and the name of a variable, fetches the related data, and downloads the related data using downloadAsXLSX
+// Used for census tract level data
 async function fetchCensusTractData(sheet, variable) {
     const data = await fetchDataLoc(variable, sheet);
-    downloadAsXLSX(data, sheet);
+    downloadAsXLSX(data);
 }
 
-// Function to fetch data for County
+// Takes in the name of a sheet and the name of a variable, fetches the related data, and downloads the related data using downloadAsXLSX
+// If the sheet name is for census tracts, changes it to be for counties
+// Used for county level data
 async function fetchCountyData(sheet, variable) {
     let newSheet;
 
@@ -99,10 +172,12 @@ async function fetchCountyData(sheet, variable) {
     }
 
     const data = await fetchDataLoc(variable, newSheet);
-    downloadAsXLSX(data, newSheet);
+    downloadAsXLSX(data);
 }
 
-// Function to fetch data for Commuting Zone
+// Takes in the name of a sheet and the name of a variable, fetches the related data, and downloads the related data using downloadAsXLSX
+// If the sheet name is for census tracts, changes it to be for commuting zones
+// Used for commuting zone level data
 async function fetchCommutingZoneData(sheet, variable) {
     let newSheet;
 
@@ -117,48 +192,18 @@ async function fetchCommutingZoneData(sheet, variable) {
     }
 
     const data = await fetchDataLoc(variable, newSheet);
-    downloadAsXLSX(data, newSheet);
+    downloadAsXLSX(data);
 }
 
+// Adds an event listener to the shopping cart button which opens the data download page
 document.getElementsByClassName("cart-button")[0].addEventListener("click", function() {
+    // Stores all the tables that will be displayed on the data download page
     tables = [];
-    dataTables = [];
 
-    // Helper function to capture selected values of dropdowns in a table
-    function captureSelectValues(table) {
-        const selectValues = [];
-        table.querySelectorAll('select').forEach((select, index) => {
-            selectValues.push({ index: index, value: select.value });
-        });
-        return selectValues;
-    }
-
-    function applySelectValues(table, selectValues) {
-        table.querySelectorAll('select').forEach((select, selectIndex) => {
-            const valueObj = selectValues.find(val => val.index == selectIndex);
-            if (valueObj) {
-                // Update dropdown if match is found
-                updateDropdownIfMatch(select, valueObj.value);
-            }
-        });
-    }
-    
-    function updateDropdownIfMatch(dropdown, targetValue) {
-        const option = Array.from(dropdown.options).find(opt => opt.value == targetValue);
-        if (option) {
-            dropdown.value = targetValue;
-            // Set the onchange event handler to onUpdate(event)
-            dropdown.disabled = false;
-            dropdown.dispatchEvent(new Event('change'));
-            dropdown.disabled = true;
-        }
-    }
-
-    // Capture tables and their select values
+    // Capture tables to be displayed on the data download page and adds them to tables
     document.querySelectorAll('table').forEach(table => {
-        if (!table.classList.contains('hidden') && !table.closest('div.hidden')) {
-            const selectValues = captureSelectValues(table);
-            if (table.rows[0].cells.length === 2) {
+        // Checks that the table is not hidden and is not a table holding actual data
+        if (!table.classList.contains('hidden') && !table.closest('div.hidden') && table.rows[0].cells.length === 2) {
                 // Clone the table element to avoid modifying the original table
                 let clonedTable = table.cloneNode(true);
 
@@ -166,12 +211,7 @@ document.getElementsByClassName("cart-button")[0].addEventListener("click", func
                 let firstCellAnchor = clonedTable.querySelector('td a');
                 let title = firstCellAnchor.href;
 
-                // Create the links
-                // let links = [
-                //     `<n href="#dct">Download Census Tract Data</a><br><br>`,
-                //     `<a href="#dc">Download County Data</a>`,
-                //     `<br><br><a href="#dcz">Download Commuting Zone Data</a>`
-                // ];
+                // Creates the links for different geographical download levels
                 let links = [
                          `<input type="checkbox"> Download Census Tract Data</input><br><br>`,
                          `<input type="checkbox"> Download County Data</input>`,
@@ -179,11 +219,12 @@ document.getElementsByClassName("cart-button")[0].addEventListener("click", func
                 ];
 
                 // Remove "Download Census Tract Data" link if the title contains "in5Not4"
+                // If the title contains in5Not4 that means that the data is not available at the census tract level
                 if (title.includes('in5Not4')) {
                     links.shift();
                 }
 
-                // Add the links as new columns in the single row
+                // Add the links as a new column for the current table
                 let row = clonedTable.querySelector('tr');
                 row.innerHTML += "<td>" + links.map(link => `${link}`).join('') + "</td>";
 
@@ -198,14 +239,12 @@ document.getElementsByClassName("cart-button")[0].addEventListener("click", func
                     select.classList.remove('notDropDown');
                 });
 
-                // Push the modified table HTML and select values to the tables array
-                tables.push({ html: clonedTable.outerHTML, values: selectValues });
-            } else {
-                dataTables.push({ html: table.outerHTML, values: selectValues });
-            }
+                // Push the modified table HTML to the tables array
+                tables.push({ html: clonedTable.outerHTML});
         }
     });
 
+    // Hides the current chat
     document.getElementsByClassName("chat-container")[0].classList.toggle("hidden");
 
     // Create and append a div to the body
@@ -217,6 +256,7 @@ document.getElementsByClassName("cart-button")[0].addEventListener("click", func
     div.appendChild(div1);
     div = div1;
 
+    // Creates a link to close the data download page and display the chat again
     let a = document.createElement('a');
     function close() {
         document.getElementsByClassName("chat-container")[0].classList.toggle("hidden");
@@ -225,53 +265,37 @@ document.getElementsByClassName("cart-button")[0].addEventListener("click", func
     a.innerHTML = '< Return to Chat';
     a.href = "#";
 
+    // Adds the link as a message to the data download page, then adds the event listener to close the page
     appendMessageSCDI('message error topMessage', a.outerHTML + " " + '<a href="#" onclick="downloadAll(event)" class="download-link"><img height="1em" width="1em" src="' + downloadIconUrl + '" alt="Download"> Click here to download all selected data</a>');
     div.getElementsByTagName('a')[0].addEventListener('click', close);
 
-    // Helper function to add a category of strings to the div
-    function addCategoryToDiv(category, title) {
-        if (category.length === 0 || title != "Variable Tables") return;
-
+    // Checks to see if there are any variable tables to add
+    if (tables.length != 0) {
+        // Adds a title for the tables
         let categoryTitle = document.createElement('h2');
-        categoryTitle.innerHTML = title;
+        categoryTitle.innerHTML = "Variable Tables";
         appendMessageSCDI('message error des', categoryTitle.outerHTML);
 
+        // Creates a table to hold all the tables once they are combined into one table
         let combinedTable = document.createElement('table');
         combinedTable.classList.add('table');
         combinedTable.classList.add('table-bordered');
 
-        category.forEach((item, index) => {
-
-            if (title != "Variable Tables") {
-                return;
-            }
-
+        // Loops through each table
+        tables.forEach((item) => {
             // Create a temporary container to parse and re-insert the HTML
             let tempDiv = document.createElement('div');
             tempDiv.id = "tempDiv";
             tempDiv.innerHTML = item.html;
 
-            // Remove 'onchange' attributes from 'select' elements
-            Array.from(tempDiv.getElementsByTagName('select')).forEach(select => {
-                select.removeAttribute('onchange');
-            });
-
             // Get the text from the 2nd column of the table's first row
             let secondColumn = tempDiv.querySelector('table tr td:nth-child(2)');
 
-            // Parse and replace the text
+            // Parse and replace the text so the variable name is removed and only the generic description is shown
             let updatedText = secondColumn.innerText.replace(/^VARIABLE NAME: [^:]* - VARIABLE DESCRIPTION:/, 'VARIABLE DESCRIPTION:');
-            secondColumn.innerText = updatedText;
-
-            // Make any links unclickable while keeping the href attribute
-            Array.from(tempDiv.getElementsByTagName('a')).forEach(link => {
-                link.addEventListener('click', event => event.preventDefault());
-                link.style.pointerEvents = 'none'; // Optional: visually indicate that the link is disabled
-            });
 
             // Update the text in the 2nd column
             tempDiv.querySelector('table tr td:nth-child(2)').innerText = updatedText;
-
 
             // Append the row to the combined table
             let row = tempDiv.querySelector('tr');
@@ -282,126 +306,66 @@ document.getElementsByClassName("cart-button")[0].addEventListener("click", func
 
         // Append the combined table to the DOM
         appendMessageSCDI('message bot', combinedTable.outerHTML);
-    }
-
-    // Add all categories to the div with titles
-    //addCategoryToDiv(stats, 'Calculated Statistics');
-    //addCategoryToDiv(graphs, 'Scatter Plots');
-    //addCategoryToDiv(maps, 'Choropleth Maps');
-    addCategoryToDiv(tables, 'Variable Tables');
-    //addCategoryToDiv(dataTables, 'Data Tables');
-
-    
-    try {
-        document.querySelectorAll('a[href="#dc"]').forEach(element => {
-            element.addEventListener('click', (event) => fetchCountyData(event));
-        });
-        
-        document.querySelectorAll('a[href="#dcz"]').forEach(element => {
-            element.addEventListener('click', (event) => fetchCommutingZoneData(event));
-        });
-        document.querySelectorAll('a[href="#dct"]').forEach(element => {
-            element.addEventListener('click', (event) => fetchCensusTractData(event));
-        });
-    } catch (error) {
-        console.error(error);
-    }
+    };
 });
 
-let chatbotMode = '';
-Math.seedrandom('OIP2Seed');
-
+// Sets the mode of the chat based on the user selection
 function selectMode(mode) {
     chatbotMode = mode;
+
+    // Makes the popup to choose the mode disapear
     const popup = document.getElementById('popup');
     popup.classList.add('fade-out');
+    // After the fade out of the popup is done, the popup is removed from the DOM
+    setTimeout(() => {
+        popup.style.display = 'none';
+    }, 500); // Match this with the transition duration in the CSS
+
+    // Replaces the message on the top of the screen with the right message for that mode
     removeLastMessage();
     appendMessage('error topMessage', "Hello! I'm a bot designed to help you find data! Please ask me anything and I will do my best to find some related data from the Opportunity Atlas paper. (" + chatbotMode + " Mode)");
+    // Adds a message to messages to instruct the AI about its user
     if (chatbotMode == "Expert") {
         messages.push({ role: 'assistant', content: "I am talking with an expert. I will assume they understand economics and statistics and are a very serious person who does not like emojis. I am their helpful assistant. I WILL USE THIS IN EVERYTHING I WRITE AND DO, EVEN IN FUNCTION CALLS."});
     } else if (chatbotMode == "Learner") {
         messages.push({ role: 'assistant', content: "I am talking to a person who has the knowledge of a 2nd grader. I will assume they know nothing about economics and statistics, and I will be their teacher. I WILL USE THIS IN EVERYTHING I WRITE AND DO, EVEN IN FUNCTION CALLS."});
     }
-    setTimeout(() => {
-        popup.style.display = 'none';
-    }, 500); // Match this with the transition duration in the CSS
-    
 }
 
+// Opens the report popup
 function openReportPopup() {
     document.getElementById('report-popup').classList.remove('hidden');
     document.getElementsByTagName('textarea')[0].value = '';
 }
 
+// Closes the report popup
 function closeReportPopup() {
     document.getElementById('report-popup').classList.add('hidden');
 }
 
+// When the window first loads open the welcome popup
 window.onload = function() {
     document.getElementById('popup').style.display = 'flex';
 }
 
-const chatBox = document.getElementById('chat-box');
-const messageInput = document.getElementById('message-input');
-
-const race = ["white", "black", "hisp", "asian", "natam", "other", "pooled"];
-const gender = ["male", "female", "pooled"];
-const percentile = ["p1", "p25", "p10", "p50", "p75", "p100"];
-
-const all = [...race, ...gender, ...percentile];
-const addOns = ["n", "mean", "se", "s", "imp", "mean_se"];
-
-let messages = [];
-let distances = []; 
-let variable = [];
-let added = 0;
-let locations = [];
-
-const allOptions = [];
-const allDescriptions = [];
-const allLinks = [];
-let linkedRows = [];
-let titles = [];
-
-let storedData = {};
-
-let stats = [];
-let graphs = [];
-let maps = [];
-let tables = [];
-let dataTables = [];
-
-let genderQ;
-let raceQ;
-let percentileQ;
-let queryQ;
-let locationTypeQ;
-let locationNameQ;
-
-let variableNameGlobal;
-
-let display = true;
-
-let gotName = false;
-
-messages.push({
-    role: 'assistant',
-    content: "Only I have the ability to browse the database and provide data. You, the user, does not have the ability to use it or provide data. I will NEVER use equation formatting because this application can not parse it. I promise to use varying emojis and formatting VERY OFTEN. Data is only available for commuting zones, addresses (census tracts), counties, counties by state, all US counties, and census tracts by state. If you are given data, never use specific numeric examples or refer to specific locations, just talk about the variable names. Also, you have the ability to make scatter plots, calculate statistics, and make maps. To do these things, the user first has to ask for location specific data. After they do this, in their next message, they can then ask for a map, scatter, or statistic."
-});
-
-appendMessage('error topMessage', "Hello! I'm a bot designed to help you find data! Please ask me anything and I will do my best to find some related data from the Opportunity Atlas paper.");
-messages.push({ role: 'assistant', content: "Hello! I'm a bot designed to help you find data! Please ask me anything and I will do my best to find some related data from the Opportunity Atlas paper." });
-
+// Runs every time the user sends a message
+// First figures out what the user wants to do
+// Then  calls the function to execute that task
 async function sendMessage() {
+    // Gets the message and checks it is not empty
     const message = messageInput.value;
     if (message.trim() === '') return;
 
+    // Adds the message to the chat and messages
     appendMessage('user', message);
     messages.push({ role: 'user', content: message });
+    // Clears the input field
     messageInput.value = '';
 
+    // Adds a placeholder message to the chat
     appendMessage('error', 'Thinking <span class="animate-ellipsis"></span>');
 
+    // Checks what specific task teh user wants and calls the related function
     let wTD = await graphQM(message);
     if(wTD == "create scatter plot") {
         requestGraphVars();
@@ -421,8 +385,18 @@ async function sendMessage() {
     } else if (wTD == "calculate correlation") {
         requestDoubleStatVars();
         return
+    } else {
+        variableSearch();
+        return
     }
+}
 
+// Does some checks to see if an input string is a JSON string. If so, returns true, else false
+function isValidJSON(str) {
+    return typeof str === 'string' && str.trim().startsWith('{') && str.trim().endsWith('}');
+}
+
+async function variableSearch() {
     try {
         const response = await fetch('http://127.0.0.1:3000/des', {
             method: 'POST',
@@ -430,44 +404,27 @@ async function sendMessage() {
             body: JSON.stringify({ messages }),
         });
         const data = await response.json();
-        try {
+        if (isValidJSON(data.reply)) {
             let pars = JSON.parse(data.reply);
-            genderQ = pars["gender"];
-            if (genderQ == null) {
-                genderQ = "pooled";
-            }
-            raceQ = pars["race"];
-            if (raceQ == null) {
-                raceQ = "pooled";
-            }
-            percentileQ = pars["percentile"];
-            if (percentileQ == null) {
-                percentileQ = "p25";
-            }
+            genderQ = pars["gender"] || "pooled";
+            raceQ = pars["race"] || "pooled";
+            percentileQ = pars["percentile"] || "p25";
             queryQ = pars["query"];
-            if (queryQ == null) {
+            if (!queryQ) {
                 removeLastMessage();
-                appendMessage('error', "Could you specify what data your looking for? For example, you could say education, income, or parental.");
-                messages.push({ role: 'assistant', content: "Could you specify what data your looking for? For example, you could say education, income, or parental." });
+                appendMessage('error', "Could you specify what data you're looking for? For example, you could say education, income, or parental.");
+                messages.push({ role: 'assistant', content: "Could you specify what data you're looking for? For example, you could say education, income, or parental." });
                 return;
             }
-            locationTypeQ = pars["location type"];
-            if (locationTypeQ == "state") {
-                locationTypeQ = "counties in state";
-            }
-            locationNameQ = pars["location name"];
-            if (locationTypeQ == "all US counties") {
-                locationNameQ = "";
-            }
-            
+            locationTypeQ = pars["location type"] === "state" ? "counties in state" : pars["location type"];
+            locationNameQ = locationTypeQ === "all US counties" ? "" : pars["location name"];
+        
             await fetchData();
-        } catch (error) {
+        } else {
             removeLastMessage();
             appendMessage('error', data.reply);
             messages.push({ role: 'assistant', content: data.reply });
         }
-        //appendMessage('error', 'Fetching your data ...');
-        //await fetchData(question);
     } catch (error) {
         console.error('Error:', error);
         removeLastMessage();
@@ -517,7 +474,7 @@ async function requestSingleStatVar(operation) {
             return;
         }
 
-        // get the shet with id varToMap + t and make its contents into a list of lists
+        // get the sheet with id varToMap + t and make its contents into a list of lists
         let table = document.getElementById("t" + varToStat);
         let rows = table.rows;
         let data = [];
@@ -536,7 +493,6 @@ async function requestSingleStatVar(operation) {
             removeLastMessage();
             appendMessage('error', `The mean of ${pars["variable"]} is ${sum / lastColumnData.length}. This statistic is calculated by weighting all rows from the data table equally.`);
             messages.push({ role: 'assistant', content: `The mean of ${pars["variable"]} is ${sum / lastColumnData.length}. This statistic is calculated by weighting all rows from the data table equally.`});
-            stats.push(`The mean of ${pars["variable"]} is ${sum / lastColumnData.length}. This statistic is calculated by weighting all rows from the data table equally.`);
           } else if (operation === 'get median') {
             // Calculate median
             lastColumnData.sort((a, b) => a - b);
@@ -545,12 +501,10 @@ async function requestSingleStatVar(operation) {
               removeLastMessage();
               appendMessage('error', `The median of ${pars["variable"]} is ${(lastColumnData[middleIndex - 1] + lastColumnData[middleIndex]) / 2}. This statistic is calculated by weighting all rows from the data table equally.`);
               messages.push({ role: 'assistant', content: `The median of ${pars["variable"]} is ${(lastColumnData[middleIndex - 1] + lastColumnData[middleIndex]) / 2}. This statistic is calculated by weighting all rows from the data table equally.`});
-              stats.push(`The median of ${pars["variable"]} is ${(lastColumnData[middleIndex - 1] + lastColumnData[middleIndex]) / 2}. This statistic is calculated by weighting all rows from the data table equally.`);
             } else {
                 removeLastMessage();
                 appendMessage('error', `The median of the data is ${lastColumnData[middleIndex]}. This statistic is calculated by weighting all rows from the data table equally.`);
                 messages.push({ role: 'assistant', content: `The median of the data is ${lastColumnData[middleIndex]}. This statistic is calculated by weighting all rows from the data table equally.` });
-                stats.push(`The median of the data is ${lastColumnData[middleIndex]}. This statistic is calculated by weighting all rows from the data table equally.`);
             }
           } else if (operation === 'get standard deviation') {
             // Calculate standard deviation
@@ -559,7 +513,6 @@ async function requestSingleStatVar(operation) {
             removeLastMessage();
             appendMessage('error', `The standard deviation of ${pars["variable"]} is ${Math.sqrt(variance)}. This statistic is calculated by weighting all rows from the data table equally.`);
             messages.push({ role: 'assistant', content: `The standard deviation of ${pars["variable"]} is ${Math.sqrt(variance)}. This statistic is calculated by weighting all rows from the data table equally.` });
-            stats.push(`The standard deviation of ${pars["variable"]} is ${Math.sqrt(variance)}. This statistic is calculated by weighting all rows from the data table equally.`);
           }
         
     } catch (error) {
@@ -660,7 +613,6 @@ async function requestDoubleStatVars() {
         removeLastMessage();
         appendMessage('error', `The correlation between ${pars["variable1"]} and ${pars["variable2"]} is ${numerator / (denominator1 * denominator2)}. This statistic is calculated by weighting all rows from the data tables equally.`);
         messages.push({ role: 'assistant', content: `The correlation between ${pars["variable1"]} and ${pars["variable2"]} is ${numerator / (denominator1 * denominator2)}. This statistic is calculated by weighting all rows from the data tables equally.` });
-        stats.push(`The correlation between ${pars["variable1"]} and ${pars["variable2"]} is ${numerator / (denominator1 * denominator2)}. This statistic is calculated by weighting all rows from the data tables equally.`);
     } catch (error) {
         removeLastMessage();
         console.log(error);
@@ -767,8 +719,6 @@ async function requestMapVars() {
             appendMessage('error graph', d.outerHTML);
             if (data.html) {
                 document.getElementById('md' + randomNum).innerHTML = data.html;
-                maps.push(`Here is your map of ${pars["variable"]} for ${result}. <a href="#" id="${'li' + randomNum}" onclick="captureElementM(event)" class="download-link"><img height="1em" width="1em" src="${downloadIconUrl}" alt="Download"> Click here to download</a>`);
-                maps.push('<div id="' + 'md' + randomNum + '">' + data.html + "</div>");
                 document.getElementById('md' + randomNum).style.display = 'block';
             } else {
                 alert('Failed to generate map.');
@@ -835,7 +785,6 @@ async function requestGraphVars() {
         removeLastMessage();
         appendMessage('error', `Here is your graph of ${pars["x"]} and ${pars["y"]} for ${result}. <a href="#" onclick="captureElement(event)" class="download-link"><img height="1em" width="1em" src="${downloadIconUrl}" alt="Download"> Click here to download</a>`);
         messages.push({ role: 'assistant', content: `Here is your graph of ${pars["x"]} and ${pars["y"]} for ${result}.` });
-        graphs.push(`Here is your graph of ${pars["x"]} and ${pars["y"]} for ${result}.  <a href="#" onclick="captureElement(event)" class="download-link"><img height="1em" width="1em" src="${downloadIconUrl}" alt="Download"> Click here to download</a>`);
         graphVariable([pars["y"], yKey], xKey);
         messages.push({ role: 'assistant', content: "Graph created!" });
     } catch (error) {
@@ -956,8 +905,6 @@ function processChatData(data) {
         return;
     }
 
-    distances = data.distances;
-
     let randomID = Math.floor(Math.random() * 1000000);
     let tableHtml = '<table class="table table-bordered main" id="' + randomID + '">';
     data.reply.forEach(row => {
@@ -978,15 +925,12 @@ function processChatData(data) {
     appendMessage('bot showLatter hidden', tableHtml);
 
     removeDups();
-    allOptions.push([]);
-    allDescriptions.push([]);
-    allLinks.push([]);
 
     condense(document.getElementById(randomID));
-    chooseDropdown(document.getElementById(randomID), distances);
+    chooseDropdown(document.getElementById(randomID));
 }
 
-function chooseDropdown(table, distances) {
+function chooseDropdown(table) {
     // Get all select elements in the table
     const dropdowns = table.querySelectorAll('select');
 
@@ -1025,8 +969,7 @@ function chooseDropdown(table, distances) {
 
     let text1 = linkRows(table);
     Array.from(document.getElementsByClassName('toDelete')).forEach(element => element.classList.add('hidden'));
-    
-    //makeGraph(distances);
+   
     answerQuestion(text1, table);
 }
 
@@ -1041,6 +984,7 @@ function removeTablesFromHtml(htmlContent) {
 }
 
 function appendMessage(sender, message) {
+    const chatBox = document.getElementById('chat-box');
     removeBR();
     removeBR();
     //const formattedMessage = message.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
@@ -1117,9 +1061,6 @@ function removeDups() {
 }
 
 function condense(table) {
-    const tables = Array.from(document.querySelectorAll('table')).filter(table => !table.classList.contains('dataTable'));
-    const index = tables.indexOf(table);
-
     titles = [];
     let descriptions = [];
     let links = [];
@@ -1167,9 +1108,6 @@ function condense(table) {
             }
         }
         remakeLink(rows[i].querySelector('td:nth-child(1) a'), des, lin, ti, options);
-        allOptions[index].push(options);
-        allDescriptions[index].push(des);
-        allLinks[index].push(lin);
     }
 }
 
@@ -1186,7 +1124,7 @@ function linkRows(table) {
     addedToShow = 0;
     display = true;
     let titlesTogether = titles.map(title => title.filter(part => !addOns.includes(part) && !all.includes(part)).join('_'));
-    linkedRows = [];
+    let linkedRows = [];
 
     const rows = Array.from(table.querySelectorAll('tr'));
     for (let i = 0; i < rows.length; i++) {
@@ -1253,9 +1191,6 @@ function linkRows(table) {
     for (let i = rows.length - 1; i >= 0; i--) {
         if (!toShow.includes(i)) {
             rows[i].remove();
-            allOptions[allOptions.length - 1].splice(i, 1);
-            allDescriptions[allOptions.length - 1].splice(i, 1);
-            allLinks[allOptions.length - 1].splice(i, 1);
         }
     }
 
@@ -1301,15 +1236,11 @@ function answerQuestionContinued(table) {
             if (variable.includes(toShow) && locations[variable.indexOf(toShow)] != locationNameQ) display = false;
             if (variable.includes(toShow.replace(/_mean$/, '')) && locations[variable.indexOf(toShow.replace(/_mean$/, ''))] != locationNameQ) display = false;
             
-            variableNameGlobal = toShow;
             for (let I = rows.length - 1; I >= 0; I--) {
                 const row = rows[I];
                 const variableName = new URL(row.querySelector('td:nth-child(1) a').href).searchParams.get('var');
                 if (variableName !== toShow) {
                     row.remove();
-                    allOptions[allOptions.length - 1].splice(I, 1);
-                    allDescriptions[allOptions.length - 1].splice(I, 1);
-                    allLinks[allOptions.length - 1].splice(I, 1);
                 }
             }
 
@@ -1358,7 +1289,7 @@ function replaceVariableContent() {
             
             for (let part of parts) {
                 
-                if (part.trim().startsWith(`VARIABLE NAME: ${variableNameGlobal} VARIABLE DESCRIPTION:`)) {
+                if (part.trim().match(/^VARIABLE NAME: .* VARIABLE DESCRIPTION:/)) {
                     // Extract the relevant part
                     let result = part.trim();
                     // Replace the content in the messages list
@@ -1394,15 +1325,11 @@ function answerQuestionContinuedLoc(table) {
                 }
             }
             
-            variableNameGlobal = toShow;
             for (let I = rows.length - 1; I >= 0; I--) {
                 const row = rows[I];
                 const variableName = new URL(row.querySelector('td:nth-child(1) a').href).searchParams.get('var');
                 if (variableName !== toShow) {
                     row.remove();
-                    allOptions[allOptions.length - 1].splice(I, 1);
-                    allDescriptions[allOptions.length - 1].splice(I, 1);
-                    allLinks[allOptions.length - 1].splice(I, 1);
                 }
             }
 
@@ -1480,10 +1407,8 @@ async function getLocationData(table) {
         appendMessage('showLatter1 hidden error', `Sorry, that data is not available. 😕 Do you want me to search for something else? (Try querying the same data with a more specific prompt or search for something new)`)
         messages.push({ role: 'assistant', content: `Sorry, that data is not available. 😕 Do you want me to search for something else?` });
         Array.from(document.getElementsByClassName('showLatter1')).forEach(element => element.classList.remove('hidden'));
-        gotName = true;
         return;
     }
-    gotName = false;
     
     const linkData = extractLinkData(table);
     
@@ -1885,7 +1810,6 @@ function graphVariable(variable, otherKey) {
     Plotly.newPlot(plotDiv, data, layout);
     plotDiv.style.display = 'block';
     appendMessage('error graph', plotDiv.outerHTML);
-    graphs.push(plotDiv.outerHTML);
     plotDiv.remove();
 }
 
@@ -1992,7 +1916,7 @@ function remakeLink(link, des, lin, ti, options) {
 
 function makeDropDown(options) {
     return `
-            <select class="notDropDown" onchange="onUpdate(event)" disabled>
+            <select class="notDropDown" disabled>
                 ${options.map(option => `<option value="${option}">${option}</option>`).join('')}
             </select>
     `;
@@ -2031,66 +1955,6 @@ function update(choices, options, descriptions, links, row, tableID) {
         // updates messages
         messages[messages.indexOf(message) + 2].content = newMessageEdited;
     } catch (error) {}
-}
-
-function onUpdate(event) {
-    const table = event.target.closest('table');
-    let index;
-    if (document.getElementById('shopping-cart-div') != null) {
-        // // Get the innerHTML of the shopping cart div as a string
-        // let shoppingCartDiv = document.getElementById('shopping-cart-div');
-        // let innerHTMLString = shoppingCartDiv.innerHTML;
-
-        // // Use a regular expression to find all table ids in the string
-        // let tableIdRegex = /<table.*?id=["'](.*?)["']/g;
-        // let match;
-        // let tableIds = [];
-
-        // // Iterate through the matches and store the ids in the list
-        // while ((match = tableIdRegex.exec(innerHTMLString)) !== null) {
-        //     tableIds.push(match[1]);
-        // }
-
-        // // Function to find the index of a specific table id in the list
-        // function getTableIdIndex(tableId) {
-        //     return tableIds.indexOf(tableId);
-        // }
-
-        // index = getTableIdIndex(table.id);
-        const elements = Array.from(document.getElementsByClassName("main"));
-        index = elements.findIndex(element => element.id === table.id);
-    } else {
-        index = Array.from(document.getElementsByClassName("main")).indexOf(table);
-    }
-    const row = event.target.closest('tr');
-    const rowIndex = Array.from(row.parentNode.children).indexOf(row);
-    const values = Array.from(row.querySelectorAll('select')).map(selector => selector.value);
-
-    update(values, allOptions[index][rowIndex], allDescriptions[index][rowIndex], allLinks[index][rowIndex], row, table.id);
-}
-
-function makeGraph(distances) {
-    var x = distances;
-
-    // remove values close to 0 from x
-    x = x.filter(value => value > 0.0001);
-
-    randomNumber = Math.floor(Math.random() * 1000000);
-    appendMessage('error graph', '<div id="myDiv' + randomNumber + '"></div>');
-
-    var trace = {
-        x: x,
-        type: 'histogram',
-        nbinsx: 30
-      };
-      
-      var layout = {
-        yaxis: { title: 'Frequency' },
-        xaxis: { title: 'Similarity' },
-        title: 'Similarity of Data Embeddings and User Query Embedding'
-      };
-      
-      Plotly.newPlot(`myDiv${randomNumber}`, [trace], layout);
 }
 
 async function fetchCSS(file) {

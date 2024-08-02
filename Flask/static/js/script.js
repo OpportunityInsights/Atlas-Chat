@@ -878,7 +878,7 @@ function processChatData(data) {
         let cells = row.split("SPECIAL").map((cell, index) => {
             if (index === 0) {
                 let [sheet, varName] = cell.split("LINK");
-                return `<td><a href="http://127.0.0.1:3000/viewData?sheet=${sheet}&var=${varName}" target="_blank">${varName}</a></td>`;
+                return `<td><a href="http://127.0.0.1:3000/viewData?sheet=${sheet}&var=${varName}" disabled onclick="clickLink(event)" class="broken" target="_blank">${varName}</a></td>`;
             } else {
                 return `<td>${cell}</td>`;
             }

@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="icon" href="{{ url_for('static', filename='images/img.png') }}">    
+    <script src="https://cdn.plot.ly/plotly-2.32.0.min.js" charset="utf-8"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+    <script src="https://d3js.org/d3.v6.min.js"></script>
+</head>
+<body>
+    <div id="popup" class="popup">
+        <div class="popup-content">
+            <h2>Welcome to Atlas Chat! 🌐 👋</h2>
+            <p>Please select one of the following modes to continue. I'm ...</p>
+            <button class="mode-button" onclick="selectMode('Learner')">Still Learning Economics</button>
+            <button class="mode-button" onclick="selectMode('Normal')">Good at Economics</button>
+            <button class="mode-button" onclick="selectMode('Expert')">An Economics Expert</button>
+        </div>
+    </div>
+    <div id="report-popup" class="popup hidden">
+        <div class="popup-content report">
+            <h2>Report A Problem 🚩</h2>
+            <p id="rt" style="margin-bottom: 20px;">The chat contents will be sent with any comments you leave here.</p>
+            <textarea class="report" placeholder="The problem is ..."></textarea>
+            <button id="rb1" class="mode-button report" onclick="gatherAndSendData()">Send Report</button>
+            <button id="rb2" class="mode-button cancel" onclick="closeReportPopup()">Cancel</button>
+        </div>
+    </div>
+    <div id="graph-popup" class="popup hidden">
+        <div class="popup-content graph">
+            <h2>Create Graph 📉</h2>
+            <p style="margin-bottom: 20px;">Select a second variable to create a scatter plot.</p>
+            <div class="graph options"></div>
+            <button class="mode-button cancel" onclick="closeGraphPopup()">Cancel</button>
+        </div>
+    </div>
+    <div class="chat-container">
+        <div class="chat-box" id="chat-box"></div>
+        <div class="input-container">
+            <input type="text" id="message-input" placeholder="Ask the database a question or get some information ...">
+            <button class="flag-button" onclick="openReportPopup()"></button>
+            <button class="cart-button" onclick=""></button>
+        </div>
+    </div>
+    <script>
+        const downloadIconUrl = "{{ url_for('static', filename='images/download_icon.png') }}";
+        const graphIconUrl = "{{ url_for('static', filename='images/graph_icon.png') }}";
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/seedrandom/3.0.5/seedrandom.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>

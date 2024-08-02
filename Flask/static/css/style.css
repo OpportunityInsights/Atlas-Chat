@@ -1,0 +1,380 @@
+body {
+    font-family: Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    height: 100vh;
+    backdrop-filter: blur(1px); /* Reduced blur effect */
+    margin: 0;
+}
+
+.flag-button, .cart-button {
+    width: 55px;
+    height: 55px;
+    border: 1px solid #ff1f1f;
+    background: rgb(255, 30, 30); /* Red gradient background */
+    text-shadow: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    border-radius: 50% !important; /* Circle shape */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.3s ease, transform 0.3s ease;
+    margin: .3em;
+    margin-right: 0em;
+    margin-left: 1em;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.cart-button {
+    margin-left: .5em;
+    border: 1px solid rgb(54, 149, 204);
+    background: rgb(54, 149, 204); /* Red gradient background */
+}
+
+.flag-button:hover {
+    background: rgb(255, 30, 30); /* Red gradient background */
+    transform: scale(1.05); /* Slightly enlarge on hover */
+}
+
+.cart-button:hover {
+    transform: scale(1.05); /* Slightly enlarge on hover */
+}
+
+.flag-button::before {
+    content: "📮"; /* Unicode for flag symbol */
+    color: white;
+    font-size: 1.5em;
+}
+
+.cart-button::before {
+    content: "🛍️"; /* Unicode for shopping cart symbol */
+    color: white;
+    font-size: 1.5em;
+}
+
+.popup {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    backdrop-filter: blur(1px); /* Reduced blur effect */
+    background-color: rgba(255, 255, 255, 0.5);
+}
+
+.fade-out {
+    opacity: 0;
+    transition: opacity 0.3s ease-out;
+}
+
+.popup-content {
+    border: 1px solid rgb(110, 202, 190);
+    padding: 40px; /* Increase padding for larger size */
+    border-radius: 20px; /* More rounded corners */
+    text-align: center;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Add a subtle shadow */
+    max-width: 400px; /* Max width for the popup */
+    width: 90%; /* Make it responsive */
+    background-color: white;
+}
+
+.popup-content.graph-img {
+    max-width: 1000px;
+}
+
+.popup-content.report {
+    border: 1px solid rgb(174, 36, 36);
+}
+
+.popup-content.graph {
+    border: 1px solid rgb(96, 137, 36);
+}
+
+.popup-content h2 {
+    font-size: 2rem; /* Increase font size */
+    margin-bottom: 20px;
+    color: #333;
+}
+
+.popup-content p {
+    font-size: 1.2rem; /* Increase font size */
+    margin-bottom: 30px;
+    color: #666;
+}
+
+.mode-button {
+    background: linear-gradient(to top left, rgb(130, 227, 214), #ffffff); /* Softer gradient */
+    border: 1px solid rgb(110, 202, 190);
+    color: black;
+    font-size: 1rem; /* Larger text */
+    cursor: pointer;
+    padding: 15px 30px; /* Larger padding */
+    border-radius: 20px; /* More rounded corners */
+    margin: 10px 0px;
+    transition: background 0.3s ease, transform 0.3s ease;
+    display: block; /* Ensure buttons stack vertically */
+    width: 100%; /* Full width buttons */
+}
+
+textarea.report {
+    width: 100%;
+    height: 100px;
+    border: 1px solid rgb(174, 36, 36);
+    border-radius: 16px;
+    padding: 10px;
+    margin-top: 10px;
+    resize: none; /* Prevent resizing */
+}
+
+.mode-button.cancel {
+    background: linear-gradient(to top left, rgb(169, 169, 169), #ffffff); /* Softer gradient */
+    border: 1px solid rgb(90, 90, 90);
+}
+
+.mode-button.cancel:hover {
+    background: linear-gradient(to top left, rgb(106, 106, 106), #ffffff);
+}
+
+.mode-button.report {
+    background: linear-gradient(to top left, rgb(220, 66, 66), #ffffff); /* Red gradient */
+    border: 1px solid rgb(174, 36, 36);
+}
+
+.mode-button.graph-button {
+    background: linear-gradient(to top left, rgb(96, 137, 36), #ffffff); /* Green gradient */
+    border: 1px solid rgb(71, 96, 35);
+    margin: auto auto;
+    height: 60px;
+    margin-bottom: .5em;
+}
+
+.mode-button.graph-button:hover {
+    background: linear-gradient(to top left, rgb(81, 103, 52), #ffffff);
+}
+
+.mode-button.report:hover {
+    background: linear-gradient(to top left, rgb(135, 38, 38), #ffffff);
+}
+
+.mode-button.disabled.report:hover {
+    background: linear-gradient(to top left, rgb(220, 66, 66), #ffffff) !important; /* Red gradient */
+    transform: scale(1) !important;
+    cursor: default;
+}
+
+.mode-button.disabled.cancel:hover {
+    background: linear-gradient(to top left, rgb(169, 169, 169), #ffffff) !important; /* Red gradient */
+    transform: scale(1) !important;
+    cursor: default;
+}
+
+.mode-button:hover {
+    background: linear-gradient(to top left, rgb(94, 173, 163), #ffffff);
+    transform: scale(1.05); /* Slightly enlarge on hover */
+}
+
+.chat-container, #shopping-cart-div {
+    width: 70%;
+    height: 96%;
+    border-radius: 16px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.topMessage {
+    margin-top: 3em !important;
+}
+
+.chat-box, #scdi {
+    height: 100%; /* Takes up most of the space */
+    padding: 10px;
+    padding-top: 0px;
+    overflow-y: auto;
+    flex-grow: 1;
+    padding-bottom: 0 !important;
+}
+
+.chat-box .message {
+    margin: 7px 0;
+}
+
+.chat-box .message.user {
+    border-radius: 16px;
+    padding: 15px;
+    /* background: linear-gradient(to top left, #e6eeff, #ffffff); */
+    background: linear-gradient(to top left, rgb(130, 227, 214), #ffffff);
+    border: 1px solid rgb(110, 202, 190);
+    align-self: flex-end;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    margin-top: 1em;
+    margin-bottom: 1em;
+}
+
+.message.bot {
+    overflow: auto;
+}
+
+.message.botBig {
+    overflow: auto;
+    align-self: flex-start;
+}
+
+.chat-box .message.bot {
+    align-self: flex-start;
+}
+
+.message.error {
+    align-self: flex-start;
+}
+
+.message.error.des {
+    margin-top: 14px;
+}
+
+.message {
+    margin-right: 1em !important;
+    margin-left: 1em !important;
+}
+
+.input-container {
+    display: flex;
+    align-items: center;
+    margin: 1em;
+    border-radius: 16px;
+    height: 65px; /* Adjust height as needed */
+    margin-top: 0;
+}
+
+input[type="text"] {
+    flex-grow: 1;
+    padding: 10px 15px; /* Adjust padding as needed */
+    border: none;
+    border-radius: 0;
+    outline: none; /* Remove blue outline */
+    height: 100%; /* Match height of container */
+    border: 1px solid rgb(110, 202, 190);
+    border-radius: 16px !important;
+    transition: border 1s ease;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+input[type="text"]:focus {
+    outline: none; /* Ensure no outline on focus */
+    border: 1px solid rgb(48, 125, 115);
+}
+
+button {
+    width: 80px; /* Adjust width if needed */
+    border: none;
+    background: linear-gradient(to top left, rgb(130, 227, 214), #ffffff);
+    border: 1px solid rgb(110, 202, 190);
+    color: black;
+    font-size: 16px;
+    cursor: pointer;
+    padding: 0; /* Remove padding */
+    border-radius: 16px !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%; /* Match height of container */
+}
+
+button {
+    text-shadow: 0 0 10px rgba(255, 255, 255, 1),
+    0 0 20px rgba(255, 255, 255, 1),
+    0 0 30px rgba(255, 255, 255, 0.8);
+}
+
+.input-container.select {
+    transition: box-shadow 0.3s ease;
+}
+
+.input-container.select:hover {
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.25) !important;
+}
+
+.broken:hover, .broken:active {
+    text-decoration: none;
+    color: #0e5c00 !important;
+}
+
+.broken {
+    cursor: default;
+    color: #0e5c00 !important;
+}
+
+.table {
+    margin-bottom: 0 !important;
+}
+
+.hidden {
+    display: none;
+}
+
+@keyframes ellipsis-animation {
+    0% { content: '...'; }
+    25% { content: ''; }
+    37.5% { content: '.'; }
+    50% { content: '..'; }
+    62.5% { content: '...'; }
+    100% { content: '...'; }
+}
+
+.animate-ellipsis::after {
+    content: '';
+    animation: ellipsis-animation 1.5s infinite;
+}
+
+.download-link img {
+    margin-left: .5em;
+    width: 2em;
+    height: 2em;
+}
+
+.graph-link img {
+    margin-left: .5em;
+    width: 2em;
+    height: 2em;
+}
+
+.graph-link {
+    color: rgb(95, 158, 0);
+}
+
+.load-more-link1 {
+    display: block;
+    text-align: center;
+    margin: 5px auto;
+    margin-top: 10px;
+    margin-bottom: 0px;
+}
+
+.graph.options {
+    padding: 1em;
+    border: 1px solid rgb(96, 137, 36);
+    margin-bottom: 20px;
+    border-radius: 20px;
+    height: 200px;
+    overflow-y: scroll;
+}
+
+.error.graph {
+    display: flex;
+    justify-content: center;
+    margin-top: 7px;
+    margin-bottom: 2em;
+}
+
+.notDropDown {
+    word-wrap: normal;
+    -webkit-appearance: none;
+    color: #0e5c00 !important;
+    border: none;
+    opacity: 1;
+}

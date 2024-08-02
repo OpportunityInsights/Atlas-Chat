@@ -364,10 +364,6 @@ button {
     overflow-y: scroll;
 }
 
-.act-graph {
-    margin-bottom: 20px;
-}
-
 .error.graph {
     display: flex;
     justify-content: center;

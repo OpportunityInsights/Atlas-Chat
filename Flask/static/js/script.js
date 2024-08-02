@@ -394,16 +394,25 @@ async function sendMessage() {
         requestDoubleStatVars();
         return
     } else {
-        // TODO: add comments here
+        // Prepares the parameters to search for a variable or directly answers the user's question
         if (! await variableSearch()) {return}
+        // Gets a list of variables from the database
         let chatData = await fetchData();
         if (! chatData) {return}
+        // Turns those variables into a table
         let randomID = processChatData(chatData);
         if (! randomID) {return}
         let table = document.getElementById(randomID);
+        // Combines variables in the table with the same name but different characteristics like race, gender, or percentile
         condense(table);
+        // Chooses the right race, gender, and percentile for each variable
         chooseDropdown(table);
+        // linkRows: creates families of variables by linking things like kfr_black_pooled_p50 and kfr_black_pooled together
+        // answerQuestion: adds instructions to the chat and decides if location specific data should be fetched
+        // answerQuestionContinued: picks a specific variable to display and writes a description for that variable
+        // getLocationData: fetches the data for the location specific variable
         if (! answerQuestionContinued(table, answerQuestion(linkRows(table), table)) || ! getLocationData(table)) {return}
+        // Writes a final description for the location specific data
         answerQuestionContinuedLocDes();
     }
 }
@@ -413,7 +422,7 @@ function isValidJSON(str) {
     return typeof str === 'string' && str.trim().startsWith('{') && str.trim().endsWith('}');
 }
 
-// Prepares the parameters to search for a variable
+// Prepares the parameters to search for a variable or directly answers the user's question
 async function variableSearch() {
     try {
         // Asks chat-GPT to either answer the user's question or do a function call to get the data

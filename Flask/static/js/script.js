@@ -63,6 +63,125 @@ messageInput.addEventListener('keydown', function (event) {
     }
 });
 
+// Adds an event listener to the shopping cart button which opens the data download page
+document.getElementsByClassName("cart-button")[0].addEventListener("click", function() {
+    // Stores all the tables that will be displayed on the data download page
+    tables = [];
+
+    // Capture tables to be displayed on the data download page and adds them to tables
+    document.querySelectorAll('table').forEach(table => {
+        // Checks that the table is not hidden and is not a table holding actual data
+        if (!table.classList.contains('hidden') && !table.closest('div.hidden') && table.rows[0].cells.length === 2) {
+                // Clone the table element to avoid modifying the original table
+                let clonedTable = table.cloneNode(true);
+
+                // Extract the title from the first cell
+                let firstCellAnchor = clonedTable.querySelector('td a');
+                let title = firstCellAnchor.href;
+
+                // Creates the links for different geographical download levels
+                let links = [
+                         `<input type="checkbox"> Download Census Tract Data</input><br><br>`,
+                         `<input type="checkbox"> Download County Data</input>`,
+                         `<br><br><input type="checkbox"> Download Commuting Zone Data</input>`
+                ];
+
+                // Remove "Download Census Tract Data" link if the title contains "in5Not4"
+                // If the title contains in5Not4 that means that the data is not available at the census tract level
+                if (title.includes('in5Not4')) {
+                    links.shift();
+                }
+
+                // Add the links as a new column for the current table
+                let row = clonedTable.querySelector('tr');
+                row.innerHTML += "<td>" + links.map(link => `${link}`).join('') + "</td>";
+
+                // Find all select elements in the cloned table
+                let selectElements = clonedTable.querySelectorAll('select');
+
+                // Convert each select element to a multi-select
+                selectElements.forEach(select => {
+                    select.multiple = true;
+                    select.disabled = false;
+                    select.onclick = "";
+                    select.classList.remove('notDropDown');
+                });
+
+                // Push the modified table HTML to the tables array
+                tables.push({ html: clonedTable.outerHTML});
+        }
+    });
+
+    // Hides the current chat
+    document.getElementsByClassName("chat-container")[0].classList.toggle("hidden");
+
+    // Create and append a div to the body
+    let div = document.createElement('div');
+    div.id = "shopping-cart-div";
+    document.body.appendChild(div);
+    div1 = document.createElement('div');
+    div1.id = "scdi";
+    div.appendChild(div1);
+    div = div1;
+
+    // Creates a link to close the data download page and display the chat again
+    let a = document.createElement('a');
+    function close() {
+        document.getElementsByClassName("chat-container")[0].classList.toggle("hidden");
+        document.getElementById("shopping-cart-div").remove();
+    }
+    a.innerHTML = '< Return to Chat';
+    a.href = "#";
+
+    // Adds the link as a message to the data download page, then adds the event listener to close the page
+    appendMessageSCDI('message error topMessage', a.outerHTML + " " + '<a href="#" onclick="downloadAll(event)" class="download-link"><img height="1em" width="1em" src="' + downloadIconUrl + '" alt="Download"> Click here to download all selected data</a>');
+    div.getElementsByTagName('a')[0].addEventListener('click', close);
+
+    // Checks to see if there are any variable tables to add
+    if (tables.length != 0) {
+        // Adds a title for the tables
+        let categoryTitle = document.createElement('h2');
+        categoryTitle.innerHTML = "Variable Tables";
+        appendMessageSCDI('message error des', categoryTitle.outerHTML);
+
+        // Creates a table to hold all the tables once they are combined into one table
+        let combinedTable = document.createElement('table');
+        combinedTable.classList.add('table');
+        combinedTable.classList.add('table-bordered');
+
+        // Loops through each table
+        tables.forEach((item) => {
+            // Create a temporary container to parse and re-insert the HTML
+            let tempDiv = document.createElement('div');
+            tempDiv.id = "tempDiv";
+            tempDiv.innerHTML = item.html;
+
+            // Get the text from the 2nd column of the table's first row
+            let secondColumn = tempDiv.querySelector('table tr td:nth-child(2)');
+
+            // Parse and replace the text so the variable name is removed and only the generic description is shown
+            let updatedText = secondColumn.innerText.replace(/^VARIABLE NAME: [^:]* - VARIABLE DESCRIPTION:/, 'VARIABLE DESCRIPTION:');
+
+            // Update the text in the 2nd column
+            tempDiv.querySelector('table tr td:nth-child(2)').innerText = updatedText;
+
+            // Append the row to the combined table
+            let row = tempDiv.querySelector('tr');
+            if (row) {
+                combinedTable.appendChild(row);
+            }
+        });
+
+        // Append the combined table to the DOM
+        appendMessageSCDI('message bot', combinedTable.outerHTML);
+    };
+});
+
+// When the window first loads open the welcome popup
+window.onload = function() {
+    document.getElementById('popup').style.display = 'flex';
+}
+
 // This function deals with the error flagging feature
 (function() {
     // Variables storing references to different ways that stuff enters the console
@@ -203,120 +322,6 @@ async function fetchCommutingZoneData(sheet, variable) {
     downloadAsXLSX(data);
 }
 
-// Adds an event listener to the shopping cart button which opens the data download page
-document.getElementsByClassName("cart-button")[0].addEventListener("click", function() {
-    // Stores all the tables that will be displayed on the data download page
-    tables = [];
-
-    // Capture tables to be displayed on the data download page and adds them to tables
-    document.querySelectorAll('table').forEach(table => {
-        // Checks that the table is not hidden and is not a table holding actual data
-        if (!table.classList.contains('hidden') && !table.closest('div.hidden') && table.rows[0].cells.length === 2) {
-                // Clone the table element to avoid modifying the original table
-                let clonedTable = table.cloneNode(true);
-
-                // Extract the title from the first cell
-                let firstCellAnchor = clonedTable.querySelector('td a');
-                let title = firstCellAnchor.href;
-
-                // Creates the links for different geographical download levels
-                let links = [
-                         `<input type="checkbox"> Download Census Tract Data</input><br><br>`,
-                         `<input type="checkbox"> Download County Data</input>`,
-                         `<br><br><input type="checkbox"> Download Commuting Zone Data</input>`
-                ];
-
-                // Remove "Download Census Tract Data" link if the title contains "in5Not4"
-                // If the title contains in5Not4 that means that the data is not available at the census tract level
-                if (title.includes('in5Not4')) {
-                    links.shift();
-                }
-
-                // Add the links as a new column for the current table
-                let row = clonedTable.querySelector('tr');
-                row.innerHTML += "<td>" + links.map(link => `${link}`).join('') + "</td>";
-
-                // Find all select elements in the cloned table
-                let selectElements = clonedTable.querySelectorAll('select');
-
-                // Convert each select element to a multi-select
-                selectElements.forEach(select => {
-                    select.multiple = true;
-                    select.disabled = false;
-                    select.onclick = "";
-                    select.classList.remove('notDropDown');
-                });
-
-                // Push the modified table HTML to the tables array
-                tables.push({ html: clonedTable.outerHTML});
-        }
-    });
-
-    // Hides the current chat
-    document.getElementsByClassName("chat-container")[0].classList.toggle("hidden");
-
-    // Create and append a div to the body
-    let div = document.createElement('div');
-    div.id = "shopping-cart-div";
-    document.body.appendChild(div);
-    div1 = document.createElement('div');
-    div1.id = "scdi";
-    div.appendChild(div1);
-    div = div1;
-
-    // Creates a link to close the data download page and display the chat again
-    let a = document.createElement('a');
-    function close() {
-        document.getElementsByClassName("chat-container")[0].classList.toggle("hidden");
-        document.getElementById("shopping-cart-div").remove();
-    }
-    a.innerHTML = '< Return to Chat';
-    a.href = "#";
-
-    // Adds the link as a message to the data download page, then adds the event listener to close the page
-    appendMessageSCDI('message error topMessage', a.outerHTML + " " + '<a href="#" onclick="downloadAll(event)" class="download-link"><img height="1em" width="1em" src="' + downloadIconUrl + '" alt="Download"> Click here to download all selected data</a>');
-    div.getElementsByTagName('a')[0].addEventListener('click', close);
-
-    // Checks to see if there are any variable tables to add
-    if (tables.length != 0) {
-        // Adds a title for the tables
-        let categoryTitle = document.createElement('h2');
-        categoryTitle.innerHTML = "Variable Tables";
-        appendMessageSCDI('message error des', categoryTitle.outerHTML);
-
-        // Creates a table to hold all the tables once they are combined into one table
-        let combinedTable = document.createElement('table');
-        combinedTable.classList.add('table');
-        combinedTable.classList.add('table-bordered');
-
-        // Loops through each table
-        tables.forEach((item) => {
-            // Create a temporary container to parse and re-insert the HTML
-            let tempDiv = document.createElement('div');
-            tempDiv.id = "tempDiv";
-            tempDiv.innerHTML = item.html;
-
-            // Get the text from the 2nd column of the table's first row
-            let secondColumn = tempDiv.querySelector('table tr td:nth-child(2)');
-
-            // Parse and replace the text so the variable name is removed and only the generic description is shown
-            let updatedText = secondColumn.innerText.replace(/^VARIABLE NAME: [^:]* - VARIABLE DESCRIPTION:/, 'VARIABLE DESCRIPTION:');
-
-            // Update the text in the 2nd column
-            tempDiv.querySelector('table tr td:nth-child(2)').innerText = updatedText;
-
-            // Append the row to the combined table
-            let row = tempDiv.querySelector('tr');
-            if (row) {
-                combinedTable.appendChild(row);
-            }
-        });
-
-        // Append the combined table to the DOM
-        appendMessageSCDI('message bot', combinedTable.outerHTML);
-    };
-});
-
 // Sets the mode of the chat based on the user selection
 function selectMode(mode) {
     chatbotMode = mode;
@@ -349,11 +354,6 @@ function openReportPopup() {
 // Closes the report popup
 function closeReportPopup() {
     document.getElementById('report-popup').classList.add('hidden');
-}
-
-// When the window first loads open the welcome popup
-window.onload = function() {
-    document.getElementById('popup').style.display = 'flex';
 }
 
 // Runs every time the user sends a message
@@ -394,8 +394,17 @@ async function sendMessage() {
         requestDoubleStatVars();
         return
     } else {
-        variableSearch();
-        return
+        // TODO: add comments here
+        if (! await variableSearch()) {return}
+        let chatData = await fetchData();
+        if (! chatData) {return}
+        let randomID = processChatData(chatData);
+        if (! randomID) {return}
+        let table = document.getElementById(randomID);
+        condense(table);
+        chooseDropdown(table);
+        if (! answerQuestionContinued(table, answerQuestion(linkRows(table), table)) || ! getLocationData(table)) {return}
+        answerQuestionContinuedLocDes();
     }
 }
 
@@ -404,7 +413,7 @@ function isValidJSON(str) {
     return typeof str === 'string' && str.trim().startsWith('{') && str.trim().endsWith('}');
 }
 
-// Prepares the parameters for to search for a variable
+// Prepares the parameters to search for a variable
 async function variableSearch() {
     try {
         // Asks chat-GPT to either answer the user's question or do a function call to get the data
@@ -428,7 +437,7 @@ async function variableSearch() {
                 removeLastMessage();
                 appendMessage('error', "Could you specify what data you're looking for? For example, you could say education, income, or parental.");
                 messages.push({ role: 'assistant', content: "Could you specify what data you're looking for? For example, you could say education, income, or parental." });
-                return;
+                return false;
             }
             // Since state is not an option, if the location type is state, changes it to counties in state (default instead of census tracts in state)
             locationTypeQ = pars["location type"] === "state" ? "counties in state" : pars["location type"];
@@ -436,14 +445,14 @@ async function variableSearch() {
             // Otherwise sets it to the name of the location
             locationNameQ = locationTypeQ === "all US counties" ? "" : pars["location name"];
         
-            // Starts fetching the variable
-            await fetchData();
+            return true;
         } else {
             // If the function was not called, prints the answer to the users's question to the chat and adds it to messages
             // First removes placeholder message
             removeLastMessage();
             appendMessage('error', data.reply);
             messages.push({ role: 'assistant', content: data.reply });
+            return false;
         }
     } catch (error) {
         // If there is an error, prints an error message to the chat and adds it to messages
@@ -451,6 +460,7 @@ async function variableSearch() {
         removeLastMessage();
         appendMessage('error', "Sorry, there was an error processing your request.");
         Array.from(document.getElementsByClassName('toDelete')).forEach(element => element.classList.add('hidden'));
+        return false;
     }
 }
 
@@ -826,7 +836,7 @@ async function graphQM(message) {
 }
 
 // Continues the process of fetching a variable by calling the server with the prompt
-// Gets a list of all variables ordered by relevance and calls the next function to process that data
+// Returns a list of all variables ordered by relevance
 async function fetchData() {
     try {
         // Calls the server to get the list of variables
@@ -842,21 +852,21 @@ async function fetchData() {
             removeLastMessage();
             appendMessage('error', "Hmm. I don't think we have any data on that.");
             messages.push({ role: 'assistant', content: "Hmm. I don't think we have any data on that." });
-            return;
+            return false;
         }
 
-        // Calls the function to process that data
-        processChatData(chatData);
+        return chatData;
     } catch (error) {
         console.error('Error:', error);
         removeLastMessage();
         appendMessage('error', "Sorry, there was an error processing your request.");
         // Removes any residual placeholder messages
         Array.from(document.getElementsByClassName('toDelete')).forEach(element => element.classList.add('hidden'));
+        return false;
     }
 }
 
-// Processes the variable list from the server and then calls the next function to process the data further
+// Puts the processed variable list from the server into a table and returns the id of that table
 function processChatData(data) {
     // Updates the placeholder message
     removeLastMessage();
@@ -868,7 +878,7 @@ function processChatData(data) {
         removeLastMessage();
         appendMessage('error', "Sorry, there was an error processing your request.");
         Array.from(document.getElementsByClassName('toDelete')).forEach(element => element.classList.add('hidden'));
-        return;
+        return false;
     }
 
     // Creates a table as an html string and puts the data into it
@@ -892,18 +902,11 @@ function processChatData(data) {
     messages.push({ role: 'assistant', content: "Here is some data that may help. Give me a second to write up an explanation." });
     appendMessage('bot showLatter hidden', tableHtml);
 
-    // Processes the data by removing duplicates of the same title for different races, genders, and percentiles
-    // For example, if kfr_black_pooled_p50 and kfr_black_pooled_p25 are both in the data, only one will be kept
-    condense(document.getElementById(randomID));
-    // Takes the remaining variables, for example kfr_black_pooled_p50, and changes their values to align with what the user wants
-    // For example, if they wanted it for female white people in p50, it would change kfr_black_pooled_p50 to kfr_white_female_p50
-    // Then calls the next data processing phase
-    chooseDropdown(document.getElementById(randomID));
+    return randomID;
 }
 
 // Takes the values, for example kfr_black_pooled_p50, and changes their values to align with what the user wants
 // For example, if they wanted it for female white people in p50, it would change kfr_black_pooled_p50 to kfr_white_female_p50
-// Then calls the next data processing phase
 function chooseDropdown(table) {
     // Get all select elements in the table
     const dropdowns = table.querySelectorAll('select');
@@ -940,16 +943,8 @@ function chooseDropdown(table) {
         }
     });
 
-    // Reorders the table by putting all similar values together
-    // For example, if kfr_black_pooled_p50 and kfr_black_pooled are both in the dataset but are not next to each other, moves them to be next to each other
-    // Then returns the top 10 variables as text
-    let text1 = linkRows(table);
-
     // Hides elements marked for deletion
     Array.from(document.getElementsByClassName('toDelete')).forEach(element => element.classList.add('hidden'));
-   
-    // Continues the data processing
-    answerQuestion(text1, table);
 }
 
 // Takes in an html string and removes all tables from it
@@ -1198,14 +1193,14 @@ function answerQuestion(variableText, table) {
     // If a location was specified, calls the function to continue the process with location specific data, otherwise, calls the other processing function
     if (locationTypeQ != null) {
         appendMessage('error', 'Looking for location specific data <span class="animate-ellipsis"></span>');
-        answerQuestionContinuedLoc(table, true);
+        return true;
     } else {
-        answerQuestionContinued(table, false);
+        return false;
     }
 }
 
 // Uses chat-GPT to pick a variable to describe and then describes that variable
-// If a location was specified, calls the function to get location specific data
+// If a location was specified, returns true
 // Otherwise, puts the data and description in the chat
 function answerQuestionContinued(table, usingLocation) {
     // Adds a message to the chat to show that the chatbot is generating a response
@@ -1262,7 +1257,8 @@ function answerQuestionContinued(table, usingLocation) {
                 Array.from(document.getElementsByClassName('showLatter')).forEach(element => element.classList.remove('showLatter'));
                 appendMessage('error', 'Sorry, I couldn\'t find a variable that would help. 😕 Do you want me to search for something else?');
                 messages.push({ role: 'assistant', content: 'Sorry, I couldn\'t find a variable that would help. 😕 Do you want me to search for something else?' });
-                return;
+                
+                return false;
             }
 
             // Takes the message specifying the variable options and replaces it with the picked variable
@@ -1270,7 +1266,7 @@ function answerQuestionContinued(table, usingLocation) {
 
             // If a location was specified, calls the function to get location specific data, otherwise, puts the variable and description in the chat
             if (usingLocation) {
-                getLocationData(table);
+                return true;
             } else {
                 appendMessage('error des', pars['response']);
                 messages.push({ role: 'assistant', content: pars['response'] });
@@ -1278,6 +1274,8 @@ function answerQuestionContinued(table, usingLocation) {
                     Array.from(document.getElementsByClassName('showLatter')).forEach(element => element.classList.remove('hidden'));
                 }
                 Array.from(document.getElementsByClassName('showLatter1')).forEach(element => element.classList.remove('hidden'));
+                
+                return false;
             }
         } else {
             for (let i = 0; i < added; i++) {
@@ -1294,6 +1292,8 @@ function answerQuestionContinued(table, usingLocation) {
             Array.from(document.getElementsByClassName('showLatter')).forEach(element => element.classList.remove('showLatter'));
             appendMessage('error', 'Sorry, I couldn\'t find a variable that would help. 😕 Do you want me to search for something else?');
             messages.push({ role: 'assistant', content: 'Sorry, I couldn\'t find a variable that would help. 😕 Do you want me to search for something else?' });
+            
+            return false;
         }
     });
 }
@@ -1375,7 +1375,7 @@ function splitAndRemoveLeadingZeros(numbers) {
     return [firstParts, secondParts];
 }
 
-// Gets the location specific data table and calls a function to describe and display all the fetched information
+// Gets the location specific data table
 async function getLocationData(table) {
     // Gets the sheet name and variable name for the table
     const result = extractLinkData(table);
@@ -1405,8 +1405,7 @@ async function getLocationData(table) {
             removeLastMessage();
             appendMessage('showLatter1 hidden error', `I'm sorry, ${result.shortestVar} is not available for ${locationNameQ}. I can only provide that data for commuting zones, counties, and counties by state.`)
             messages.push({ role: 'assistant', content: `I'm sorry, ${result.shortestVar} is not available for ${locationNameQ}. I can only provide that data for commuting zones, counties, and counties by state.` });
-            answerQuestionContinuedLocDes();
-            return;
+            return true;
         }
 
         // Fetches the data
@@ -1460,8 +1459,7 @@ async function getLocationData(table) {
         messages.push({ role: 'assistant', content: `Data is only available for commuting zones, addresses (census tracts), counties, counties by state, all US counties, and census tracts by state. I don't think ${locationNameQ} falls into any of these categories.` });
     }
 
-    // Calls a function to write a final description
-    answerQuestionContinuedLocDes();
+    return true;
 }
   
 // Gets the variable name and sheet name for the variable in the table

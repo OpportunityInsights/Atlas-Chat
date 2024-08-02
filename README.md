@@ -70,7 +70,7 @@ gcloud run deploy
 You may have to wait a while for the files to upload, but after that you should be all good to go. ☁️ 🔗
 
 > [!WARNING]
-> Right now their is a problem with the code which means that your deployment will return an error when you try to make a map of census tracts
+> Right now their is a problem with the code which means that your deployment will return an error when you try to make a map of census tracts.
 
 ## Inner Workings
 

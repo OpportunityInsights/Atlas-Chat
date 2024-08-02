@@ -321,7 +321,7 @@ document.getElementsByClassName("cart-button")[0].addEventListener("click", func
 function selectMode(mode) {
     chatbotMode = mode;
 
-    // Makes the popup to choose the mode disapear
+    // Makes the popup to choose the mode disappear
     const popup = document.getElementById('popup');
     popup.classList.add('fade-out');
     // After the fade out of the popup is done, the popup is removed from the DOM
@@ -971,7 +971,7 @@ function appendMessage(sender, message) {
     // Removes the two br messages at the bottom of the chat
     removeBR();
     removeBR();
-    // Formates the message using markdown
+    // Formats the message using markdown
     let formattedMessage = message;
     if (sender.split(' ').includes('error')) {
         formattedMessage = marked.parse(message);
@@ -1193,7 +1193,7 @@ function linkRows(table) {
 function answerQuestion(variableText, table) {
     // Adds the available variables to the chat along with additional information about them
     messages.push({ role: 'assistant', content: variableText, id : table.id });
-    messages.push({ role: 'assistant', content: "THE USER DOES NOT SEE THIS MESSAGE: Variables with _n in their names do not refer to the number of people who have a certain outcome or did a certain thing. Instead, these variables refer to the number of people used to make a estimate in another variable. Almost never give a variable ending in _n to the user. Variable with pSOMENUMBER like p50 in them only refer to people with parents in a specific income bracet. Make sure to mention this to the user in descriptions." });
+    messages.push({ role: 'assistant', content: "THE USER DOES NOT SEE THIS MESSAGE: Variables with _n in their names do not refer to the number of people who have a certain outcome or did a certain thing. Instead, these variables refer to the number of people used to make a estimate in another variable. Almost never give a variable ending in _n to the user. Variable with pSOMENUMBER like p50 in them only refer to people with parents in a specific income bracket. Make sure to mention this to the user in descriptions." });
     
     // If a location was specified, calls the function to continue the process with location specific data, otherwise, calls the other processing function
     if (locationTypeQ != null) {
@@ -1265,7 +1265,7 @@ function answerQuestionContinued(table, usingLocation) {
                 return;
             }
 
-            // Takes the message specifiying the variable options and replaces it with the picked variable
+            // Takes the message specifying the variable options and replaces it with the picked variable
             replaceVariableContent(toShow);
 
             // If a location was specified, calls the function to get location specific data, otherwise, puts the variable and description in the chat

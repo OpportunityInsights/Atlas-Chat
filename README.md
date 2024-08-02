@@ -35,6 +35,26 @@ The website also has an error reporting features that sends the contents of the 
 
 ## Installation
 
+First, clone this repository.
+
+```bash
+git clone https://github.com/xamxl/OIP3.git
+```
+Next, navigate the Flask folder and install the python requirements.
+
+```bash
+cd OIP3/Flask
+pip install -r requirements.txt
+```
+The one tricky part is that you now need your own OpenAI API key and Google Cloud service account (If you want error reporting to work). You can get an OpenAI API key [here](https://platform.openai.com/docs/overview) and a service account [here](https://cloud.google.com/iam/docs/keys-create-delete). Later, if you get a Google Cloud service account, put your json key into the atlas-chat-429014-31385e10f4b1.json file.
+
+Now, run the python file to start the server.
+
+```bash
+python main.py
+```
+Finally, navigate to the [localhost](http://127.0.0.1:3000/). Thats it! 🎉
+
 ## Hosting
 
 ## Inner Workings

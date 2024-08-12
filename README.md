@@ -9,6 +9,7 @@ Hello! Welcome to Atlas Chat. This README goes over all the information you shou
 - [Features](#usage)
 - [Installation](#installation)
 - [Hosting](#hosting)
+- [Structure](#structure)
 - [Inner Workings](#inner-workings)
 - [Problems & Possible Next Steps](#problems--possible-next-steps)
 - [Contact](#contact)
@@ -71,6 +72,12 @@ You may have to wait a while for the files to upload, but after that you should 
 
 > [!WARNING]
 > Right now their is a problem with the code which means that your deployment will return an error when you try to make a map of census tracts.
+
+## Structure
+
+The image below shows the structure of the program. The program is divided into four main parts. First, their is a webpage consisting of html, css, and importantly js. This front end, which runs on the users computer, then can make requests to a backend server programmed in python using the Flask library. The backend server can get data from the sheets, which are represented by the database. Finally, the backend can also make requests to the OpenAI API.
+
+![Image that shows how the structure of the chat.](structure.jpeg)
 
 ## Inner Workings
 

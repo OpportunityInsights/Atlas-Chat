@@ -266,6 +266,22 @@ window.onload = function() {
     window.gatherAndSendData = gatherAndSendData;
 })();
 
+// Opens the report popup
+function openReportPopup() {
+    document.getElementById('report-popup').classList.remove('hidden');
+    document.getElementsByTagName('textarea')[0].value = '';
+}
+
+// Closes the report popup
+function closeReportPopup() {
+    document.getElementById('report-popup').classList.add('hidden');
+}
+
+// Does some checks to see if an input string is a JSON string. If so, returns true, else false
+function isValidJSON(str) {
+    return typeof str === 'string' && str.trim().startsWith('{') && str.trim().endsWith('}');
+}
+
 // Takes in an object with a data table enclosed and downloads the data as a xlsx file
 function downloadAsXLSX(data) {
     data = data.tableData;
@@ -273,6 +289,27 @@ function downloadAsXLSX(data) {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "table");
     XLSX.writeFile(wb, `table.xlsx`);
+}
+
+// Takes in an html string and removes all tables from it
+// Prevents chat-GPT from trying to interpret the table as markdown with fake data
+function removeTablesFromHtml(htmlContent) {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(htmlContent, 'text/html');
+    
+    const tables = doc.querySelectorAll('table');
+    tables.forEach(table => table.remove());
+    
+    return doc.body.innerHTML;
+}
+
+// A function to check if two arrays are equal in length and values
+function arraysEqual(arr1, arr2) {
+    if (arr1.length !== arr2.length) return false;
+    for (let i = 0; i < arr1.length; i++) {
+        if (arr1[i] !== arr2[i]) return false;
+    }
+    return true;
 }
 
 // Takes in the name of a sheet and the name of a variable, fetches the related data, and downloads the related data using downloadAsXLSX
@@ -345,15 +382,123 @@ function selectMode(mode) {
     }
 }
 
-// Opens the report popup
-function openReportPopup() {
-    document.getElementById('report-popup').classList.remove('hidden');
-    document.getElementsByTagName('textarea')[0].value = '';
+// Appends a message to the chat
+// Takes in a list of classes for the message and the message
+function appendMessage(sender, message) {
+    const chatBox = document.getElementById('chat-box');
+    // Removes the two br messages at the bottom of the chat
+    removeBR();
+    removeBR();
+    // Formats the message using markdown
+    let formattedMessage = message;
+    if (sender.split(' ').includes('error')) {
+        formattedMessage = marked.parse(message);
+        formattedMessage = removeTablesFromHtml(formattedMessage);
+    }
+    // Creates the message div and adds it to the chat
+    const messageElement = document.createElement('div');
+    messageElement.classList.add('message')
+    sender.split(' ').forEach(className => messageElement.classList.add(className));
+    messageElement.innerHTML = formattedMessage;
+    chatBox.appendChild(messageElement);
+    // Adds two br messages to the bottom of the chat
+    let br = document.createElement('br');
+    chatBox.appendChild(br);
+    br = document.createElement('br');
+    chatBox.appendChild(br);
 }
 
-// Closes the report popup
-function closeReportPopup() {
-    document.getElementById('report-popup').classList.add('hidden');
+// Adds a message to the shopping cart
+// Takes in a list of classes for the message and the message
+function appendMessageSCDI(sender, message) {
+    // Formats the mates
+    let formattedMessage = message;
+    if (sender.split(' ').includes('error')) {
+        formattedMessage = marked.parse(message);
+        formattedMessage = removeTablesFromHtml(formattedMessage);
+    }
+    // Creates the message div and adds it to the shopping cart
+    const messageElement = document.createElement('div');
+    messageElement.classList.add('message')
+    sender.split(' ').forEach(className => messageElement.classList.add(className));
+    messageElement.innerHTML = formattedMessage;
+    document.getElementById("scdi").appendChild(messageElement);
+}
+
+// Removes the last br from the chat
+function removeBR() {
+    const brs = document.querySelectorAll('br');
+    if (brs.length > 0) {
+        brs[brs.length - 1].remove();
+    }
+}
+
+// Removes the last message from the chat
+function removeLastMessage() {
+    const messages = document.querySelectorAll('.message');
+    if (messages.length > 0) {
+        messages[messages.length - 1].remove();
+    }
+}
+
+// Prevents certain links from working
+function clickLink(event) {
+    event.preventDefault();
+}
+  
+// Gets the variable name and sheet name for the variable in the table
+function extractLinkData(table) {
+    const row = table.rows[0];
+    if (!row) return null;
+    const link = row.cells[0].querySelector('a');
+    if (!link) return null;
+    const url = new URL(link.href);
+    const varParam = url.searchParams.get('var');
+    const sheetParam = url.searchParams.get('sheet');
+    return varParam ? { shortestVar: varParam, correspondingSheet: sheetParam } : null;
+}
+
+// Opens the graphing popup and populates it with the variables that can be graphed with the current variable
+function openGraphPopup(event) {
+    event.preventDefault();
+
+    // Makes the popup visible
+    const graphPopup = document.getElementById('graph-popup');
+    graphPopup.classList.remove('hidden');
+
+    // Gets the id related to the current variable
+    let id = event.currentTarget.id;
+    
+    // Empties the options div
+    const optionsDiv = document.querySelector('.graph.options');
+    optionsDiv.innerHTML = '';
+
+    let variableNames = [];
+    // Populate variableNames from the stored data with the variable names and corresponding ids that can be graphed with the current variable
+    for (let key in storedVariables) {
+        if (storedVariables[key][0] == storedVariables[event.currentTarget.id][0] && storedVariables[key][1] == storedVariables[event.currentTarget.id][1] && key != event.currentTarget.id) {
+            let table = document.getElementById("t" + key);
+            let rows = table.rows;
+            let variableName = rows[0].cells[rows[0].cells.length - 1].textContent;
+            variableNames.push([variableName, key]);
+        }
+    }
+
+    // Create a button for each variable that can be graphed with the current variable and adds it to options
+    variableNames.forEach(variable => {
+        const button = document.createElement('button');
+        button.classList.add('mode-button');
+        button.classList.add('graph-button');
+        button.textContent = variable[0];
+        button.onclick = () => graphVariable(variable, id);
+        optionsDiv.appendChild(button);
+    });
+}
+
+// Closes the graphing popup
+function closeGraphPopup() {
+    const graphPopup = document.getElementById('graph-popup');
+    graphPopup.classList.add('hidden');
 }
 
 // Runs every time the user sends a message
@@ -414,11 +559,6 @@ async function sendMessage() {
         // Writes a final description for the location specific data
         describeLocationData();
     }
-}
-
-// Does some checks to see if an input string is a JSON string. If so, returns true, else false
-function isValidJSON(str) {
-    return typeof str === 'string' && str.trim().startsWith('{') && str.trim().endsWith('}');
 }
 
 // Prepares the parameters to search for a variable or directly answers the user's question
@@ -955,77 +1095,6 @@ function chooseDropdown(table) {
     Array.from(document.getElementsByClassName('toDelete')).forEach(element => element.classList.add('hidden'));
 }
 
-// Takes in an html string and removes all tables from it
-// Prevents chat-GPT from trying to interpret the table as markdown with fake data
-function removeTablesFromHtml(htmlContent) {
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(htmlContent, 'text/html');
-    
-    const tables = doc.querySelectorAll('table');
-    tables.forEach(table => table.remove());
-    
-    return doc.body.innerHTML;
-}
-
-// Appends a message to the chat
-// Takes in a list of classes for the message and the message
-function appendMessage(sender, message) {
-    const chatBox = document.getElementById('chat-box');
-    // Removes the two br messages at the bottom of the chat
-    removeBR();
-    removeBR();
-    // Formats the message using markdown
-    let formattedMessage = message;
-    if (sender.split(' ').includes('error')) {
-        formattedMessage = marked.parse(message);
-        formattedMessage = removeTablesFromHtml(formattedMessage);
-    }
-    // Creates the message div and adds it to the chat
-    const messageElement = document.createElement('div');
-    messageElement.classList.add('message')
-    sender.split(' ').forEach(className => messageElement.classList.add(className));
-    messageElement.innerHTML = formattedMessage;
-    chatBox.appendChild(messageElement);
-    // Adds two br messages to the bottom of the chat
-    let br = document.createElement('br');
-    chatBox.appendChild(br);
-    br = document.createElement('br');
-    chatBox.appendChild(br);
-}
-
-// Adds a message to the shopping cart
-// Takes in a list of classes for the message and the message
-function appendMessageSCDI(sender, message) {
-    // Formats the mates
-    let formattedMessage = message;
-    if (sender.split(' ').includes('error')) {
-        formattedMessage = marked.parse(message);
-        formattedMessage = removeTablesFromHtml(formattedMessage);
-    }
-    // Creates the message div and adds it to the shopping cart
-    const messageElement = document.createElement('div');
-    messageElement.classList.add('message')
-    sender.split(' ').forEach(className => messageElement.classList.add(className));
-    messageElement.innerHTML = formattedMessage;
-    document.getElementById("scdi").appendChild(messageElement);
-}
-
-// Removes the last br from the chat
-function removeBR() {
-    const brs = document.querySelectorAll('br');
-    if (brs.length > 0) {
-        brs[brs.length - 1].remove();
-    }
-}
-
-// Removes the last message from the chat
-function removeLastMessage() {
-    const messages = document.querySelectorAll('.message');
-    if (messages.length > 0) {
-        messages[messages.length - 1].remove();
-    }
-}
-
 // Processes the data by removing duplicates of the same title for different races, genders, and percentiles
 // For example, if kfr_black_pooled_p50 and kfr_black_pooled_p25 are both in the data, only one will be kept
 // Saves the options for different races, genders, and percentiles for each variable
@@ -1086,15 +1155,6 @@ function condense(table) {
         // Remakes the row in the table corresponding to the current title by adding drop downs with all the options
         remakeLink(rows[i].querySelector('td:nth-child(1) a'), lin, ti, options);
     }
-}
-
-// A function to check if two arrays are equal in length and values
-function arraysEqual(arr1, arr2) {
-    if (arr1.length !== arr2.length) return false;
-    for (let i = 0; i < arr1.length; i++) {
-        if (arr1[i] !== arr2[i]) return false;
-    }
-    return true;
 }
 
 // Reorders the table by putting all similar values together
@@ -1468,18 +1528,6 @@ async function getLocationData(table) {
     return true;
 }
   
-// Gets the variable name and sheet name for the variable in the table
-function extractLinkData(table) {
-    const row = table.rows[0];
-    if (!row) return null;
-    const link = row.cells[0].querySelector('a');
-    if (!link) return null;
-    const url = new URL(link.href);
-    const varParam = url.searchParams.get('var');
-    const sheetParam = url.searchParams.get('sheet');
-    return varParam ? { shortestVar: varParam, correspondingSheet: sheetParam } : null;
-}
-  
 // Gets the data for a specific variable from a specific sheet
 async function fetchDataLoc(variable, sheet) {
     const response = await fetch('http://127.0.0.1:3000/getData', {
@@ -1596,49 +1644,6 @@ function displayLocationData(location, units, headers, filteredRows) {
     messages.push({ role: 'assistant', content: `Here is the data for ${location}. Each row represents a ${units}.` });
     displayFilteredTable(headers, filteredRows, randomNumber);
     storedVariables[randomNumber] = [locationNameQ, locationTypeQ];
-}
-
-// Opens the graphing popup and populates it with the variables that can be graphed with the current variable
-function openGraphPopup(event) {
-    event.preventDefault();
-
-    // Makes the popup visible
-    const graphPopup = document.getElementById('graph-popup');
-    graphPopup.classList.remove('hidden');
-
-    // Gets the id related to the current variable
-    let id = event.currentTarget.id;
-    
-    // Empties the options div
-    const optionsDiv = document.querySelector('.graph.options');
-    optionsDiv.innerHTML = '';
-
-    let variableNames = [];
-    // Populate variableNames from the stored data with the variable names and corresponding ids that can be graphed with the current variable
-    for (let key in storedVariables) {
-        if (storedVariables[key][0] == storedVariables[event.currentTarget.id][0] && storedVariables[key][1] == storedVariables[event.currentTarget.id][1] && key != event.currentTarget.id) {
-            let table = document.getElementById("t" + key);
-            let rows = table.rows;
-            let variableName = rows[0].cells[rows[0].cells.length - 1].textContent;
-            variableNames.push([variableName, key]);
-        }
-    }
-
-    // Create a button for each variable that can be graphed with the current variable and adds it to options
-    variableNames.forEach(variable => {
-        const button = document.createElement('button');
-        button.classList.add('mode-button');
-        button.classList.add('graph-button');
-        button.textContent = variable[0];
-        button.onclick = () => graphVariable(variable, id);
-        optionsDiv.appendChild(button);
-    });
-}
-
-// Closes the graphing popup
-function closeGraphPopup() {
-    const graphPopup = document.getElementById('graph-popup');
-    graphPopup.classList.add('hidden');
 }
 
 // Creates a graph and displays it in the chat
@@ -2084,9 +2089,4 @@ function downloadAll(event) {
             }
         }
     }
-}
-
-// Prevents certain links from working
-function clickLink(event) {
-    event.preventDefault();
 }

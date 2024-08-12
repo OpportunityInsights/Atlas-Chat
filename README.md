@@ -76,13 +76,15 @@ You may have to wait a while for the files to upload, but after that, you should
 
 ## LLM Vocabulary
 
-OpenAI provides two different services through its API that are used in this project: text generation with chat-GPT and embedding generation. Text generation is the process of prompting a model like chat-GPT-4o and getting a response consisting of text. For example, putting in the prompt "tell me about standard deviation" will get a response like "Standard deviation is a measure of the amount of variation or dispersion in a set of values. It indicates how much the individual data points in a dataset differ from the mean (average) of the dataset". Embedding generation is the process of putting text into a model like text-embedding-3-large to get out a vector that represents the meaning of the text.
+OpenAI offers two main services through its API that are used in this project: text generation with chat-GPT and embedding generation.
 
-Embeddings, vectors representing the meaning of text, are useful during search processes because it is easy to calculate the distance between two of them. The smaller the distance, the closer the two pieces of text that the embeddings represent are to each other in meaning.
+Text generation involves providing a prompt to a model like gpt-4o and receiving a text-based response. For example, if you prompt “Tell me about standard deviation,” the model might respond with: “Standard deviation is a measure of the amount of variation or dispersion in a set of values. It indicates how much the individual data points in a dataset differ from the mean (average) of the dataset.”
 
-While sometimes prompting chat-GPT with a question and getting text back is all an application needs, in certain cases it is more useful for chat-GPT to provide a formatted response that can be used to call a function. For example, if the user says "What is the wether in Boston?" it would be nice if chat-GPT could respond with a JSON object containing the name of a function which could be called to get the weather for a certain city and the name of the city that should be used, in this case Boston. This capability of chat-GPT during text generation is called a function call.
+Embedding generation involves inputting text into a model, such as text-embedding-3-large, which outputs a vector representing the meaning of the text. These embeddings are useful in search processes because the distance between two vectors can be calculated. A smaller distance indicates that the two pieces of text are more similar in meaning.
 
-A function call is a way to get a regular formatted response from an LLM like chat-GPT. Instead of responding to a prompt with plain text, if a function call is used, the LLM can choose to either responds with plain text or with a JSON output representing the parameters to use to call a certain function. A programmer can also specify that the LLM should always call a certain function and never return plain text.
+While simple text generation is sufficient for many applications, there are cases where it’s more beneficial for chat-GPT to provide a structured response that can be used to trigger specific functions. For instance, if a user asks, “What is the weather in Boston?”, it would be ideal if chat-GPT could return a JSON object specifying the name of a function to call for retrieving the weather, along with the relevant parameters, such as the city name “Boston”. This ability to generate a function call during text generation is a feature of chat-GPT.
+
+A function call allows the model to output a structured response instead of plain text. When a function call is enabled, the model can either return plain text or a JSON object with the necessary parameters to execute a specific function. Developers can also configure the model to always use a function call for certain prompts, ensuring that it consistently provides structured outputs instead of plain text.
 
 ## Structure
 

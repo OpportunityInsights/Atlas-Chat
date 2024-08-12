@@ -31,7 +31,7 @@ let addedToVariables = 0;
 // A list that contains all the variable names in the order that they were returned from the server after a data fetch
 // It is reset every time new data is requested
 // The names are added before the dropdowns are selected
-let titles = [];
+let variableNamesFromServer = [];
 
 // A dictionary where each key is the id of a table with the t removed form the beginning
 // Each value is a list where the first element is the location name and the second element is the location type
@@ -1030,21 +1030,21 @@ function removeLastMessage() {
 // For example, if kfr_black_pooled_p50 and kfr_black_pooled_p25 are both in the data, only one will be kept
 // Saves the options for different races, genders, and percentiles for each variable
 function condense(table) {
-    // Empties titles
-    titles = [];
+    // Empties variableNamesFromServer
+    variableNamesFromServer = [];
     // Temporal list to store the links corresponding to the titles
     let links = [];
     // Gets all the rows in the table
     const rows = Array.from(table.querySelectorAll('tr'));
-    // For each row, adds the title to titles and the link to links
+    // For each row, adds the title to variableNamesFromServer and the link to links
     rows.forEach(row => {
         const link = row.querySelector('td:nth-child(1) a');
-        titles.push(link.textContent.split("_"));
+        variableNamesFromServer.push(link.textContent.split("_"));
         links.push(link.href);
     });
 
-    // Makes a list like titles but with all race, gender, and percentile information replaced with empty strings
-    let titles1 = titles.map(title => title.map(part => (all.includes(part) ? '' : part)));
+    // Makes a list like variableNamesFromServer but with all race, gender, and percentile information replaced with empty strings
+    let titles1 = variableNamesFromServer.map(title => title.map(part => (all.includes(part) ? '' : part)));
 
     // Goes through each of these new titles
     for (let i = 0; i < titles1.length; i++) {
@@ -1063,18 +1063,18 @@ function condense(table) {
                 titles1[i].forEach((_, k) => {
                     if (titles1[i][k] === '') {
                         added = true;
-                        options[k].push(titles[j][k]);
+                        options[k].push(variableNamesFromServer[j][k]);
                     }
                 });
                 if (added) {
                     lin.push(links[j]);
-                    ti.push(titles[j]);
+                    ti.push(variableNamesFromServer[j]);
                 }
 
                 // Removes the row from the table if it is not the current row
                 if (j != i) {
                     titles1.splice(j, 1);
-                    titles.splice(j, 1);
+                    variableNamesFromServer.splice(j, 1);
                     links.splice(j, 1);
 
                     rows[j].remove();
@@ -1106,7 +1106,7 @@ function linkRows(table) {
     display = true;
     // Gets all the rows in the table and removes all race, percentile, gender, and statistical information from the titles
     // Rejoins the titles into strings
-    let titlesTogether = titles.map(title => title.filter(part => !addOns.includes(part) && !all.includes(part)).join('_'));
+    let titlesTogether = variableNamesFromServer.map(title => title.filter(part => !addOns.includes(part) && !all.includes(part)).join('_'));
     // Initializes a list to store the indexes of the rows that are linked together
     let linkedRows = [];
 
@@ -1128,7 +1128,7 @@ function linkRows(table) {
     }
 
     // Makes strings out of the titles without race, percentile, gender, and statistical information removed
-    let tableTitles = titles.map(title => title.join('_'));
+    let tableTitles = variableNamesFromServer.map(title => title.join('_'));
     // Gets a list of the descriptions for each row
     let descriptions = rows.map(row => row.querySelector('td:nth-child(2)').textContent);
 

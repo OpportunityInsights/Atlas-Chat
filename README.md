@@ -147,6 +147,8 @@ Sometimes when the variable the user wants is not one of the top 10 variables re
 
 To save money, the function call in `/useCase()` is only given one message to use to decide which action to take. Since it is missing most of the context of the chat, the function call sometimes decides to take the wrong action. Since the OpenAI API has already gotten much cheaper, it not makes sense to give `useCase()` more messages to use to decide which action to take. This would make the chat more accurate.
 
+By the time someone reads this it is likely that there are new LLMs and embedding models that will preform better then the ones used in this code. Do research on the best LLMs and embedding models and add the new ones to the code. Specifically, try looking for chat-GPT 5 and for [llama 3.1 405B hosted by Groq](https://console.groq.com/docs/models).
+
 > [!NOTE]  
 > While creating this README it has become clear that `condense()`, `chooseDropdown()`, and `linkRows()` could be combined into one function. In addition, `answerQuestion()` should be removed.
 

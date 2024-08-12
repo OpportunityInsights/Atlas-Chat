@@ -78,7 +78,9 @@ This section explains how the code works. Please look through the following flow
 
 ![Flowchart that shows how the chat works.](flowchart.jpeg)
 
-When the user sends a message to the chat, [sendMessage()](https://github.com/xamxl/Atlas-Chat/blob/main/Flask/static/js/script.js#L362) in script.js ...
+When the user sends a message to the chat, [sendMessage()](https://github.com/xamxl/Atlas-Chat/blob/main/Flask/static/js/script.js#L362) in script.js begins handling the request. The function adds the user's message to the `messages` list and calls [graphQM()](https://github.com/xamxl/Atlas-Chat/blob/main/Flask/static/js/script.js#L836) which makes a server call to determine which action the chat should take. [useCase()](https://github.com/xamxl/Atlas-Chat/blob/main/Flask/main.py#L648) in the server uses a function call from the OpenAI API to make the decision. This represents the first box in the flow chart. `sendMessage()` ultimately calls the right function(s) based on what branch of the flow chart the function call picks.
+
+A function call is a way to get a regular formatted response from an LLM like chat-GPT. Instead of responding to a prompt with plain text, if a function call is used, the LLM either responds with plain text or with a json output representing the parameters to use to call a certain function. A programer can also specify that the LLM should always call a certain function and never return plain text.
 
 ## Problems & Possible Next Steps
 

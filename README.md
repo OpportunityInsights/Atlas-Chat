@@ -39,12 +39,12 @@ The website also has an error reporting features that sends the contents of the 
 First, clone this repository.
 
 ```bash
-git clone https://github.com/xamxl/OIP3.git
+git clone https://github.com/xamxl/Atlas-Chat.git
 ```
 Next, navigate the Flask folder and install the python requirements.
 
 ```bash
-cd OIP3/Flask
+cd Atlas-Chat/Flask
 pip install -r requirements.txt
 ```
 The one tricky part is that you now need your own OpenAI API key and Google Cloud service account (If you want error reporting to work). You can get an OpenAI API key [here](https://platform.openai.com/docs/overview) and a service account [here](https://cloud.google.com/iam/docs/keys-create-delete). Later, if you get a Google Cloud service account, put your json key into the atlas-chat-429014-31385e10f4b1.json file.

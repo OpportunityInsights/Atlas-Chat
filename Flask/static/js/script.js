@@ -49,7 +49,7 @@ let locationTypeQ;
 let locationNameQ;
 
 // True if the table with the description should be displayed with the data, false otherwise
-let display = true;
+let displayVariableDescriptionTable = true;
 
 // Adds the first message to the chat
 appendMessage('error topMessage', "Hello! I'm a bot designed to help you find data! Please ask me anything and I will do my best to find some related data from the Opportunity Atlas paper.");
@@ -1101,9 +1101,9 @@ function arraysEqual(arr1, arr2) {
 // For example, if kfr_black_pooled_p50 and kfr_black_pooled are both in the dataset but are not next to each other, moves them to be next to each other
 // Then returns the top 10 variables as text
 function linkRows(table) {
-    // Sets the number of variable added to variables to be 0 and defaults display to true
+    // Sets the number of variable added to variables to be 0 and defaults displayVariableDescriptionTable to true
     addedToVariables = 0;
-    display = true;
+    displayVariableDescriptionTable = true;
     // Gets all the rows in the table and removes all race, percentile, gender, and statistical information from the titles
     // Rejoins the titles into strings
     let titlesTogether = variableNamesFromServer.map(title => title.filter(part => !addOns.includes(part) && !all.includes(part)).join('_'));
@@ -1245,8 +1245,8 @@ function answerQuestionContinued(table, variableText) {
             }
 
             // Checks if the variable table needs to be displayed or if only the datable should be displayed
-            if (variables.includes(toShow) && locations[variables.indexOf(toShow)] != locationNameQ) display = false;
-            if (variables.includes(toShow.replace(/_mean$/, '')) && locations[variables.indexOf(toShow.replace(/_mean$/, ''))] != locationNameQ) display = false;
+            if (variables.includes(toShow) && locations[variables.indexOf(toShow)] != locationNameQ) displayVariableDescriptionTable = false;
+            if (variables.includes(toShow.replace(/_mean$/, '')) && locations[variables.indexOf(toShow.replace(/_mean$/, ''))] != locationNameQ) displayVariableDescriptionTable = false;
             
             // Removes all rows from the table that are not being used
             for (let I = rows.length - 1; I >= 0; I--) {
@@ -1276,7 +1276,7 @@ function answerQuestionContinued(table, variableText) {
             } else {
                 appendMessage('error des', pars['response']);
                 messages.push({ role: 'assistant', content: pars['response'] });
-                if (display) {
+                if (displayVariableDescriptionTable) {
                     Array.from(document.getElementsByClassName('showLatter')).forEach(element => element.classList.remove('hidden'));
                 }
                 Array.from(document.getElementsByClassName('showLatter1')).forEach(element => element.classList.remove('hidden'));
@@ -1346,7 +1346,7 @@ function answerQuestionContinuedLocDes() {
                 removeLastMessage();
                 appendMessage('des error', data.reply);
                 messages.push({ role: 'assistant', content: data.reply });
-                if (display) {
+                if (displayVariableDescriptionTable) {
                     Array.from(document.getElementsByClassName('showLatter')).forEach(element => element.classList.remove('hidden'));
                 }
                 Array.from(document.getElementsByClassName('showLatter')).forEach(element => element.classList.remove('showLatter'));

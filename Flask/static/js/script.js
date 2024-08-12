@@ -1396,7 +1396,7 @@ function replaceVariableContent(toShow) {
 // Makes the data visible
 function describeLocationData() {
         appendMessage('error', 'Generating a response <span class="animate-ellipsis"></span>');
-        fetch('http://127.0.0.1:3000/chatData', {
+        fetch('http://127.0.0.1:3000/describeLocationData', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ messages }),

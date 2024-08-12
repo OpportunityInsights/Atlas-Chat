@@ -243,7 +243,7 @@ def ensure_ending(value):
 
 # Takes in a query from the user consisting of key words separated by spaces
 # Returns a list of strings where each string represents a variable. The strings with the lower indexes are more likely to match the search
-def handle_chat_request_no_sheets(user_message):
+def getRankedVariables(user_message):
     # Gets a list of all the information that was embedded in the same order that it appears in the embeddings files
     # The files are ordered by numerical value
     all_merged_headers_and_description = []
@@ -576,15 +576,15 @@ def chat_completion_request(messages, tools=None, tool_choice=None, model=model)
         print(f"Exception: {e}")
         return e
 
-# Handles a data request from the front end by calling handle_chat_request_no_sheets
+# Handles a data request from the front end by calling getRankedVariables
 @app.route('/chat', methods=['POST'])
 def chat():
     user_message = request.json['message']
-    response = handle_chat_request_no_sheets(user_message)
+    response = getRankedVariables(user_message)
     return jsonify({'reply': response['headers'], 'distances': response['distances']})
 
 # Describes some data by asking chatGPT and returns the response
-@app.route('/chatData', methods=['POST'])
+@app.route('/describeLocationData', methods=['POST'])
 def chat_data():
     messages = request.json['messages']
     messages.append({"role": "assistant", "content": "I will explain in language any non expert can understand what data has just been presented. I will ask if you want me to query the database again. I will not make up any other variables that were not already mentioned earlier. I will not use numerical examples from any data I am given or reference specific locations in the data. IMPORTANTLY, if the data is not what the user was asking for I will say so. IMPORTANT: If the data is for a specific percentile, I will mention this. Data is for a specific percentile if the variable name ends with _pSOMENUMBER, for example, if the name ends with p50 it is for a specific percentile. I will begin my explanation with \"This data\"\n"})

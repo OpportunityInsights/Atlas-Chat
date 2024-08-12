@@ -80,9 +80,9 @@ OpenAI provides two different services through its API that are used in this pro
 
 Embeddings, vectors representing the meaning of text, are useful during search processes because it is easy to calculate the distance between two of them. The smaller the distance, the closer the two pieces of text that the embeddings represent are to each other in meaning.
 
-While sometimes prompting chat-GPT with a question and getting text back is all an application needs, in certain cases it is more useful for chat-GPT to provide a formatted response that can be used to call a function. For example, if the user says "What is the wether in Boston?" it would be nice if chat-gpt could respond with a JSON object containing the name of a function which could be called to get the weather for a certain city and the name of the city that should be used, in this case Boston. This capability of chat-GPT during text generation is called a function call.
+While sometimes prompting chat-GPT with a question and getting text back is all an application needs, in certain cases it is more useful for chat-GPT to provide a formatted response that can be used to call a function. For example, if the user says "What is the wether in Boston?" it would be nice if chat-GPT could respond with a JSON object containing the name of a function which could be called to get the weather for a certain city and the name of the city that should be used, in this case Boston. This capability of chat-GPT during text generation is called a function call.
 
-A function call is a way to get a regular formatted response from an LLM like chat-GPT. Instead of responding to a prompt with plain text, if a function call is used, the LLM either responds with plain text or with a JSON output representing the parameters to use to call a certain function. A programmer can specify that the LLM should always call a certain function and never return plain text.
+A function call is a way to get a regular formatted response from an LLM like chat-GPT. Instead of responding to a prompt with plain text, if a function call is used, the LLM can choose to either responds with plain text or with a JSON output representing the parameters to use to call a certain function. A programmer can also specify that the LLM should always call a certain function and never return plain text.
 
 ## Structure
 

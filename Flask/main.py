@@ -823,8 +823,6 @@ def generate_map():
     # Create a DataFrame from the data
     df = pd.DataFrame(data)
 
-    print("PASSED HERE 0")
-
     # Check if multiple states are present
     states = df.iloc[:, 0].unique()
 
@@ -835,16 +833,12 @@ def generate_map():
         state_fips = str(df.iloc[0, 1]).zfill(2)
         state_fips_list = [state_fips]
 
-    print("PASSED HERE 0.5")
-
     # Gets the county FIPS codes
     county_fips = df.iloc[:, 3].apply(lambda x: str(x).zfill(3)).tolist()
 
     # Gets the tract FIPS codes
     if geo_level == 'tract':
         tract_fips = df.iloc[:, 4].apply(lambda x: str(x).zfill(6)).tolist()
-
-    print("PASSED HERE 0.75")
 
     # Find the shapefile path based on the geographic level
     shapefile_path = None
@@ -853,12 +847,8 @@ def generate_map():
     elif geo_level == 'tract':
         shapefile_path = 'map_data/' + state_fips_list[0] + '.shp'
 
-    print("PASSED HERE 0.9")
-
     # Gets the data from the shapfile
     columns = get_shapefile_columns(shapefile_path)
-
-    print("PASSED HERE")
 
     # Check if the required columns are present in the shapefile
     if 'STATEFP' not in columns or 'COUNTYFP' not in columns:
@@ -868,10 +858,8 @@ def generate_map():
         print("error")
         return jsonify({"error": "The required column TRACTCE is not in the shapefile"}), 400
 
-    print("Loading")
     # Load the shapefile into a GeoDataFrame
     geo_df = gpd.read_file(shapefile_path)
-    print("Loaded")
 
     # Add a GEOID column to the GeoDataFrame
     if geo_level == 'county':
@@ -909,8 +897,6 @@ def generate_map():
         xt += cen.x
         yt += cen.y
     state_center = [yt / len(centroids), xt / len(centroids)]
-    
-    print("PASSED HERE 1")
 
     # Prepares final data and creates the map
     data_column = merged.columns[-1]
@@ -920,12 +906,8 @@ def generate_map():
     else:
         m = create_folium_choropleth(merged, data_column, state_center, 5.5)
 
-    print("PASSED HERE 2")
-
     # Save the map to an HTML string
     map_html = m._repr_html_()
-
-    print("PASSED HERE 3")
 
     return jsonify({"html": map_html})
 

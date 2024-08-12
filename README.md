@@ -141,6 +141,12 @@ Finally, after the data is fetched, `sendMessage()` calls [answerQuestionContinu
 
 ## Problems & Possible Next Steps
 
+This section outlies some of the key problems with the chat right now and some ways that these problems could be fixed.
+
+Sometimes when the variable the user wants is not one of the top 10 variables returned by `linkRows()` the function call in `/pickVarAndDescribe` still returns the name the variable that the user wants. Right now this causes the chat to break because the code can't find the variable form the function call in the list of possible variables. This could be fixed by making the chat directly search for variable names that are returned by the function call but are not in the list of possible variables. Basically, if "Pick Final Variable From Resulting List" fails after the function call returns a name, then the chat should first try finding that variable directly from the database before returning an error.
+
+To save money, the function call in `/useCase()` is only given one message to use to decide which action to take. Since it is missing most of the context of the chat, the function call sometimes decides to take the wrong action. Since the OpenAI API has already gotten much cheaper, it not makes sense to give `useCase()` more messages to use to decide which action to take. This would make the chat more accurate.
+
 > [!NOTE]  
 > While creating this README it has become clear that `condense()`, `chooseDropdown()`, and `linkRows()` could be combined into one function. In addition, `answerQuestion()` should be removed.
 

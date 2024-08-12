@@ -74,6 +74,8 @@ You may have to wait a while for the files to upload, but after that you should 
 
 ## Inner Workings
 
+![Flowchart that shows how the chat works.](flowchart.jpeg)
+
 ## Problems & Possible Next Steps
 
 ## Contact

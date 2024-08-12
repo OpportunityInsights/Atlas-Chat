@@ -125,7 +125,7 @@ The front end receives the resulting list and `sendMessage()` calls  [processCha
 
 ### Pick Final Variable From Resulting List
 
-The next important function called by `sendMessage()` is [answerQuestionContinued()](https://github.com/xamxl/Atlas-Chat/blob/main/Flask/static/js/script.js#L1214). This function calls [/pickVarAndDescribe](https://github.com/xamxl/Atlas-Chat/blob/main/Flask/main.py#L631) in the server which uses a function call from the OpenAI API to decide which of the variables returned by `linkRows()` should be used. Along with its choice, the function call also returns a description of the variable. 
+The next function called by `sendMessage()` is [answerQuestionContinued()](https://github.com/xamxl/Atlas-Chat/blob/main/Flask/static/js/script.js#L1214). This function calls [/pickVarAndDescribe](https://github.com/xamxl/Atlas-Chat/blob/main/Flask/main.py#L631) in the server which uses a function call from the OpenAI API to decide which of the variables returned by `linkRows()` should be used. Along with its choice, the function call also returns a description of the variable. 
 
 If the function call did not find a suitable variable, back in `answerQuestionContinued()` the chat will print an error message to let the user know no variable was found. If a variable was found and no location was specified by the user, the chat displays the resulting variable along with its description. 
 
@@ -150,7 +150,7 @@ To save money, the function call in `/useCase()` is only given one message to us
 By the time someone reads this it is likely that there are new LLMs and embedding models that will preform better then the ones used in this code. Do research on the best LLMs and embedding models and add the new ones to the code. Specifically, try looking for chat-GPT 5 and for [llama 3.1 405B hosted by Groq](https://console.groq.com/docs/models).
 
 > [!NOTE]  
-> While creating this README it has become clear that `condense()`, `chooseDropdown()`, and `linkRows()` could be combined into one function. In addition, `answerQuestion()` should be removed.
+> While creating this README it has become clear that `condense()`, `chooseDropdown()`, and `linkRows()` could be combined into one function.
 
 ## Contact
 

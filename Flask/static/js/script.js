@@ -408,10 +408,9 @@ async function sendMessage() {
         // Chooses the right race, gender, and percentile for each variable
         chooseDropdown(table);
         // linkRows: creates families of variables by linking things like kfr_black_pooled_p50 and kfr_black_pooled together
-        // answerQuestion: adds instructions to the chat and decides if location specific data should be fetched
         // answerQuestionContinued: picks a specific variable to display and writes a description for that variable
         // getLocationData: fetches the data for the location specific variable
-        if (! answerQuestionContinued(table, answerQuestion(linkRows(table), table)) || ! getLocationData(table)) {return}
+        if (! answerQuestionContinued(table, linkRows(table)) || ! getLocationData(table)) {return}
         // Writes a final description for the location specific data
         answerQuestionContinuedLocDes();
     }
@@ -1193,25 +1192,23 @@ function linkRows(table) {
     return text;
 }
 
-// Depending of wether a location was specified, chooses a different path for the data
-function answerQuestion(variableText, table) {
-    // Adds the available variables to the chat along with additional information about them
-    messages.push({ role: 'assistant', content: variableText, id : table.id });
-    messages.push({ role: 'assistant', content: "THE USER DOES NOT SEE THIS MESSAGE: Variables with _n in their names do not refer to the number of people who have a certain outcome or did a certain thing. Instead, these variables refer to the number of people used to make a estimate in another variable. Almost never give a variable ending in _n to the user. Variable with pSOMENUMBER like p50 in them only refer to people with parents in a specific income bracket. Make sure to mention this to the user in descriptions." });
-    
-    // If a location was specified, calls the function to continue the process with location specific data, otherwise, calls the other processing function
-    if (locationTypeQ != null) {
-        appendMessage('error', 'Looking for location specific data <span class="animate-ellipsis"></span>');
-        return true;
-    } else {
-        return false;
-    }
-}
-
 // Uses chat-GPT to pick a variable to describe and then describes that variable
 // If a location was specified, returns true
 // Otherwise, puts the data and description in the chat
-function answerQuestionContinued(table, usingLocation) {
+function answerQuestionContinued(table, variableText) {
+    // Adds the available variables to the chat along with additional information about them
+    messages.push({ role: 'assistant', content: variableText, id : table.id });
+    messages.push({ role: 'assistant', content: "THE USER DOES NOT SEE THIS MESSAGE: Variables with _n in their names do not refer to the number of people who have a certain outcome or did a certain thing. Instead, these variables refer to the number of people used to make a estimate in another variable. Almost never give a variable ending in _n to the user. Variable with pSOMENUMBER like p50 in them only refer to people with parents in a specific income bracket. Make sure to mention this to the user in descriptions." });
+
+    // Figures out if a location was specified
+    let usingLocation;
+    if (locationTypeQ != null) {
+        appendMessage('error', 'Looking for location specific data <span class="animate-ellipsis"></span>');
+        usingLocation =  true;
+    } else {
+        usingLocation =  false;
+    }
+
     // Adds a message to the chat to show that the chatbot is generating a response
     if (!usingLocation) {
         appendMessage('error', 'Generating a response <span class="animate-ellipsis"></span>');

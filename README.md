@@ -80,7 +80,7 @@ OpenAI offers two main services through its API that are used in this project: t
 
 Text generation involves providing a prompt to a model like gpt-4o and receiving a text-based response. For example, if you prompt “Tell me about standard deviation,” the model might respond with: “Standard deviation is a measure of the amount of variation or dispersion in a set of values. It indicates how much the individual data points in a dataset differ from the mean (average) of the dataset.”
 
-Embedding generation involves inputting text into a model, such as text-embedding-3-large, which outputs a vector representing the meaning of the text. These embeddings are useful in search processes because the distance between two vectors can be calculated. A smaller distance indicates that the two pieces of text are more similar in meaning.
+Embedding generation involves inputting text into a model, such as text-embedding-3-large, which outputs a vector representing the meaning of the text. These embeddings are useful in search processes because the distance between two vectors can easily be calculated. A smaller distance indicates that the two pieces of text are more similar in meaning.
 
 While simple text generation is sufficient for many applications, there are cases where it’s more beneficial for chat-GPT to provide a structured response that can be used to trigger specific functions. For instance, if a user asks, “What is the weather in Boston?”, it would be ideal if chat-GPT could return a JSON object specifying the name of a function to call for retrieving the weather, along with the relevant parameters, such as the city name “Boston”. This ability to generate a function call during text generation is a feature of chat-GPT.
 

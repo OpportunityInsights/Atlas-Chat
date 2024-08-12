@@ -108,7 +108,7 @@ This section explains how the code works. Please look through the following flow
 
 ### Mode Decision: What does the user want?
 
-When the user sends a message to the chat, [sendMessage()](https://github.com/xamxl/Atlas-Chat/blob/main/Flask/static/js/script.js#L362) in script.js begins handling the request. The function adds the user's message to the `messages` list and calls [graphQM()](https://github.com/xamxl/Atlas-Chat/blob/main/Flask/static/js/script.js#L836) which makes a server call to determine which action the chat should take. [/useCase](https://github.com/xamxl/Atlas-Chat/blob/main/Flask/main.py#L648) in the server uses a function call from the OpenAI API to make the decision. This represents the first box in the flow chart. `sendMessage()` ultimately calls the right function(s) based on what branch of the flow chart the function call picks.
+When the user sends a message to the chat, [sendMessage()](https://github.com/xamxl/Atlas-Chat/blob/main/Flask/static/js/script.js#L362) in script.js begins handling the request. The function adds the user's message to the `messages` list and calls [useCase()](https://github.com/xamxl/Atlas-Chat/blob/main/Flask/static/js/script.js#L836) which makes a server call to determine which action the chat should take. [/useCase](https://github.com/xamxl/Atlas-Chat/blob/main/Flask/main.py#L648) in the server uses a function call from the OpenAI API to make the decision. This represents the first box in the flow chart. `sendMessage()` ultimately calls the right function(s) based on what branch of the flow chart the function call picks.
 
 ### Pick Variable, Pick Two Variables, Pick Two Graphing Variables, Pick Mapping Variables
 
@@ -132,7 +132,7 @@ The two different distance metrics are combined, weighting the cosine similarity
 
 `handle_chat_request_no_sheets()` then gets all the variable headers from all the sheets and returns a list with them ordered by the distance metric. The lower the index of a header, the closer the header is to the keywords. The headers also contain information about the sheet they are from and the description of the variable. For example, one of the descriptions with an embedding and distanced could be "hs - the fraction of children who completed high school". This would match with all the related headers like hs_pooled_pooled_mean, hs_black_pooled_mean, and hs_white_pooled_mean.
 
-The front end receives the resulting list and `sendMessage()` calls  [processChatData()](https://github.com/xamxl/Atlas-Chat/blob/main/Flask/static/js/script.js#L879) which puts the variables into a hidden HTML table to make processing easier.
+The front end receives the resulting list and `sendMessage()` calls  [makeTable()](https://github.com/xamxl/Atlas-Chat/blob/main/Flask/static/js/script.js#L879) which puts the variables into a hidden HTML table to make processing easier.
 
 `sendMessage()` then calls [condense()](https://github.com/xamxl/Atlas-Chat/blob/main/Flask/static/js/script.js#L1033) which removes duplicates from the table that have the same title but different races, genders, and percentiles. It saves the different race, gender, and percentile options for each variable to lists. For example, if kfr_black_pooled_p50 and kfr_black_pooled_p25 are both in the data, only one will be kept.
 
@@ -142,9 +142,9 @@ The front end receives the resulting list and `sendMessage()` calls  [processCha
 
 ### Pick Final Variable From Resulting List
 
-The next function called by `sendMessage()` is [answerQuestionContinued()](https://github.com/xamxl/Atlas-Chat/blob/main/Flask/static/js/script.js#L1214). This function calls [/pickVarAndDescribe](https://github.com/xamxl/Atlas-Chat/blob/main/Flask/main.py#L631) in the server which uses a function call from the OpenAI API to decide which of the variables returned by `linkRows()` to use. Along with its choice, the function call also returns a description of the variable. 
+The next function called by `sendMessage()` is [pickVarAndDescribe()](https://github.com/xamxl/Atlas-Chat/blob/main/Flask/static/js/script.js#L1214). This function calls [/pickVarAndDescribe](https://github.com/xamxl/Atlas-Chat/blob/main/Flask/main.py#L631) in the server which uses a function call from the OpenAI API to decide which of the variables returned by `linkRows()` to use. Along with its choice, the function call also returns a description of the variable. 
 
-If the function call does not find a suitable variable, back in `answerQuestionContinued()` the chat will print an error message to let the user know no variable was found. If a variable was found and no location was specified by the user, the chat displays the resulting variable along with its description. 
+If the function call does not find a suitable variable, back in `pickVarAndDescribe()` the chat will print an error message to let the user know no variable was found. If a variable was found and no location was specified by the user, the chat displays the resulting variable along with its description. 
 
 ### All US Counties, County, Counties in State, Commuting Zone, Tracts in State, Address (Census Tract)
 
@@ -154,7 +154,7 @@ In this case, `getLocationData()` calls [fetchDataLoc()](https://github.com/xamx
 
 ### Describe Data
 
-Finally, after the data is fetched, `sendMessage()` calls [answerQuestionContinuedLocDes()](https://github.com/xamxl/Atlas-Chat/blob/main/Flask/static/js/script.js#L1340) which then calls [/chatData](https://github.com/xamxl/Atlas-Chat/blob/main/Flask/main.py#L588) in the server. `/chatData` uses a direct request, instead of a function call, to ask the OpenAI API to describe the data. The server then returns the description to the front end which displays the variable, location-specific data, and description to the user.
+Finally, after the data is fetched, `sendMessage()` calls [describeLocationData()](https://github.com/xamxl/Atlas-Chat/blob/main/Flask/static/js/script.js#L1340) which then calls [/chatData](https://github.com/xamxl/Atlas-Chat/blob/main/Flask/main.py#L588) in the server. `/chatData` uses a direct request, instead of a function call, to ask the OpenAI API to describe the data. The server then returns the description to the front end which displays the variable, location-specific data, and description to the user.
 
 ## Problems & Possible Next Steps
 

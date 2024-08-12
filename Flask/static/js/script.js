@@ -373,8 +373,8 @@ async function sendMessage() {
     // Adds a placeholder message to the chat
     appendMessage('error', 'Thinking <span class="animate-ellipsis"></span>');
 
-    // Checks what specific task teh user wants and calls the related function
-    let wTD = await graphQM(message);
+    // Checks what specific task the user wants and calls the related function
+    let wTD = await useCase(message);
     if(wTD == "create scatter plot") {
         requestGraphVars();
         return
@@ -400,7 +400,7 @@ async function sendMessage() {
         let chatData = await fetchData();
         if (! chatData) {return}
         // Turns those variables into a table
-        let randomID = processChatData(chatData);
+        let randomID = makeTable(chatData);
         if (! randomID) {return}
         let table = document.getElementById(randomID);
         // Combines variables in the table with the same name but different characteristics like race, gender, or percentile
@@ -408,11 +408,11 @@ async function sendMessage() {
         // Chooses the right race, gender, and percentile for each variable
         chooseDropdown(table);
         // linkRows: creates families of variables by linking things like kfr_black_pooled_p50 and kfr_black_pooled together
-        // answerQuestionContinued: picks a specific variable to display and writes a description for that variable
+        // pickVarAndDescribe: picks a specific variable to display and writes a description for that variable
         // getLocationData: fetches the data for the location specific variable
-        if (! answerQuestionContinued(table, linkRows(table)) || ! getLocationData(table)) {return}
+        if (! pickVarAndDescribe(table, linkRows(table)) || ! getLocationData(table)) {return}
         // Writes a final description for the location specific data
-        answerQuestionContinuedLocDes();
+        describeLocationData();
     }
 }
 
@@ -832,7 +832,7 @@ function getVariableId(variableName, variableType) {
 }
 
 // Takes in a single message and asks chat-GPT to use it to figure out what action the user wants that chatbot to take
-async function graphQM(message) {
+async function useCase(message) {
     mgs = [{ role: 'user', content: message }];
     const gQM = await fetch('http://127.0.0.1:3000/useCase', {
             method: 'POST',
@@ -875,7 +875,7 @@ async function fetchData() {
 }
 
 // Puts the processed variable list from the server into a table and returns the id of that table
-function processChatData(data) {
+function makeTable(data) {
     // Updates the placeholder message
     removeLastMessage();
     appendMessage('error toDelete', 'Processing your data <span class="animate-ellipsis"></span>');
@@ -1195,7 +1195,7 @@ function linkRows(table) {
 // Uses chat-GPT to pick a variable to describe and then describes that variable
 // If a location was specified, returns true
 // Otherwise, puts the data and description in the chat
-function answerQuestionContinued(table, variableText) {
+function pickVarAndDescribe(table, variableText) {
     // Adds the available variables to the chat along with additional information about them
     messages.push({ role: 'assistant', content: variableText, id : table.id });
     messages.push({ role: 'assistant', content: "THE USER DOES NOT SEE THIS MESSAGE: Variables with _n in their names do not refer to the number of people who have a certain outcome or did a certain thing. Instead, these variables refer to the number of people used to make a estimate in another variable. Almost never give a variable ending in _n to the user. Variable with pSOMENUMBER like p50 in them only refer to people with parents in a specific income bracket. Make sure to mention this to the user in descriptions." });
@@ -1334,7 +1334,7 @@ function replaceVariableContent(toShow) {
 
 // Uses chat-GPT to describe the data that has been found and then puts that description in the chat
 // Makes the data visible
-function answerQuestionContinuedLocDes() {
+function describeLocationData() {
         appendMessage('error', 'Generating a response <span class="animate-ellipsis"></span>');
         fetch('http://127.0.0.1:3000/chatData', {
             method: 'POST',

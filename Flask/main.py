@@ -276,7 +276,7 @@ def handle_chat_request_no_sheets(user_message):
         dumb_distance.append(proportion)
 
     # Combines the two distance metrics, weighting them differently
-    all_distances = [(0.8 * old + 0.25 * dumb) for old, dumb in zip(all_distances, dumb_distance)]
+    all_distances = [(0.8 * old + 0.2 * dumb) for old, dumb in zip(all_distances, dumb_distance)]
 
     rawForIndex = {}
     processedForIndex = {}

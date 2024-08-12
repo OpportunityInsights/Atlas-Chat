@@ -35,7 +35,7 @@ let variableNamesFromServer = [];
 
 // A dictionary where each key is the id of a table with the t removed form the beginning
 // Each value is a list where the first element is the location name and the second element is the location type
-let storedData = {};
+let storedVariables = {};
 
 // A list where each element in the html of a table that holds a variable
 let tables = [];
@@ -771,13 +771,13 @@ async function requestVar(endPoint) {
 
     // Populate populates longString with all the variables that could be used to calculate the statistic
     // Includes the location name and type with each variable name
-    for (let key in storedData) {
+    for (let key in storedVariables) {
         let table = document.getElementById("t" + key);
         if (table) {
             let rows = table.rows;
             if (rows.length > 0 && rows[0].cells.length > 0) {
                 let variableName = rows[0].cells[rows[0].cells.length - 1].textContent;
-                let variableType = `${storedData[key][0]} ${storedData[key][1]}`;
+                let variableType = `${storedVariables[key][0]} ${storedVariables[key][1]}`;
                 longString += `VARIABLE NAME: ${variableName} VARIABLE TYPE: ${variableType} `;
             }
         }
@@ -803,8 +803,8 @@ async function requestVar(endPoint) {
 
 // Takes in variable name and type and returns the id of the table which has that variable in it minus the t
 function getVariableId(variableName, variableType) {
-    // Searches through each item in storedData
-    for (let key in storedData) {
+    // Searches through each item in storedVariables
+    for (let key in storedVariables) {
         // Gets the table relating to that element
         let table = document.getElementById("t" + key);
         // If that table corresponds to the variable name and type, returns the id of the table without the t
@@ -812,7 +812,7 @@ function getVariableId(variableName, variableType) {
             let rows = table.rows;
             if (rows.length > 0 && rows[0].cells.length > 0) {
                 let currentVariableName = rows[0].cells[rows[0].cells.length - 1].textContent;
-                let currentVariableType = `${storedData[key][0]} ${storedData[key][1]}`;
+                let currentVariableType = `${storedVariables[key][0]} ${storedVariables[key][1]}`;
                 // if the last character of the type is a space, remove it
                 if (currentVariableType[currentVariableType.length - 1] === ' ') {
                     currentVariableType = currentVariableType.substring(0, currentVariableType.length - 1);
@@ -1588,14 +1588,14 @@ async function filterRowsByCommutingZoneName(tableData, commutingZoneName) {
     return filteredRows;
 }
 
-// Displays the location data in a table and adds information about the table to storedData
+// Displays the location data in a table and adds information about the table to storedVariables
 function displayLocationData(location, units, headers, filteredRows) {
     // generate a random 10 digit number to act as an id
     const randomNumber = Math.floor(Math.random() * 10000000000);
     appendMessage('error hidden showLatter1', `Here is the data for ${location}. Each row represents a ${units}. ` + '<a href="#" id="' + randomNumber + '" onclick="downloadTableAsXlsx(event)" class="download-link"><img height="1em" width="1em" src="' + downloadIconUrl + '" alt="Download"> Click here to download</a>' +'<a href="#" id="' + randomNumber + '" onclick="openGraphPopup(event)" class="graph-link"><img height="1em" width="1em" src="' + graphIconUrl + '" alt="Graph"> Click here to graph this data with ...</a>');
     messages.push({ role: 'assistant', content: `Here is the data for ${location}. Each row represents a ${units}.` });
     displayFilteredTable(headers, filteredRows, randomNumber);
-    storedData[randomNumber] = [locationNameQ, locationTypeQ];
+    storedVariables[randomNumber] = [locationNameQ, locationTypeQ];
 }
 
 // Opens the graphing popup and populates it with the variables that can be graphed with the current variable
@@ -1615,8 +1615,8 @@ function openGraphPopup(event) {
 
     let variableNames = [];
     // Populate variableNames from the stored data with the variable names and corresponding ids that can be graphed with the current variable
-    for (let key in storedData) {
-        if (storedData[key][0] == storedData[event.currentTarget.id][0] && storedData[key][1] == storedData[event.currentTarget.id][1] && key != event.currentTarget.id) {
+    for (let key in storedVariables) {
+        if (storedVariables[key][0] == storedVariables[event.currentTarget.id][0] && storedVariables[key][1] == storedVariables[event.currentTarget.id][1] && key != event.currentTarget.id) {
             let table = document.getElementById("t" + key);
             let rows = table.rows;
             let variableName = rows[0].cells[rows[0].cells.length - 1].textContent;

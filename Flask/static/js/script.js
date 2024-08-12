@@ -22,11 +22,11 @@ let messages = [{
 }];
 
 // A list to hold all the variables that the chatbot returns
-let variable = [];
+let variables = [];
 // A list to hold the names of the locations that each variable in variable was found for (always the same length as variable)
 let locations = [];
 // A variable to count the number of variables added to variables each time a set of additions is made
-let added = 0;
+let addedToVariables = 0;
 
 // A list that contains all the variable names in the order that they were returned from the server after a data fetch
 // It is reset every time new data is requested
@@ -1101,8 +1101,8 @@ function arraysEqual(arr1, arr2) {
 // For example, if kfr_black_pooled_p50 and kfr_black_pooled are both in the dataset but are not next to each other, moves them to be next to each other
 // Then returns the top 10 variables as text
 function linkRows(table) {
-    // Sets the number of variable added to variable to be 0 and defaults display to true
-    added = 0;
+    // Sets the number of variable added to variables to be 0 and defaults display to true
+    addedToVariables = 0;
     display = true;
     // Gets all the rows in the table and removes all race, percentile, gender, and statistical information from the titles
     // Rejoins the titles into strings
@@ -1165,14 +1165,14 @@ function linkRows(table) {
         let url = new URL(rows[linkedRows[i]].querySelector('td:nth-child(1) a').href).searchParams.get('var');
         const parseVarName = url.split('_').filter(part => !addOns.includes(part)).join('_');
         // If this variable has already been used in the chat for the same location name, skip it
-        if (variable.includes(parseVarName) && locations[variable.indexOf(parseVarName)] == locationNameQ) continue;
+        if (variables.includes(parseVarName) && locations[variables.indexOf(parseVarName)] == locationNameQ) continue;
 
         // Adds the variable name and description to text
         text += `VARIABLE NAME: ${url} VARIABLE DESCRIPTION: ${descriptions[linkedRows[i]]} LINE BREAK `;
-        // Adds the variable name to variable
-        variable.push(parseVarName);
-        // increments added
-        added++;
+        // Adds the variable name to variables
+        variables.push(parseVarName);
+        // increments addedToVariables
+        addedToVariables++;
         // Adds the location name to locations
         locations.push(locationNameQ);
         // Adds the index of the row to toShow
@@ -1233,20 +1233,20 @@ function answerQuestionContinued(table, variableText) {
         if (pars['found'] === 'true') {
             const toShow = pars['name'];
 
-            // Remove all values from variable and locations that are not being used
+            // Remove all values from variables and locations that are not being used
             const rows = Array.from(table.querySelectorAll('tr'));
-            for (let i = 0; i < added; i++) {
-                if (variable[variable.length - 1 - i] !== toShow && variable[variable.length - 1 - i] + "_mean" !== toShow) {
-                    variable.splice(variable.length - 1 - i, 1);
+            for (let i = 0; i < addedToVariables; i++) {
+                if (variables[variables.length - 1 - i] !== toShow && variables[variables.length - 1 - i] + "_mean" !== toShow) {
+                    variables.splice(variables.length - 1 - i, 1);
                     locations.splice(locations.length - 1 - i, 1);
                     i--;
-                    added--;
+                    addedToVariables--;
                 }
             }
 
             // Checks if the variable table needs to be displayed or if only the datable should be displayed
-            if (variable.includes(toShow) && locations[variable.indexOf(toShow)] != locationNameQ) display = false;
-            if (variable.includes(toShow.replace(/_mean$/, '')) && locations[variable.indexOf(toShow.replace(/_mean$/, ''))] != locationNameQ) display = false;
+            if (variables.includes(toShow) && locations[variables.indexOf(toShow)] != locationNameQ) display = false;
+            if (variables.includes(toShow.replace(/_mean$/, '')) && locations[variables.indexOf(toShow.replace(/_mean$/, ''))] != locationNameQ) display = false;
             
             // Removes all rows from the table that are not being used
             for (let I = rows.length - 1; I >= 0; I--) {
@@ -1284,11 +1284,11 @@ function answerQuestionContinued(table, variableText) {
                 return false;
             }
         } else {
-            for (let i = 0; i < added; i++) {
-                variable.splice(variable.length - 1 - i, 1);
+            for (let i = 0; i < addedToVariables; i++) {
+                variables.splice(variables.length - 1 - i, 1);
                 locations.splice(locations.length - 1 - i, 1);
                 i--;
-                added--;
+                addedToVariables--;
             }
             
             // check the beginning of last message in messages content

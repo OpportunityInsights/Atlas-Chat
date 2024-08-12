@@ -19,7 +19,7 @@ CORS(app)  # Enable CORS for all routes
 # Replaces the [outcome] tag in the variable names with the outcome names and saves the new json file over the old one
 @app.route('/outcomeProcess/<num>')
 def outcome_process(num):
-    data = read_json_file(f"json-des/{num}.json")
+    data = read_json_file(f"description_units/{num}.json")
     
     outcomes = data['outcomes']
     variables = data['variables']
@@ -39,7 +39,7 @@ def outcome_process(num):
     data['variables'] = processed_variables
     
     # Define file paths
-    json_des_file_path = os.path.join(os.path.dirname(__file__), 'json-des', f"{num}.json")
+    json_des_file_path = os.path.join(os.path.dirname(__file__), 'description_units', f"{num}.json")
     
     # Ensure directories exist
     os.makedirs(os.path.dirname(json_des_file_path), exist_ok=True)
@@ -57,7 +57,7 @@ def update_state_column(num):
     state_data = [line.split(',') for line in state_data if line]
     state_dict = {row[0].strip(): row[1].strip().title() for row in state_data}  # Ensure state names are title-cased
 
-    file_path = f'./sheets/{num}.csv'
+    file_path = f'./headers/{num}.csv'
     df = pd.read_csv(file_path)
     if 'state' in df.columns:
         df['state'] = df['state'].astype(str).str.strip()  # Ensure state codes are strings and stripped of whitespace
@@ -83,7 +83,7 @@ def update_county_column(num):
     county_dict = {row[0]: row[1].strip() for row in county_data}
     print("County data loaded successfully.")
 
-    file_path = f'./sheets/{num}.csv'
+    file_path = f'./headers/{num}.csv'
     df = pd.read_csv(file_path)
     print(f"Processing file: {file_path}")
     if 'county' in df.columns and 'state' in df.columns:
@@ -103,8 +103,8 @@ def update_county_column(num):
 @app.route('/create_unique_sheet', methods=['GET'])
 def create_unique_sheet():
     # Read both CSV files
-    df4 = pd.read_csv('./sheets/4.csv')
-    df5 = pd.read_csv('./sheets/5.csv')
+    df4 = pd.read_csv('./headers/4.csv')
+    df5 = pd.read_csv('./headers/5.csv')
     
     print("Sheets 4 and 5 loaded successfully.")
 
@@ -125,7 +125,7 @@ def create_unique_sheet():
     new_df = df5[additional_columns + list(unique_columns)]
 
     # Save the new DataFrame to a new CSV file
-    new_file_path = './sheets/unique_columns.csv'
+    new_file_path = './headers/unique_columns.csv'
     new_df.to_csv(new_file_path, index=False)
     print(f"New sheet created with unique columns and saved to {new_file_path}")
 
@@ -155,12 +155,12 @@ def edit_cz_columns():
 
 # Goes through all the sheets in the sheets folder
 # For each sheet breaks the sheet down into multiple sheets with only one column each
-# Saves the new sheets in the newSheets_1 folder
+# Saves the new sheets in the data_columns folder
 @app.route('/split_sheets', methods=['GET'])
 def split_sheets():
     # Directory paths
     sheets_dir = './sheets'
-    new_sheets_dir = './newSheets_1'
+    new_sheets_dir = './data_columns'
 
     # Create the newSheets directory if it doesn't exist
     os.makedirs(new_sheets_dir, exist_ok=True)
@@ -219,15 +219,15 @@ def make_des(num):
     num = int(num)
 
     # Loads header and description data
-    headers = get_header_row(f'./sheets/{num}.csv')
-    descriptions = get_descriptions(f'./json-des/{num}.json')
+    headers = get_header_row(f'./headers/{num}.csv')
+    descriptions = get_descriptions(f'./description_units/{num}.json')
 
     # Matches the headers with the descriptions
     header_descriptions = match_headers_with_descriptions(headers, descriptions)
     merged_headers_descriptions = merge_headers_with_descriptions(headers, header_descriptions)
 
     # Saves the variable names and descriptions to a json file and returns it
-    save_embedding(merged_headers_descriptions, f'newHeader/{num}.json')
+    save_embedding(merged_headers_descriptions, f'header_description/{num}.json')
     return jsonify({'processed': "All done!"})
 
 # Takes in an integer sheet name and calculates and saves the embeddings for the variables in that sheet
@@ -244,21 +244,21 @@ def get_headers(num):
     embeddings = prep_embedding_list(get_embedding_throttled(merged_headers_descriptions))
 
     # Sets the embeddings to be all 0 for any variable that is a label column
-    label_cols = read_json_file(f"label-col-des/{num}.json")['labelCols']
+    label_cols = read_json_file(f"label_col_names/{num}.json")['labelCols']
     for i in range(len(embeddings)):
         if (matched_headers[i]["header"] in label_cols):
             for j in range(len(embeddings[i])):
                 embeddings[i][j] = 0
     
     # Saves and returns the embeddings
-    save_embedding(embeddings, f'embedding/{num}.json')
+    save_embedding(embeddings, f'embeddings/{num}.json')
     return jsonify({'mergedHeadersDescriptions': merged_headers_descriptions, 'embeddings': embeddings})
 
-# Renames all the files in the unzipped folder that relate to census tracts in a state
+# Renames all the files in the map_data folder that relate to census tracts in a state
 # Gives all files for each state the same name, which is the state's FIPS code
 @app.route('/rename_files', methods=['GET'])
 def rename_files():
-    directory = 'unzipped'
+    directory = 'map_data'
     shapefiles = [f for f in os.listdir(directory) if f.endswith('.shp')]
 
     renamed_files = {}

@@ -126,7 +126,7 @@ def get_header_row(file_path):
     return header_row
 
 # Takes in a json file path and returns the descriptions from the json file
-# Used to read the files in the json-des folder
+# Used to read the files in the description_units folder
 def get_descriptions(file_path):
     with open(file_path, 'r') as file:
         data = json.load(file)
@@ -205,7 +205,7 @@ def read_csv_file(file_path):
 def get_files_in_folder(folder_path):
     return os.listdir(folder_path)
 
-# Takes in the name of a sheet in the sheets folder (with the .csv ending) and a list of variable names that need to be fetched from that sheet
+# Takes in the name of a sheet in the headers folder (with the .csv ending) and a list of variable names that need to be fetched from that sheet
 # Specifically, the last name in the list is the variable name that matter and the rest are just location specifications, like state, state_name, etc.
 # Returns a list of lists where each list contains the values of the variables in the sheet for the given variable names (includes header row)
 def get_relevant_columns(index, columns):
@@ -214,7 +214,7 @@ def get_relevant_columns(index, columns):
     
     # Iterate over each column in the columns list
     for column in columns:
-        file_path = f"./newSheets_1/{index}_{column}.csv"
+        file_path = f"./data_columns/{index}_{column}.csv"
         
         if os.path.exists(file_path):
             lines = read_csv_file(file_path)
@@ -258,7 +258,7 @@ def handle_chat_request_no_sheets(user_message):
     names.sort()
 
     # Loads the embeddings from the files
-    embeddings = [read_json_file(f"embedding/{name}.json") for name in names]
+    embeddings = [read_json_file(f"embeddings/{name}.json") for name in names]
 
     # Calculates the cosine similarity between the user's message and all the embeddings, then flattens the resulting list
     distances = [[similarity(embedding[0].data[0].embedding, emb[j]) for j in range(len(emb))] for emb in embeddings]
@@ -292,7 +292,7 @@ def handle_chat_request_no_sheets(user_message):
     # sheetNames: A list of the names of the sheets that the headers are from. The names are repeated for each header in the sheet that is unique once the unwanted words are removed
     # allHeaders: A list of lists. Each sublist contains the unique headers of a sheet with the unwanted words removed
     for name in names:
-        headers = get_header_row(f'./sheets/{name}.csv')
+        headers = get_header_row(f'./headers/{name}.csv')
         rawForIndex[name] = headers
 
         headers = [re.split(r'[_\s]', header) for header in headers]
@@ -329,7 +329,7 @@ def handle_chat_request_no_sheets(user_message):
         return {"headers": ["NO"], "distances": all_distances}
 
     # Makes a dictionary where the keys are the names of the sheets and the values are lists of variable descriptions
-    new_headers_dict = {name: read_json_file(f"newHeader/{name}.json")['embedding'] for name in names}
+    new_headers_dict = {name: read_json_file(f"header_description/{name}.json")['embedding'] for name in names}
     # Makes sure that all of the descriptions end with a punctuation mark, adding a period if they do not
     new_headers_dict = {k: ensure_ending(v) for k, v in new_headers_dict.items()}
 
@@ -371,7 +371,7 @@ def function_GPT(prompt, function, requiredFunction=None):
 # Label columns generally refer to locations. Examples of label columns include state id, state name, county id, county name, etc.
 def get_table_data(sheet, variable):
     index = titles.index(sheet)
-    label_cols = read_json_file(f"label-col-des/{index}.json")['labelCols']
+    label_cols = read_json_file(f"label_col_names/{index}.json")['labelCols']
     label_cols.append(variable)
     cols = get_relevant_columns(index, label_cols)
     max_len = max(len(col) for col in cols)
@@ -382,7 +382,7 @@ def get_table_data(sheet, variable):
 # Takes in a string title of a sheet and returns a string containing what each row in that sheet represents
 def get_units(sheet):
     index = titles.index(sheet)
-    return read_json_file(f"json-des/{index}.json")['units']
+    return read_json_file(f"description_units/{index}.json")['units']
 
 # Takes in a string representing a variable name and removes any placeholders from it along with any suffixes at the end like mean, n, se, etc.
 def simplify_name(name):
@@ -415,7 +415,7 @@ def match_score(header, desc_name):
 # All variables are unique after having things like p1, white, and mean removed from them
 def get_stripped_names_and_descriptions(sheetName):
     # Gets the values in the header row of the sheet
-    headers = get_header_row(f'./sheets/{sheetName}.csv')
+    headers = get_header_row(f'./headers/{sheetName}.csv')
     toRemove = ["p1", "p10", "p25", "p50", "p75", "p100", "n", "mean", "se", "s", "imp", "white", "black", "hisp", "asian", "natam", "other", "pooled", "male", "female", "2010", "2000", "2016", "1990", "24", "26", "29", "32"]
     # Split headers and remove unwanted words
     processed_headers = []
@@ -433,7 +433,7 @@ def get_stripped_names_and_descriptions(sheetName):
             unique_headers.append(header)
     headers = unique_headers
     # Gets the descriptions that belong to the variables in the sheet
-    descriptions = get_descriptions(f'./json-des/{sheetName}.json')
+    descriptions = get_descriptions(f'./description_units/{sheetName}.json')
     # Matches the headers with the description with a variable name that most closely matches the header
     matched_headers = []
     for header in headers:
@@ -460,7 +460,7 @@ def get_stripped_names_and_descriptions(sheetName):
     # Creates a list of strings where each string contains the variable name and the description of the variable
     merged_headers_descriptions = [f"VARIABLE NAME: {matched_headers[i]["header"]} - VARIABLE DESCRIPTION: {matched_headers[i]["description"]}" for i in range(len(headers))]
     # Gets the units of the variables in the sheet and adds them to the strings
-    unit = read_json_file(f"json-des/{sheetName}.json")['units']
+    unit = read_json_file(f"description_units/{sheetName}.json")['units']
     merged_headers_descriptions = [f"{desc} - UNIT: {unit}" for desc in merged_headers_descriptions]
 
     return {"merged_headers_descriptions": merged_headers_descriptions, "matched_headers": matched_headers}
@@ -849,9 +849,9 @@ def generate_map():
     # Find the shapefile path based on the geographic level
     shapefile_path = None
     if geo_level == 'county':
-        shapefile_path = 'unzipped/cb_2018_us_county_500k.shp'
+        shapefile_path = 'map_data/cb_2018_us_county_500k.shp'
     elif geo_level == 'tract':
-        shapefile_path = 'unzipped/' + state_fips_list[0] + '.shp'
+        shapefile_path = 'map_data/' + state_fips_list[0] + '.shp'
 
     print("PASSED HERE 0.9")
 

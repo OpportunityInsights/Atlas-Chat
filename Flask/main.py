@@ -148,8 +148,8 @@ def match_headers_with_descriptions(headers, descriptions):
                 continue
             match = True
             for desc_part, header_part in zip(desc_parts, header_parts):
-                # For a certain part of the variable name, checks if there is text in bracets like [race]
-                # If there is, ignores that specific braceted text in the comparision
+                # For a certain part of the variable name, checks if there is text in bracket like [race]
+                # If there is, ignores that specific bracted text in the comparison
                 if '[' in desc_part and ']' in desc_part:
                     desc_prefix = desc_part.split('[')[0]
                     desc_suffix = desc_part.split(']')[-1]
@@ -253,7 +253,7 @@ def handle_chat_request_no_sheets(user_message):
     # Calculates the embedding of the user's messages
     embedding = get_embedding_throttled([user_message])
     
-    # Gets the names of all the avalable embeddings files and sorts them to be in acceding numerical order
+    # Gets the names of all the available embeddings files and sorts them to be in acceding numerical order
     names = [int(name[:-5]) for name in get_files_in_folder("embedding")]
     names.sort()
 
@@ -520,7 +520,6 @@ def create_folium_choropleth(gdf, data_column, state_center, zoom):
     # Create a linear color map with white in the middle
     min_value = gdf[data_column].min()
     max_value = gdf[data_column].max()
-    # linear = cm.LinearColormap(['#872c9b', '#ffffff', '#de7356', '#7e1727', '#ffffc8', '#2b5371'], vmin=min_value, vmax=max_value)
     linear = cm.LinearColormap(['#7e1727', '#ffffc8', '#2b5371'], vmin=min_value, vmax=max_value)
     
     # Add the choropleth layer
@@ -847,7 +846,7 @@ def generate_map():
     elif geo_level == 'tract':
         shapefile_path = 'map_data/' + state_fips_list[0] + '.shp'
 
-    # Gets the data from the shapfile
+    # Gets the data from the shapefile
     columns = get_shapefile_columns(shapefile_path)
 
     # Check if the required columns are present in the shapefile

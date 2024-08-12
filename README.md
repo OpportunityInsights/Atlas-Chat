@@ -9,6 +9,7 @@ Hello! Welcome to Atlas Chat. This README contains all the information you need 
 - [Features](#usage)
 - [Installation](#installation)
 - [Hosting](#hosting)
+- [LLM Vocabulary](#llm-vocabulary)
 - [Structure](#structure)
 - [Inner Workings](#inner-workings)
 - [Problems & Possible Next Steps](#problems--possible-next-steps)
@@ -73,6 +74,16 @@ You may have to wait a while for the files to upload, but after that, you should
 > [!WARNING]
 > There is a bug in the code. Your deployment will return an error when you try to make a map of census tracts.
 
+## LLM Vocabulary
+
+OpenAI provides two different services through its API that are used in this project: text generation with chat-GPT and embedding generation. Text generation is the process of prompting a model like chat-GPT-4o and getting a response consisting of text. For example, putting in the prompt "tell me about standard deviation" will get a response like "Standard deviation is a measure of the amount of variation or dispersion in a set of values. It indicates how much the individual data points in a dataset differ from the mean (average) of the dataset". Embedding generation is the process of putting text into a model like text-embedding-3-large to get out a vector that represents the meaning of the text.
+
+Embeddings, vectors representing the meaning of text, are useful during search processes because it is easy to calculate the distance between two of them. The smaller the distance, the closer the two pieces of text that the embeddings represent are to each other in meaning.
+
+While sometimes prompting chat-GPT with a question and getting text back is all an application needs, in certain cases it is more useful for chat-GPT to provide a formatted response that can be used to call a function. For example, if the user says "What is the wether in Boston?" it would be nice if chat-gpt could respond with a JSON object containing the name of a function which could be called to get the weather for a certain city and the name of the city that should be used, in this case Boston. This capability of chat-GPT during text generation is called a function call.
+
+A function call is a way to get a regular formatted response from an LLM like chat-GPT. Instead of responding to a prompt with plain text, if a function call is used, the LLM either responds with plain text or with a JSON output representing the parameters to use to call a certain function. A programmer can specify that the LLM should always call a certain function and never return plain text.
+
 ## Structure
 
 The image below shows the structure of the program. The program is divided into four main parts. First, there is a webpage consisting of HTML, CSS, and importantly JS. This front end, which runs on the user's computer, can make requests to a backend server programmed in Python using the Flask library. The backend server can get data from the sheets stored in the database. Finally, the backend can make requests to the OpenAI API.
@@ -83,7 +94,7 @@ The rest of this section goes over the file structure of this repository and des
 
 In the base directory, flowchart.jpeg, structure.jpeg, and README.md are all files that help explain the code. The setup.py file contains the code that was used to construct the database. The .gitignore file prevents these sensitive files from being uploaded to Git Hub. The Flask folder contains the application itself. When running the program, the whole Flask folder is part of the execution. Inside the Flask folder, there are loose files and other directories.
 
-First, the loose files. .env and atlas-chat-gcloud-key.json store the OpenAI API key and the Google Cloud service account key respectively. countycode-countyname.csv stores a table converting county codes to county names. states.csv stores a table converting state names to state IDs. merged_data.csv is populated anew each time the server makes a graph, and there is no need to understand or monitor its contents. requirements.txt lists the Python packages that need to be installed to run the server. The server code itself is within main.py.
+First, the loose files. .env and atlas-chat-gcloud-key.json store the OpenAI API key and the Google Cloud service account key respectively. countycode-countyname.csv stores a table converting county codes to county names. states.csv stores a table converting state names to state IDs. merged_data.csv is populated anew each time the server makes a map, and there is no need to understand or monitor its contents. requirements.txt lists the Python packages that need to be installed to run the server. The server code itself is within main.py.
 
 Second, the folders. Static and templates store the website code itself (the HTML, CSS, JS, and images that are given to the user's computer when it loads the page). These files are fetched for the user my main.py. The map_data folder contains files with information about the outlines of US counties and census tracts. These are used when constructing maps. The headers folder contains CSV sheets, each with only one row. This row contains the header names for all the columns in that sheet. data_columns contains the data itself. Each column from the original data was turned into its own sheet named with the number of the sheet the data comes from and then the variable name. Header_description contains JSON files with descriptions for each variable. There are only five files (fewer files than there are sheets) since many of the sheets have the same variables, just for different locations. Label_col_names holds the names of the label columns for each sheet. Examples of label columns are state ID, state name, county name, and county ID. description_units contains JSON with each variable name and its description. Importantly these variables do not specify race, gender, or percentile. For example, descriptions_units may contain a variable called kfr_\[race\]_\[gender\]_mean. descriptions_units also contains information on the sheet's units and the different outcomes in each sheet. The embeddings folder contains the embeddings themselves. All columns in the sheets have a corresponding embedding, but each embedding normally corresponds to multiple columns. For example, kfr_pooled_pooled_mean and kfr_black_pooled_mean both have the same embedding. The embeddings for all label columns are set to zero.
 
@@ -96,8 +107,6 @@ This section explains how the code works. Please look through the following flow
 ### Mode Decision: What does the user want?
 
 When the user sends a message to the chat, [sendMessage()](https://github.com/xamxl/Atlas-Chat/blob/main/Flask/static/js/script.js#L362) in script.js begins handling the request. The function adds the user's message to the `messages` list and calls [graphQM()](https://github.com/xamxl/Atlas-Chat/blob/main/Flask/static/js/script.js#L836) which makes a server call to determine which action the chat should take. [/useCase](https://github.com/xamxl/Atlas-Chat/blob/main/Flask/main.py#L648) in the server uses a function call from the OpenAI API to make the decision. This represents the first box in the flow chart. `sendMessage()` ultimately calls the right function(s) based on what branch of the flow chart the function call picks.
-
-A function call is a way to get a regular formatted response from an LLM like chat-GPT. Instead of responding to a prompt with plain text, if a function call is used, the LLM either responds with plain text or with a JSON output representing the parameters to use to call a certain function. A programmer can specify that the LLM should always call a certain function and never return plain text.
 
 ### Pick Variable, Pick Two Variables, Pick Two Graphing Variables, Pick Mapping Variables
 
@@ -114,8 +123,6 @@ Back in `variableSearch()`, the chat either prints out the response from the ser
 ### Variable Search
 
 In this branch of the flow chart, `sendMessage()` starts by calling [fetchData()](https://github.com/xamxl/Atlas-Chat/blob/main/Flask/static/js/script.js#L849) which calls [/chat](https://github.com/xamxl/Atlas-Chat/blob/main/Flask/main.py#L581) in the server with the key words the previous function call said should be used for the search. `/chat` calls [handle_chat_request_no_sheets()](https://github.com/xamxl/Atlas-Chat/blob/main/Flask/main.py#L246). `handle_chat_request_no_sheets()` starts by finding the embedding values using the of the keywords the function call thought should be used in the search. To find the embedding values it uses the OpenAI API.
-
-Embeddings are vectors that represent the meaning of text. Since vectors consist of numbers, embeddings can be easily used to compare the distances between different texts (how similar the meanings of two texts are).
 
 `handle_chat_request_no_sheets()` then gets a set of embeddings that correspond to a set of all variables in the database and their descriptions. These embeddings were calculated once when the server code was written. They are not calculated every time `handle_chat_request_no_sheets()` runs. The function then calculates another type of distance, dubbed "dumb distance." "Dumb distance" is the fraction of the keywords that appear in each of the descriptions of the variables in the database.
 

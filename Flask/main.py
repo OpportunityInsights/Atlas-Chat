@@ -796,7 +796,7 @@ def save_report():
     report = request.json['data']
 
     # Initialize Firebase
-    cred = credentials.Certificate('atlas-chat-429014-31385e10f4b1.json')
+    cred = credentials.Certificate('atlas-chat-gcloud-key.json')
     try:
         firebase_admin.initialize_app(cred)
     except ValueError:

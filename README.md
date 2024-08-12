@@ -74,7 +74,11 @@ You may have to wait a while for the files to upload, but after that you should 
 
 ## Inner Workings
 
+This section explains how the code works. Please look through the following flowchart before reading the following text since this section references the image. This section is an overview of the most important workflows in the chat. It does not go over every single function in the code.
+
 ![Flowchart that shows how the chat works.](flowchart.jpeg)
+
+When the user sends a message to the chat, [sendMessage()](https://github.com/xamxl/Atlas-Chat/blob/main/Flask/static/js/script.js#L362) in script.js ...
 
 ## Problems & Possible Next Steps
 

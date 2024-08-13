@@ -35,7 +35,7 @@ In addition to these features, Atlas Chat has a dedicated data download page whe
 
 The website also has an error reporting feature that sends the contents of the chat, the contents of the console, and a message entered by the user describing the problem to a [FireStore](https://cloud.google.com/firestore?hl=en) database.
 
-[![](https://img.shields.io/badge/YouTube-red?style=for-the-badge&logo=youtube&logoColor=white)](https://www.youtube.com/watch?v=9a4H78gThJw) Watch this video to get an idea how users can interact with the chat. 📹
+Watch [this video](https://www.youtube.com/watch?v=9a4H78gThJw) to get an idea of how users can interact with the chat. 📹
 
 ## Installation
 

@@ -17,7 +17,7 @@ Hello! Welcome to Atlas Chat. This README contains all the information you need 
 
 ## Features
 
-[![Watch the video](https://raw.githubusercontent.com/xamxl/Atlas-Chat/main/assets/thumbnail.jpg)](https://raw.githubusercontent.com/xamxl/Atlas-Chat/main/assets/Atlas_Chat_Example_Video.mp4)
+[![Watch the video](https://github.com/xamxl/Atlas-Chat/blob/main/thumbnail.jpg)](https://github.com/xamxl/Atlas-Chat/blob/main/Atlas_Chat_Example_Video.mp4)
 
 Atlas chat is designed to help users explore [data](https://opportunityinsights.org/data/) from the [Opportunity Atlas Paper](https://opportunityinsights.org/paper/the-opportunity-atlas/). The chat can:
 

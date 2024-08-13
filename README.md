@@ -39,7 +39,7 @@ Watch [this video](https://www.youtube.com/watch?v=9a4H78gThJw) to get an idea o
 
 ## Installation
 
-First, open the terminal in a directory of your choosing and clone this repository.
+First, open the terminal in a directory of your choosing and clone this repository. 📹
 
 ```bash
 git clone https://github.com/xamxl/Atlas-Chat.git

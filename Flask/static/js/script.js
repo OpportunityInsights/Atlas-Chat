@@ -147,6 +147,7 @@ messageInput.addEventListener('keydown', function (event) {
     if (event.key === 'Enter') {
         event.preventDefault();
         sendMessage();
+        
     }
 });
 
@@ -557,8 +558,10 @@ async function sendMessage() {
         chooseDropdown(table);
         // linkRows: creates families of variables by linking things like kfr_black_pooled_p50 and kfr_black_pooled together
         // pickVarAndDescribe: picks a specific variable to display and writes a description for that variable
-        // getLocationData: fetches the data for the location specific variable
-        if (! pickVarAndDescribe(table, linkRows(table)) || ! getLocationData(table)) {return}
+        let pVAD = await pickVarAndDescribe(table, linkRows(table));
+        if (! pVAD) {return}
+        // Fetches the data for the location specific variable
+        getLocationData(table)
         // Writes a final description for the location specific data
         describeLocationData();
     }
@@ -1321,111 +1324,116 @@ function linkRows(table) {
 // If a location was specified, returns true
 // Otherwise, puts the data and description in the chat
 function pickVarAndDescribe(table, variableText) {
-    // Adds the available variables to the chat along with additional information about them
-    messages.push({ role: 'assistant', content: variableText, id : table.id });
-    messages.push({ role: 'assistant', content: "THE USER DOES NOT SEE THIS MESSAGE: Variables with _n in their names do not refer to the number of people who have a certain outcome or did a certain thing. Instead, these variables refer to the number of people used to make a estimate in another variable. Almost never give a variable ending in _n to the user. Variable with pSOMENUMBER like p50 in them only refer to people with parents in a specific income bracket. Make sure to mention this to the user in descriptions." });
+    return new Promise((resolve, reject) => {
+        // Adds the available variables to the chat along with additional information about them
+        messages.push({ role: 'assistant', content: variableText, id: table.id });
+        messages.push({ role: 'assistant', content: "THE USER DOES NOT SEE THIS MESSAGE: Variables with _n in their names do not refer to the number of people who have a certain outcome or did a certain thing. Instead, these variables refer to the number of people used to make an estimate in another variable. Almost never give a variable ending in _n to the user. Variable with pSOMENUMBER like p50 in them only refer to people with parents in a specific income bracket. Make sure to mention this to the user in descriptions." });
 
-    // Figures out if a location was specified
-    let usingLocation;
-    if (locationTypeQ != null) {
-        appendMessage('error', 'Looking for location specific data <span class="animate-ellipsis"></span>');
-        usingLocation =  true;
-    } else {
-        usingLocation =  false;
-    }
+        // Figures out if a location was specified
+        let usingLocation;
+        if (locationTypeQ != null) {
+            appendMessage('error', 'Looking for location specific data <span class="animate-ellipsis"></span>');
+            usingLocation = true;
+        } else {
+            usingLocation = false;
+        }
 
-    // Adds a message to the chat to show that the chatbot is generating a response
-    if (!usingLocation) {
-        appendMessage('error', 'Generating a response <span class="animate-ellipsis"></span>');
-    }
+        // Adds a message to the chat to show that the chatbot is generating a response
+        if (!usingLocation) {
+            appendMessage('error', 'Generating a response <span class="animate-ellipsis"></span>');
+        }
 
-    // Asks the server to pick a variable
-    fetch('http://127.0.0.1:3000/pickVarAndDescribe', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages }),
-    })
-    .then(response => response.json())
-    .then(data => {
-        // Removes the placeholder message
-        removeLastMessage();
-        
-        let pars = JSON.parse(data.reply);
+        // Asks the server to pick a variable
+        fetch('http://127.0.0.1:3000/pickVarAndDescribe', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ messages }),
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Removes the placeholder message
+            removeLastMessage();
 
-        // Checks if the server found a variable that would help
-        // If so, uses that variable
-        // If not, removes all added variables from variable and locations and adds an error message to the chat
-        if (pars['found'] === 'true') {
-            const toShow = pars['name'];
+            let pars = JSON.parse(data.reply);
 
-            // Remove all values from variables and locations that are not being used
-            const rows = Array.from(table.querySelectorAll('tr'));
-            for (let i = 0; i < addedToVariables; i++) {
-                if (variables[variables.length - 1 - i] !== toShow && variables[variables.length - 1 - i] + "_mean" !== toShow) {
+            // Checks if the server found a variable that would help
+            // If so, uses that variable
+            if (pars['found'] === 'true') {
+                const toShow = pars['name'];
+
+                // Remove all values from variables and locations that are not being used
+                const rows = Array.from(table.querySelectorAll('tr'));
+                for (let i = 0; i < addedToVariables; i++) {
+                    if (variables[variables.length - 1 - i] !== toShow && variables[variables.length - 1 - i] + "_mean" !== toShow) {
+                        variables.splice(variables.length - 1 - i, 1);
+                        locations.splice(locations.length - 1 - i, 1);
+                        i--;
+                        addedToVariables--;
+                    }
+                }
+
+                // Checks if the variable table needs to be displayed or if only the datable should be displayed
+                if (variables.includes(toShow) && locations[variables.indexOf(toShow)] != locationNameQ) displayVariableDescriptionTable = false;
+                if (variables.includes(toShow.replace(/_mean$/, '')) && locations[variables.indexOf(toShow.replace(/_mean$/, ''))] != locationNameQ) displayVariableDescriptionTable = false;
+
+                // Removes all rows from the table that are not being used
+                for (let I = rows.length - 1; I >= 0; I--) {
+                    const row = rows[I];
+                    const variableName = new URL(row.querySelector('td:nth-child(1) a').href).searchParams.get('var');
+                    if (variableName !== toShow) {
+                        row.remove();
+                    }
+                }
+
+                // If there are no rows left in the table, adds an error message to the chat
+                if (Array.from(table.querySelectorAll('tr')).length === 0) {
+                    removeLastMessage();
+                    Array.from(document.getElementsByClassName('showLatter')).forEach(element => element.classList.remove('showLatter'));
+                    appendMessage('error', 'Sorry, I couldn\'t find a variable that would help. 😕 Do you want me to search for something else?');
+                    messages.push({ role: 'assistant', content: 'Sorry, I couldn\'t find a variable that would help. 😕 Do you want me to search for something else?' });
+
+                    resolve(false);
+                    return;
+                }
+
+                // Takes the message specifying the variable options and replaces it with the picked variable
+                replaceVariableContent(toShow);
+
+                // If a location was specified, calls the function to get location specific data, otherwise, puts the variable and description in the chat
+                if (usingLocation) {
+                    resolve(true);
+                } else {
+                    appendMessage('error des', pars['response']);
+                    messages.push({ role: 'assistant', content: pars['response'] });
+                    if (displayVariableDescriptionTable) {
+                        Array.from(document.getElementsByClassName('showLatter')).forEach(element => element.classList.remove('hidden'));
+                    }
+                    Array.from(document.getElementsByClassName('showLatter1')).forEach(element => element.classList.remove('hidden'));
+
+                    resolve(false);
+                }
+            } else {
+                for (let i = 0; i < addedToVariables; i++) {
                     variables.splice(variables.length - 1 - i, 1);
                     locations.splice(locations.length - 1 - i, 1);
                     i--;
                     addedToVariables--;
                 }
-            }
 
-            // Checks if the variable table needs to be displayed or if only the datable should be displayed
-            if (variables.includes(toShow) && locations[variables.indexOf(toShow)] != locationNameQ) displayVariableDescriptionTable = false;
-            if (variables.includes(toShow.replace(/_mean$/, '')) && locations[variables.indexOf(toShow.replace(/_mean$/, ''))] != locationNameQ) displayVariableDescriptionTable = false;
-            
-            // Removes all rows from the table that are not being used
-            for (let I = rows.length - 1; I >= 0; I--) {
-                const row = rows[I];
-                const variableName = new URL(row.querySelector('td:nth-child(1) a').href).searchParams.get('var');
-                if (variableName !== toShow) {
-                    row.remove();
+                // check the beginning of last message in messages content
+                if (messages[messages.length - 1].content.startsWith("Looking for location specific data")) {
+                    removeLastMessage();
                 }
-            }
-
-            // If there are no rows left in the table, adds an error message to the chat
-            if (Array.from(table.querySelectorAll('tr')).length === 0) {
-                removeLastMessage();
                 Array.from(document.getElementsByClassName('showLatter')).forEach(element => element.classList.remove('showLatter'));
                 appendMessage('error', 'Sorry, I couldn\'t find a variable that would help. 😕 Do you want me to search for something else?');
                 messages.push({ role: 'assistant', content: 'Sorry, I couldn\'t find a variable that would help. 😕 Do you want me to search for something else?' });
-                
-                return false;
-            }
 
-            // Takes the message specifying the variable options and replaces it with the picked variable
-            replaceVariableContent(toShow);
-
-            // If a location was specified, calls the function to get location specific data, otherwise, puts the variable and description in the chat
-            if (usingLocation) {
-                return true;
-            } else {
-                appendMessage('error des', pars['response']);
-                messages.push({ role: 'assistant', content: pars['response'] });
-                if (displayVariableDescriptionTable) {
-                    Array.from(document.getElementsByClassName('showLatter')).forEach(element => element.classList.remove('hidden'));
-                }
-                Array.from(document.getElementsByClassName('showLatter1')).forEach(element => element.classList.remove('hidden'));
-                
-                return false;
+                resolve(false);
             }
-        } else {
-            for (let i = 0; i < addedToVariables; i++) {
-                variables.splice(variables.length - 1 - i, 1);
-                locations.splice(locations.length - 1 - i, 1);
-                i--;
-                addedToVariables--;
-            }
-            
-            // check the beginning of last message in messages content
-            if (messages[messages.length - 1].content.startsWith("Looking for location specific data")) {
-                removeLastMessage();
-            }
-            Array.from(document.getElementsByClassName('showLatter')).forEach(element => element.classList.remove('showLatter'));
-            appendMessage('error', 'Sorry, I couldn\'t find a variable that would help. 😕 Do you want me to search for something else?');
-            messages.push({ role: 'assistant', content: 'Sorry, I couldn\'t find a variable that would help. 😕 Do you want me to search for something else?' });
-            
-            return false;
-        }
+        })
+        .catch(error => {
+            reject(error);
+        });
     });
 }
 
@@ -1579,6 +1587,7 @@ async function getLocationData(table) {
                 locationNameQ = "the full US";
             }
             displayLocationData(locationNameQ, data.units, data.tableData[0], filteredRows);
+            appendMessage('error', 'Generating a response <span class="animate-ellipsis"></span>');
         } else {
             removeLastMessage();
             appendMessage('error', `That variable is not available for ${locationNameQ}.`)

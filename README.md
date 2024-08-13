@@ -17,7 +17,7 @@ Hello! Welcome to Atlas Chat. This README contains all the information you need 
 
 ## Features
 
-[![Watch the video](https://github.com/xamxl/Atlas-Chat/blob/main/thumbnail.png)](https://github.com/xamxl/Atlas-Chat/blob/main/Atlas_Chat_Example_Video.mp4)
+[![Watch the video](https://github.com/xamxl/Atlas-Chat/blob/main/thumbnail.png)](https://www.youtube.com/watch?v=9a4H78gThJw)
 
 Atlas chat is designed to help users explore [data](https://opportunityinsights.org/data/) from the [Opportunity Atlas Paper](https://opportunityinsights.org/paper/the-opportunity-atlas/). The chat can:
 
@@ -104,7 +104,7 @@ Some folders in the program only contain sheets 1, 4, 9, and 12. This is because
 
 ### File Structure of Repository
 
-In the base directory, flowchart.jpeg, structure.jpeg, Atlas_Chat_Example_Video.mp4, thumbnail.png, and README.md are all files that help explain the code. The setup.py file contains the code that was used to construct the database. The .gitignore file prevents sensitive files from uploading to GitHub. The Flask folder contains the application itself. When running the program, the whole Flask folder is part of the execution. Inside the Flask folder, there are loose files and other directories.
+In the base directory, flowchart.jpeg, structure.jpeg, thumbnail.png, and README.md are all files that help explain the code. The setup.py file contains the code that was used to construct the database. The .gitignore file prevents sensitive files from uploading to GitHub. The Flask folder contains the application itself. When running the program, the whole Flask folder is part of the execution. Inside the Flask folder, there are loose files and other directories.
 
 First, the loose files. .env and atlas-chat-gcloud-key.json store the OpenAI API key and the Google Cloud service account key respectively. countycode-countyname.csv stores a table converting county codes to county names. states.csv stores a table converting state names to state IDs. merged_data.csv is populated anew each time the server makes a map, and there is no need to understand or monitor its contents. requirements.txt lists the Python packages that need to be installed to run the server. The server code itself is within main.py.
 

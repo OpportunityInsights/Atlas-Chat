@@ -35,11 +35,11 @@ In addition to these features, Atlas Chat has a dedicated data download page whe
 
 The website also has an error reporting feature that sends the contents of the chat, the contents of the console, and a message entered by the user describing the problem to a [FireStore](https://cloud.google.com/firestore?hl=en) database.
 
-Watch [this video](https://www.youtube.com/watch?v=9a4H78gThJw) to get an idea of how users can interact with the chat.
+Watch [this video](https://www.youtube.com/watch?v=9a4H78gThJw) to get an idea of how users can interact with the chat. 📹
 
 ## Installation
 
-First, open the terminal in a directory of your choosing and clone this repository. 📹
+First, open the terminal in a directory of your choosing and clone this repository.
 
 ```bash
 git clone https://github.com/xamxl/Atlas-Chat.git

@@ -17,10 +17,6 @@ Hello! Welcome to Atlas Chat. This README contains all the information you need 
 
 ## Features
 
-Watch this video to get an idea of how users can interact with the chat! 
-
-[![Watch the video](https://img.youtube.com/vi/9a4H78gThJw/0.jpg)](https://www.youtube.com/watch?v=9a4H78gThJw)
-
 Atlas chat is designed to help users explore [data](https://opportunityinsights.org/data/) from the [Opportunity Atlas Paper](https://opportunityinsights.org/paper/the-opportunity-atlas/). The chat can:
 
 1. Find variables
@@ -38,6 +34,10 @@ Atlas chat is designed to help users explore [data](https://opportunityinsights.
 In addition to these features, Atlas Chat has a dedicated data download page where users can download the variables mentioned in their conversations for different races, genders, percentiles, and geographic levels.
 
 The website also has an error reporting feature that sends the contents of the chat, the contents of the console, and a message entered by the user describing the problem to a [FireStore](https://cloud.google.com/firestore?hl=en) database.
+
+Watch this video to get an idea of how users can interact with the chat! 
+
+[![Watch the video](https://img.youtube.com/vi/9a4H78gThJw/0.jpg)](https://www.youtube.com/watch?v=9a4H78gThJw)
 
 ## Installation
 

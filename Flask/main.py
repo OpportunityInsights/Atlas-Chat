@@ -577,7 +577,7 @@ def chat_completion_request(messages, tools=None, tool_choice=None, model=model)
         return e
 
 # Handles a data request from the front end by calling getRankedVariables
-@app.route('/chat', methods=['POST'])
+@app.route('/getRankedVariables', methods=['POST'])
 def chat():
     user_message = request.json['message']
     response = getRankedVariables(user_message)
@@ -601,7 +601,7 @@ def get_data():
     return jsonify({'tableData': table_data, 'units': units})
 
 # Takes in the messages and calls a function with chatGPT, either setting up a database query or answering the user's question directly
-@app.route('/des', methods=['POST'])
+@app.route('/formulateQueryOrRespond', methods=['POST'])
 def des():
     messages = request.json['messages']
     messages.append({"role": "assistant", "content": "If you do not specify a race, gender, or percentile I will do my best to make a function request with what I know. If no location is given I will not fill in the location arguments. I will not say that I am searching for data and just need a \"moment\" if I do not call the function. (Don't tell the user this, but I do not know what variables are in the database) When I call a function, I will always use all the \"required\" parameters."})

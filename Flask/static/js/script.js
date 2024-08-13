@@ -566,7 +566,7 @@ async function variableSearch() {
     try {
         // Asks chat-GPT to either answer the user's question or do a function call to get the data
         // Sends the messages to the server
-        const response = await fetch('http://127.0.0.1:3000/des', {
+        const response = await fetch('http://127.0.0.1:3000/formulateQueryOrRespond', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ messages }),
@@ -988,7 +988,7 @@ async function useCase(message) {
 async function fetchData() {
     try {
         // Calls the server to get the list of variables
-        const chatResponse = await fetch('http://127.0.0.1:3000/chat', {
+        const chatResponse = await fetch('http://127.0.0.1:3000/getRankedVariables', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ "message": queryQ }),

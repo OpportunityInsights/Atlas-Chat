@@ -124,6 +124,9 @@ let storedVariables = {};
 // A list where each element in the html of a table that holds a variable
 let tables = [];
 
+// A list containing for the current search variables names and the descriptions corresponding to those names
+let varNamesDescriptions = [];
+
 // The values specified by a function call for the variable the user is currently looking for
 let genderQ;
 let raceQ;
@@ -1064,10 +1067,59 @@ function chooseDropdown(table) {
         const option = Array.from(dropdown.options).find(opt => opt.value == targetValue);
         if (option) {
             dropdown.value = targetValue;
-            dropdown.dispatchEvent(new Event('change'));
+            processTableCell(dropdown);
             return true;
         }
         return false;
+    }
+
+    // Function to update the links and descriptions associated with the cell
+    function processTableCell(tableSelector) {
+        // Select the table
+        let table = tableSelector.closest('table');
+    
+        // Get the first row's first cell (index 0)
+        let firstCell = table.rows[0].cells[0];
+    
+        // Get all selectors and links in the first cell
+        let elements = firstCell.querySelectorAll('select, a');
+        let valueTextArray = [];
+    
+        // Loop through elements to gather their values and text
+        elements.forEach(element => {
+            if (element.tagName === 'SELECT') {
+                valueTextArray.push(element.value);
+            } else if (element.tagName === 'A') {
+                valueTextArray.push(element.textContent);
+            }
+        });
+    
+        // Concatenate the values and text
+        let combinedString = valueTextArray.join('');
+    
+        // Find the corresponding list in varNamesDescriptions
+        let description = '';
+        for (let i = 0; i < varNamesDescriptions.length; i++) {
+            if (varNamesDescriptions[i][0] === combinedString) {
+                description = varNamesDescriptions[i][1];
+                break;
+            }
+        }
+    
+        // Update the href "var" parameter in all <a> elements
+        elements.forEach(element => {
+            if (element.tagName === 'A') {
+                let href = element.getAttribute('href');
+                if (href) {
+                    let newHref = href.replace(/var=[^&]*/, 'var=' + combinedString);
+                    element.setAttribute('href', newHref);
+                }
+            }
+        });
+    
+        // Update the text in the second cell
+        let secondCell = table.rows[0].cells[1];
+        secondCell.textContent = description;
     }
     
     // Iterate through all select elements in the table
@@ -1099,9 +1151,10 @@ function chooseDropdown(table) {
 // For example, if kfr_black_pooled_p50 and kfr_black_pooled_p25 are both in the data, only one will be kept
 // Saves the options for different races, genders, and percentiles for each variable
 function condense(table) {
-    // Empties variableNamesFromServer
+    // Empties variableNamesFromServer and varNamesDescriptions
     variableNamesFromServer = [];
-    // Temporal list to store the links corresponding to the titles
+    varNamesDescriptions = [];
+    // Temporary list to store the links corresponding to the titles
     let links = [];
     // Gets all the rows in the table
     const rows = Array.from(table.querySelectorAll('tr'));
@@ -1124,6 +1177,8 @@ function condense(table) {
         let ti = [];
         // Loops through each title appearing after the current title (also including the current title)
         for (let j = i; j < titles1.length; j++) {
+            // Stores the name of each variable with its descriptions
+            varNamesDescriptions.push([variableNamesFromServer[j].join('_'), rows[j].querySelector('td:nth-child(2)').textContent]);
             // If the current title is the same as the title being compared to (not considering race, gender, or percentile)
             // Adds to the arrays in options all the options for race, gender, and percentile
             // Stores in lin and ti the links and titles that correspond to those options
@@ -1222,8 +1277,18 @@ function linkRows(table) {
     // Loops through the linked rows, adding variable to text and toShow until 10 have been added
     for (let i = 0; i < linkedRows.length && processedCount < 10; i++) {
         // Gets the variable name and removes any statistical markers like mean, se, or n
-        let url = new URL(rows[linkedRows[i]].querySelector('td:nth-child(1) a').href).searchParams.get('var');
-        const parseVarName = url.split('_').filter(part => !addOns.includes(part)).join('_');
+        let parseVarName = null;
+        let url = null;
+        let nthChild = 1;
+
+        while (parseVarName === null && nthChild <= rows[linkedRows[i]].querySelectorAll('td').length) {
+            try {
+                url = new URL(rows[linkedRows[i]].querySelector(`td:nth-child(${nthChild}) a`).href).searchParams.get('var');
+                parseVarName = url.split('_').filter(part => !addOns.includes(part)).join('_');
+            } catch (e) {
+                nthChild++;
+            }
+        }
         // If this variable has already been used in the chat for the same location name, skip it
         if (variables.includes(parseVarName) && locations[variables.indexOf(parseVarName)] == locationNameQ) continue;
 

@@ -126,7 +126,7 @@ def get_header_row(file_path):
     return header_row
 
 # Takes in a json file path and returns the descriptions from the json file
-# Used to read the files in the description_units folder
+# Used to read the files in the descriptions_units folder
 def get_descriptions(file_path):
     with open(file_path, 'r') as file:
         data = json.load(file)
@@ -254,7 +254,7 @@ def getRankedVariables(user_message):
     embedding = get_embedding_throttled([user_message])
     
     # Gets the names of all the available embeddings files and sorts them to be in acceding numerical order
-    names = [int(name[:-5]) for name in get_files_in_folder("embedding")]
+    names = [int(name[:-5]) for name in get_files_in_folder("embeddings")]
     names.sort()
 
     # Loads the embeddings from the files
@@ -382,7 +382,7 @@ def get_table_data(sheet, variable):
 # Takes in a string title of a sheet and returns a string containing what each row in that sheet represents
 def get_units(sheet):
     index = titles.index(sheet)
-    return read_json_file(f"description_units/{index}.json")['units']
+    return read_json_file(f"descriptions_units/{index}.json")['units']
 
 # Takes in a string representing a variable name and removes any placeholders from it along with any suffixes at the end like mean, n, se, etc.
 def simplify_name(name):
@@ -433,7 +433,7 @@ def get_stripped_names_and_descriptions(sheetName):
             unique_headers.append(header)
     headers = unique_headers
     # Gets the descriptions that belong to the variables in the sheet
-    descriptions = get_descriptions(f'./description_units/{sheetName}.json')
+    descriptions = get_descriptions(f'./descriptions_units/{sheetName}.json')
     # Matches the headers with the description with a variable name that most closely matches the header
     matched_headers = []
     for header in headers:
@@ -458,9 +458,9 @@ def get_stripped_names_and_descriptions(sheetName):
     for header in matched_headers:
         header["header"] = '_'.join(header["header"])
     # Creates a list of strings where each string contains the variable name and the description of the variable
-    merged_headers_descriptions = [f"VARIABLE NAME: {matched_headers[i]["header"]} - VARIABLE DESCRIPTION: {matched_headers[i]["description"]}" for i in range(len(headers))]
+    merged_headers_descriptions = [f"VARIABLE NAME: {matched_headers[i]['header']} - VARIABLE DESCRIPTION: {matched_headers[i]['description']}" for i in range(len(headers))]
     # Gets the units of the variables in the sheet and adds them to the strings
-    unit = read_json_file(f"description_units/{sheetName}.json")['units']
+    unit = read_json_file(f"descriptions_units/{sheetName}.json")['units']
     merged_headers_descriptions = [f"{desc} - UNIT: {unit}" for desc in merged_headers_descriptions]
 
     return {"merged_headers_descriptions": merged_headers_descriptions, "matched_headers": matched_headers}

@@ -1,3 +1,87 @@
+// This function deals with the error flagging feature
+(function() {
+    // Variables storing references to different ways that stuff enters the console
+    var originalLog = console.log;
+    var originalError = console.error;
+    var originalWarn = console.warn;
+
+    // Content of the console to be send with the error
+    var consoleContent = "";
+
+    // Overwrite the console.log function to store the content and then log it
+    console.log = function(message) {
+        try {
+            consoleContent += message + "\n";
+        } catch (e) {
+            alert("Additional debugging data will not be logged.")
+        }
+        originalLog.apply(console, arguments);
+    };
+
+    // Overwrite the console.error function to store the content and then log it
+    console.error = function(message) {
+        consoleContent += message + "\n";
+        originalError.apply(console, arguments);
+    };
+
+    // Overwrite the console.warn function to store the content and then log it
+    console.warn = function(message) {
+        consoleContent += message + "\n";
+        originalWarn.apply(console, arguments);
+    };
+
+    // Function to send data to the server
+    async function sendData(data) {
+        
+        const response = await fetch('http://127.0.0.1:3000/save_report', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({data})
+        });
+        return response.json();
+    }
+
+    // Function to capture HTML content
+    function getHTMLContent() {
+        return document.documentElement.outerHTML;
+    }
+
+    // Function to gather and send data
+    async function gatherAndSendData() {
+        // Gets the data
+        const htmlContent = getHTMLContent();
+        const comment = document.getElementsByTagName('textarea')[0].value;
+        const data = {
+            html: htmlContent,
+            console: consoleContent,
+            comment: comment
+        };
+
+        // Disables the buttons and changes the text in the error flagging area
+        document.getElementById("rb1").disabled = true;
+        document.getElementById("rb2").disabled = true;
+        document.getElementById("rb1").classList.add('disabled');
+        document.getElementById("rb2").classList.add('disabled');
+        document.getElementById("rt").innerHTML = 'Saving your report <span class="animate-ellipsis"></span>';
+
+        // Sends the data to the server
+        await sendData(data);
+
+        // Reverses the changes to the error flagging area and hides it
+        document.getElementById("rb1").disabled = false;
+        document.getElementById("rb2").disabled = false;
+        document.getElementById("rb1").classList.remove('disabled');
+        document.getElementById("rb2").classList.remove('disabled');
+        document.getElementById("rt").innerHTML = 'The chat contents will be sent with any comments you leave here.';
+        document.getElementById('report-popup').classList.add('hidden');
+    }
+
+    // Expose gatherAndSendData to global scope
+    window.gatherAndSendData = gatherAndSendData;
+})();
+
 // Sets a variable to represent the mode of the chat: "Learner", "Normal", or "Expert"
 let chatbotMode = '';
 
@@ -181,90 +265,6 @@ document.getElementsByClassName("cart-button")[0].addEventListener("click", func
 window.onload = function() {
     document.getElementById('popup').style.display = 'flex';
 }
-
-// This function deals with the error flagging feature
-(function() {
-    // Variables storing references to different ways that stuff enters the console
-    var originalLog = console.log;
-    var originalError = console.error;
-    var originalWarn = console.warn;
-
-    // Content of the console to be send with the error
-    var consoleContent = "";
-
-    // Overwrite the console.log function to store the content and then log it
-    console.log = function(message) {
-        try {
-            consoleContent += message + "\n";
-        } catch (e) {
-            alert("Additional debugging data will not be logged.")
-        }
-        originalLog.apply(console, arguments);
-    };
-
-    // Overwrite the console.error function to store the content and then log it
-    console.error = function(message) {
-        consoleContent += message + "\n";
-        originalError.apply(console, arguments);
-    };
-
-    // Overwrite the console.warn function to store the content and then log it
-    console.warn = function(message) {
-        consoleContent += message + "\n";
-        originalWarn.apply(console, arguments);
-    };
-
-    // Function to send data to the server
-    async function sendData(data) {
-        
-        const response = await fetch('http://127.0.0.1:3000/save_report', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({data})
-        });
-        return response.json();
-    }
-
-    // Function to capture HTML content
-    function getHTMLContent() {
-        return document.documentElement.outerHTML;
-    }
-
-    // Function to gather and send data
-    async function gatherAndSendData() {
-        // Gets the data
-        const htmlContent = getHTMLContent();
-        const comment = document.getElementsByTagName('textarea')[0].value;
-        const data = {
-            html: htmlContent,
-            console: consoleContent,
-            comment: comment
-        };
-
-        // Disables the buttons and changes the text in the error flagging area
-        document.getElementById("rb1").disabled = true;
-        document.getElementById("rb2").disabled = true;
-        document.getElementById("rb1").classList.add('disabled');
-        document.getElementById("rb2").classList.add('disabled');
-        document.getElementById("rt").innerHTML = 'Saving your report <span class="animate-ellipsis"></span>';
-
-        // Sends the data to the server
-        await sendData(data);
-
-        // Reverses the changes to the error flagging area and hides it
-        document.getElementById("rb1").disabled = false;
-        document.getElementById("rb2").disabled = false;
-        document.getElementById("rb1").classList.remove('disabled');
-        document.getElementById("rb2").classList.remove('disabled');
-        document.getElementById("rt").innerHTML = 'The chat contents will be sent with any comments you leave here.';
-        document.getElementById('report-popup').classList.add('hidden');
-    }
-
-    // Expose gatherAndSendData to global scope
-    window.gatherAndSendData = gatherAndSendData;
-})();
 
 // Opens the report popup
 function openReportPopup() {

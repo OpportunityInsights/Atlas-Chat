@@ -147,7 +147,7 @@ messageInput.addEventListener('keydown', function (event) {
     if (event.key === 'Enter') {
         event.preventDefault();
         sendMessage();
-        
+
     }
 });
 
@@ -1995,7 +1995,7 @@ function downloadAll(event) {
     const tableLinkParams = [];
     // Holds a list of lists with teh titles of each variable, leaving blank strings for select elements
     const nt = [];
-
+    
     // Iterates over each row, populating the lists above
     rows.forEach(row => {
         // gets the the first cells
@@ -2131,7 +2131,11 @@ function downloadAll(event) {
         
             finalVarNames.push(name);
         }
-        varNames = finalVarNames;
+        if (varNames.length == 0) {
+            varNames = [data.links[0]["var"]]
+        } else {
+            varNames = finalVarNames;
+        }
 
         // Using the checkbox information, fetches the selected geographical level for each varNames and downloads it as xlsx
         if (data.checkboxes[0].length == 2) {

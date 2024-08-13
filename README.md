@@ -35,9 +35,7 @@ In addition to these features, Atlas Chat has a dedicated data download page whe
 
 The website also has an error reporting feature that sends the contents of the chat, the contents of the console, and a message entered by the user describing the problem to a [FireStore](https://cloud.google.com/firestore?hl=en) database.
 
-Watch this video to get an idea of how users can interact with the chat! 
-
-[![Watch the video](https://img.youtube.com/vi/9a4H78gThJw/0.jpg)](https://www.youtube.com/watch?v=9a4H78gThJw)
+Watch [this video](https://www.youtube.com/watch?v=9a4H78gThJw) to get an idea of how users can interact with the chat.
 
 ## Installation
 
@@ -106,7 +104,7 @@ Some folders in the program only contain sheets 1, 4, 9, and 12. This is because
 
 ### File Structure of Repository
 
-In the base directory, flowchart.jpeg, structure.jpeg, thumbnail.png, and README.md are all files that help explain the code. The setup.py file contains the code that was used to construct the database. The .gitignore file prevents sensitive files from uploading to GitHub. The Flask folder contains the application itself. When running the program, the whole Flask folder is part of the execution. Inside the Flask folder, there are loose files and other directories.
+In the base directory, flowchart.jpeg, structure.jpeg, and README.md are all files that help explain the code. The setup.py file contains the code that was used to construct the database. The .gitignore file prevents sensitive files from uploading to GitHub. The Flask folder contains the application itself. When running the program, the whole Flask folder is part of the execution. Inside the Flask folder, there are loose files and other directories.
 
 First, the loose files. .env and atlas-chat-gcloud-key.json store the OpenAI API key and the Google Cloud service account key respectively. countycode-countyname.csv stores a table converting county codes to county names. states.csv stores a table converting state names to state IDs. merged_data.csv is populated anew each time the server makes a map, and there is no need to understand or monitor its contents. requirements.txt lists the Python packages that need to be installed to run the server. The server code itself is within main.py.
 

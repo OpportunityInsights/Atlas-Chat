@@ -31,7 +31,7 @@ Atlas chat is designed to help users explore [data](https://opportunityinsights.
 5. Make scatter plots
 6. Answer questions
 
-In addition to these features, Atlas Chat also has a dedicated data download page where users can download the variables mentioned in their conversations for different races, genders, percentiles, and geographic levels.
+In addition to these features, Atlas Chat has a dedicated data download page where users can download the variables mentioned in their conversations for different races, genders, percentiles, and geographic levels.
 
 The website also has an error reporting feature that sends the contents of the chat, the contents of the console, and a message entered by the user describing the problem to a [FireStore](https://cloud.google.com/firestore?hl=en) database.
 
@@ -96,9 +96,9 @@ The image below shows the structure of the program. The program is divided into 
 
 To see the raw data this chat has access to, please [click here](https://opportunityinsights.org/data/) and scroll down to "The Opportunity Atlas: Mapping the Childhood Roots of Social Mobility".
 
-In this section there are 13 subsections. Atlas Chat has access to the csv files from all subsections except "Crosswalk Between 2010 and 2020 US Census Tracts" and "Replication Package". In the code the subsections that it can access are numbered 1 to 11, with 1 corresponding to "Household Income and Incarceration for Children from Low-Income Households by Census Tract, Race, and Gender" and 11 corresponding to "Neighborhood Characteristics by Commuting Zone". Sheet 12 contains the variables present in sheet 5 but not sheet 4.
+In this section, there are 13 subsections. Atlas Chat has access to the CSV files from all subsections except "Crosswalk Between 2010 and 2020 US Census Tracts" and "Replication Package". In the code, the subsections that it can access are numbered 1 to 11, with 1 corresponding to "Household Income and Incarceration for Children from Low-Income Households by Census Tract, Race, and Gender" and 11 corresponding to "Neighborhood Characteristics by Commuting Zone". Sheet 12 contains the variables present in sheet 5 but not sheet 4.
 
-Some folders in the program only contains sheets 1, 4, 9, and 12. This is because these sheets collectively contain all the variables in the database. The other sheets contain these same variables for different geographical levels. The geographical levels are census tract, county, and commuting zone.
+Some folders in the program only contain sheets 1, 4, 9, and 12. This is because these sheets collectively contain all the variables in the database. The other sheets contain these same variables for different geographical levels. The geographical levels are census tract, county, and commuting zone.
 
 ### File Structure of Repository
 
@@ -136,13 +136,13 @@ In this branch of the flow chart, `sendMessage()` starts by calling [fetchData()
 
 The rest of this description uses the following example: the key words are "high school completion rate" which means the variables `getRankedVariables()` should return first are hs_pooled_pooled_mean, hs_pooled_female_mean, and hs_pooled_male_mean.
 
-To find these variables `getRankedVariables()` goes to the database and gets a set of precalculated embeddings. These embeddings each represent a number of variables. For example, hs_pooled_pooled_mean, hs_pooled_female_mean, and hs_pooled_male_mean are represented by the same embedding made with the text "hs - the fraction of children who completed high school." `getRankedVariables()` uses cosine similarity to calculates the distances between the embedding of the user's key words and the precalculated embeddings.
+To find these variables `getRankedVariables()` goes to the database and gets a set of precalculated embeddings. These embeddings each represent multiple variables. For example, hs_pooled_pooled_mean, hs_pooled_female_mean, and hs_pooled_male_mean are represented by the same embedding made with the text "hs - the fraction of children who completed high school." `getRankedVariables()` uses cosine similarity to calculate the distances between the embedding of the user's key words and the precalculated embeddings.
 
-Next, `getRankedVariables()` calculates "dumb distance", which is the fraction of the user's key words which appear in each of the texts which were used to make the precalculated embeddings. For example, the text "hs - the fraction of children who completed high school" would have a "dumb distance" of 0.75 since "high", "school", and "completion" are all in the text but "rate" is not.
+Next, `getRankedVariables()` calculates "dumb distance", which is the fraction of the user's key words that appear in each of the texts that were used to make the precalculated embeddings. For example, the text "hs - the fraction of children who completed high school" would have a "dumb distance" of 0.75 since "high", "school", and "completion" are all in the text but "rate" is not.
 
 The two different distance metrics are then combined, weighing the cosine similarity by 0.8 and the "dumb distance" by 0.2. The cosine similarity embedding distance is used so that terms like "upward mobility" which do not appear in the texts used to make the precalculated embeddings can be matched with phrases from the texts with similar meanings. The "dumb distance" is used so that terms like "individual" which appear in many places in the texts but whose meaning isn't picked up by the embedding model can still impact the search.
 
-Finally, `getRankedVariables()` creates a list of all the variable names in the database ordered by the distance between the text they correspond to and the users's key words. For example, in this case the list could start with hs_pooled_pooled_mean, hs_pooled_female_mean, and hs_pooled_male_mean. The lower the index of a variable in the list the closer the variable is to the key words. The variables are concatenated with information about the sheet they come from and the description of the variable and returned to the front end.
+Finally, `getRankedVariables()` creates a list of all the variable names in the database ordered by the distance between the text they correspond to and the users's key words. For example, in this case, the list could start with hs_pooled_pooled_mean, hs_pooled_female_mean, and hs_pooled_male_mean. The lower the index of a variable in the list the closer the variable is to the key words. The variables are concatenated with information about the sheet they come from and the description of the variable and returned to the front end.
 
 The front end receives the resulting list and `sendMessage()` calls  [makeTable()](https://github.com/xamxl/Atlas-Chat/blob/main/Flask/static/js/script.js#L879) which puts the variables into a hidden HTML table to make processing easier.
 

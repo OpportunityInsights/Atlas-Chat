@@ -92,7 +92,15 @@ The image below shows the structure of the program. The program is divided into 
 
 ![Image that shows how the structure of the chat.](structure.jpeg)
 
-The rest of this section goes over the file structure of this repository and describes the purpose of each file.
+### Understanding OI Data
+
+To find the raw data this chat can access, please [click here](https://opportunityinsights.org/data/) and scroll down to "The Opportunity Atlas: Mapping the Childhood Roots of Social Mobility".
+
+In this section there are 13 subsections. Atlas Chat has access to the csv files from all subsections except "Crosswalk Between 2010 and 2020 US Census Tracts" and "Replication Package". In the code these subsections are numbered 1 to 11, with 1 corresponding to "Household Income and Incarceration for Children from Low-Income Households by Census Tract, Race, and Gender" and 11 corresponding to "Neighborhood Characteristics by Commuting Zone". Sheet 12 corresponds to the variables present in sheet 5 but not sheet 4.
+
+Some folders only contains sheets 1, 4, 9, and 12. This is because these sheets collectively contain all the variables in the database. The other sheets are just these same variables for different geographical levels. The geographical levels are census tract, county, and commuting zone.
+
+### File Structure of Repository
 
 In the base directory, flowchart.jpeg, structure.jpeg, and README.md are all files that help explain the code. The setup.py file contains the code that was used to construct the database. The .gitignore file prevents these sensitive files from being uploaded to Git Hub. The Flask folder contains the application itself. When running the program, the whole Flask folder is part of the execution. Inside the Flask folder, there are loose files and other directories.
 

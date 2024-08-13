@@ -38,7 +38,7 @@ model = "gpt-4o"
 
 # Titles of all datasets, used to translate titles into indices used in file names
 titles = [
-    "Crosswalk Between 2010 and 0 US Census Tracts",
+    "Crosswalk Between 2010 and 2020 US Census Tracts",
     "Household Income and Incarceration for Children from Low-Income Households by Census Tract, Race, and Gender",
     "Household Income and Incarceration for Children from Low-Income Households by County, Race, and Gender",
     "Household Income and Incarceration for Children from Low-Income Households by Commuting Zone, Race, and Gender",

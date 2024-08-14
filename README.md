@@ -35,7 +35,7 @@ In addition to these features, Atlas Chat has a data download page where users c
 
 The website also has an error reporting feature that sends the contents of the chat, the contents of the console, and a message entered by the user describing the problem to a [FireStore](https://cloud.google.com/firestore?hl=en) database.
 
-Watch [this video](https://www.youtube.com/watch?v=9a4H78gThJw) to get an idea of how users can interact with the chat. 📹
+Watch [this video](https://www.youtube.com/watch?v=9a4H78gThJw) to understand how users can interact with the chat. 📹
 
 ## Installation
 
@@ -104,7 +104,7 @@ Some folders in the program only contain sheets 1, 4, 9, and 12. This is because
 
 ### File Structure of Repository
 
-In the base directory, flowchart.jpeg, structure.jpeg, and README.md are all files that help explain the code. The setup.py file contains the code that was used to construct the database. The .gitignore file prevents sensitive files from uploading to GitHub. The Flask folder contains the application itself, including the files for the front end, Flask backend, and the database. When running the program, the whole Flask folder is part of the execution. Inside the Flask folder, there are loose files and other directories.
+In the base directory, flowchart.jpeg, structure.jpeg, and README.md are all files that help explain the code. The setup.py file contains the code that was used to construct the database. The .gitignore file prevents sensitive files from uploading to GitHub. The Flask folder contains the application itself, including the files for the front end, Flask backend, and database. When running the program, the whole Flask folder is part of the execution. Inside the Flask folder, there are loose files and other directories.
 
 First, the loose files. .env and atlas-chat-gcloud-key.json store the OpenAI API key and the Google Cloud service account key respectively. countycode-countyname.csv stores a table converting county codes to county names. states.csv stores a table converting state names to state IDs. merged_data.csv is populated anew each time the server makes a map, and there is no need to understand or monitor its contents. requirements.txt lists the Python packages that need to be installed to run the Flask server. The server code itself is within main.py.
 
@@ -178,7 +178,7 @@ Sometimes when the variable the user wants is not one of the top 10 variables re
 
 To save money, the function call in `/useCase` used to only get one message to use when deciding which action to take. Since it was missing most of the context of the chat, the function call sometimes decided to take the wrong action. Recently, this was updated to four messages because the OpenAI API got much cheaper, so it made sense to give `/useCase` more messages to use when deciding which action to take. If this problem persists, it might be a good idea to add even more messages to the function call. Another option is to use a cheaper model like gpt-3.5 or gpt-4o-mini for this task and give the function call all of the messages.
 
-New embeddings models and LLMs that outperform the ones used in this code are regularly being released. Researching the best LLMs and embedding models and replacing the models currently being used with the new ones will improve the chat. Try looking for chat-GPT 5 and for [llama 3.1 405B hosted by Groq](https://console.groq.com/docs/models).
+New embedding models and LLMs that outperform the ones used in this code are regularly being released. Researching the best LLMs and embedding models and replacing the models currently being used with the new ones will improve the chat. Try looking for chat-GPT 5 and for [llama 3.1 405B hosted by Groq](https://console.groq.com/docs/models).
 
 ## Contact
 

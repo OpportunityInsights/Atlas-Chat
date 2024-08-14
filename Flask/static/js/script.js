@@ -1078,12 +1078,12 @@ function chooseDropdown(table) {
     }
 
     // Function to update the links and descriptions associated with the cell
-    function processTableCell(tableSelector) {
-        // Select the table
-        let table = tableSelector.closest('table');
+    function processTableCell(rowSelector) {
+        // Select the row
+        let row = rowSelector.closest('tr');
     
-        // Get the first row's first cell (index 0)
-        let firstCell = table.rows[0].cells[0];
+        // Get the row's first cell (index 0)
+        let firstCell = row.cells[0];
     
         // Get all selectors and links in the first cell
         let elements = firstCell.querySelectorAll('select, a');
@@ -1122,7 +1122,7 @@ function chooseDropdown(table) {
         });
     
         // Update the text in the second cell
-        let secondCell = table.rows[0].cells[1];
+        let secondCell = row.cells[1];
         secondCell.textContent = description;
     }
     
@@ -1312,9 +1312,6 @@ function linkRows(table) {
         // Increments processedCount
         processedCount++;
     }
-
-    // Prints all the rows to the console
-    rows.forEach(row => console.log(row.innerText));
 
     // Removes any rows that were not used
     for (let i = rows.length - 1; i >= 0; i--) {

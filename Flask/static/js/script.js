@@ -1306,6 +1306,8 @@ function linkRows(table) {
         locations.push(locationNameQ);
         // Adds the index of the row to toShow
         toShow.push(linkedRows[i]);
+        // Prints out the added variable to the console
+        console.log(parseVarName);
         
         // Increments processedCount
         processedCount++;

@@ -923,7 +923,7 @@ async function requestVar(endPoint) {
         let table = document.getElementById("t" + key);
         if (table) {
             let rows = table.rows;
-            if (rows.length > 0 && rows[0].cells.length > 0) {
+            if (rows.length > 0 && rows[0].cells.length > 0 && storedVariables[key][1] != "commuting zone") {
                 let variableName = rows[0].cells[rows[0].cells.length - 1].textContent;
                 let variableType = `${storedVariables[key][0]} ${storedVariables[key][1]}`;
                 longString += `VARIABLE NAME: ${variableName} VARIABLE TYPE: ${variableType} `;

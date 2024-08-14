@@ -20,7 +20,7 @@ Hello! Welcome to Atlas Chat. This README contains all the information you need 
 Atlas chat is designed to help users explore [data](https://opportunityinsights.org/data/) from the [Opportunity Atlas Paper](https://opportunityinsights.org/paper/the-opportunity-atlas/). The chat can:
 
 1. Find variables
-    - Users can search for different topics, races, genders, and percentiles
+    - Users can search for variables related to various topics and broken down by race, gender, and parent income percentile
 2. Get location-specific data
     - Data is available for specific census tracts, counties, and commuting zones
     - Users can also get tables with data for all US counties, all the counties in a specific state, or all the census tracts in a specific state

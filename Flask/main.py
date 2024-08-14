@@ -648,7 +648,7 @@ def pick_var_and_describe():
 # Takes in one message and uses a chatGPT function call to decide what action the chat should take
 @app.route('/useCase', methods=['POST'])
 def use_case():
-    messages = request.json['message']
+    messages = request.json['messages']
     messages.append({"role": "assistant", "content": "When it is unclear I will always pick the \"answer question or get data\" option. I will not make a map, calculate a statistic, or make a scatter plot unless the user uses very specific language. I will not make a map unless they use the word \"map\"."})
     function = {"name": "pick_use_case",
                 "description": "Decides what the user wants the chat to do.",

@@ -523,7 +523,8 @@ async function sendMessage() {
     appendMessage('error', 'Thinking <span class="animate-ellipsis"></span>');
 
     // Checks what specific task the user wants and calls the related function
-    let wTD = await useCase(message);
+    let fourMessages = messages.slice(-4);
+    let wTD = await useCase(fourMessages);
     if(wTD == "create scatter plot") {
         requestGraphVars();
         return
@@ -979,12 +980,11 @@ function getVariableId(variableName, variableType) {
 }
 
 // Takes in a single message and asks chat-GPT to use it to figure out what action the user wants that chatbot to take
-async function useCase(message) {
-    mgs = [{ role: 'user', content: message }];
+async function useCase(fourMessages) {
     const gQM = await fetch('http://127.0.0.1:3000/useCase', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ "message": mgs }),
+            body: JSON.stringify({ "messages": fourMessages }),
         });
     const decision = await gQM.json();
     return JSON.parse(decision.reply).action;

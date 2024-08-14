@@ -595,6 +595,7 @@ async function variableSearch() {
             }
             // Since state is not an option, if the location type is state, changes it to counties in state (default instead of census tracts in state)
             locationTypeQ = pars["location type"] === "state" ? "counties in state" : pars["location type"];
+            if (locationTypeQ == "null") {locationTypeQ = null}
             // If the location type is all US counties, sets the location name to an empty string since this location has no name, just a type
             // Otherwise sets it to the name of the location
             locationNameQ = locationTypeQ === "all US counties" ? "" : pars["location name"];

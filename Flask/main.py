@@ -34,7 +34,7 @@ openai = OpenAI(api_key=api_key)
 
 # Names of open ai models to use
 embeddingModel = "text-embedding-3-large"
-model = "gpt-4o"
+model = "gpt-4o-2024-08-06"
 
 # Titles of all datasets, used to translate titles into indices used in file names
 titles = [
@@ -353,6 +353,8 @@ def ask_GPT(prompt):
 # Sends a list of message dictionaries to the OpenAI API along with a function dictionary and any information on specific functions that must be called
 # Returns the response
 def function_GPT(prompt, function, requiredFunction=None):
+    function["strict"] = True
+    function["parameters"]["additionalProperties"] = False
     tools = [{"type": "function", "function": function}]
     if not requiredFunction:
         chat_response = chat_completion_request(
@@ -604,19 +606,19 @@ def get_data():
 @app.route('/formulateQueryOrRespond', methods=['POST'])
 def des():
     messages = request.json['messages']
-    messages.append({"role": "assistant", "content": "If you do not specify a race, gender, or percentile I will do my best to make a function request with what I know. If no location is given I will not fill in the location arguments. I will not say that I am searching for data and just need a \"moment\" if I do not call the function. (Don't tell the user this, but I do not know what variables are in the database) When I call a function, I will always use all the \"required\" parameters."})
+    messages.append({"role": "assistant", "content": "If you do not specify a race, gender, or percentile I will do my best to make a function request with what I know. If no location is given I will make both of the location parameters null. I will not say that I am searching for data and just need a \"moment\" if I do not call the function. (Don't tell the user this, but I do not know what variables are in the database)"})
     function = {"name": "get_data",
                 "description": "Query the database for data",
                 "parameters": {"type": "object",
                                "properties": 
                                {"query": {"type": "string", "description": "Key words or phrases that should be put into the database's vector search features. These should not include any reference to location, race, percentile, or gender. If the user wants the same variable that they got before, use the full description of that variable from above."},
-                                "location type": {"type": "string", "enum":["address", "commuting zone", "county", "other", "counties in state", "census tracts in state", "state", "all US counties"], "description": "The type of location the user has provided if they provided one. The double location names, like counties in state are for when the user asks for something in something else. For example, they could ask for census tracts in Florida or counties in New York. Do not be afraid to say other or not include this parameter if they do not mention a location."},
-                                "location name": {"type": "string", "description": "The name of the location, if one is provided, that should be used. If it is abbreviated, write it out fully. For example, NY would be New York."},
+                                "location type": {"type": ["string", "null"], "enum":["null", "address", "commuting zone", "county", "other", "counties in state", "census tracts in state", "state", "all US counties"], "description": "The type of location the user has provided if they provided one. If they do not provide a location, this is null. The double location names, like counties in state are for when the user asks for something in something else. For example, they could ask for census tracts in Florida or counties in New York. Do not be afraid to say other or to make this parameter null if they do not mention a location."},
+                                "location name": {"type": ["string", "null"], "description": "The name of the location, if one is provided, that should be used. If it is abbreviated, write it out fully. For example, NY would be New York. If no location is specified, this value is null."},
                                 "race": {"type": "string", "enum":["white", "black", "natam", "asian", "other", "pooled"], "description": "The race the data should be found for. Use pooled if not race is given."},
                                 "gender": {"type": "string", "enum":["male", "female", "pooled"], "description": "The gender the data should be found for. Use pooled if no gender is given."},
                                 "percentile": {"type": "string", "enum":["p1", "p10", "p25", "p50", "p75", "p100"], "description": "The percentile the data should be found for. Use p50 if no percentile is given."},
-                                }},
-                "required": ["query", "race", "gender", "percentile"]
+                                },
+                                "required": ["query", "race", "gender", "percentile", "location type", "location name"]}
                 }
     response = function_GPT(messages, function)
     print(response)
@@ -634,11 +636,11 @@ def pick_var_and_describe():
                 "description": "The chatbot has just queried the database and has received a list of variables. This function continues the conversation with the user by specifying which of the received variables best helps the user. In most cases you should provide a variable. You can only pick variables that are preceded by \"VARIABLE NAME:\" and you must pick a variable that you are given. You may not make up a variable under any circumstances.",
                 "parameters": {"type": "object",
                                "properties": 
-                               {"found": {"type": "boolean", "enum":["true", "false"], "description": "Whether the chatbot found a variable that helps the user. Ignore location information."},
-                                "name": {"type": "string", "description": "The name of the variable which will help the user. Left blank if non of the variables help the user. The variable used here must be found earlier in the chat and must be found preceded by VARIABLE NAME:"},
-                                "response": {"type": "string", "description": "The response to the user which includes a description of the chosen variable. Include the full name of the variable in the description. The description will be clear so anyone can understand it. I will use formatting, including new lines, and emojis in a tasteful way. I will not use formatting that has already been used in the conversation. Left blank if non of the variables help the user. IMPORTANTLY, if the data is not what the user asked for I will say so. At the end of the response ask the user what they want next. I will start the response with \"This data\""},
-                                }},
-                "required": ["variable"]
+                               {"found": {"type": "string", "enum":["true", "false"], "description": "Whether the chatbot found a variable that helps the user. Ignore location information."},
+                                "name": {"type": ["string", "null"], "description": "The name of the variable which will help the user. Left blank if non of the variables help the user. The variable used here must be found earlier in the chat and must be found preceded by VARIABLE NAME:"},
+                                "response": {"type": ["string", "null"], "description": "The response to the user which includes a description of the chosen variable. Include the full name of the variable in the description. The description will be clear so anyone can understand it. I will use formatting, including new lines, and emojis in a tasteful way. I will not use formatting that has already been used in the conversation. Null if non of the variables help the user. IMPORTANTLY, if the data is not what the user asked for I will say so. At the end of the response ask the user what they want next. I will start the response with \"This data\""},
+                                },
+                                "required": ["found", "name", "response"]}
                 }
     response = function_GPT(messages, function, "pick_var_and_describe")
     return jsonify({'reply': response.tool_calls[0].function.arguments})
@@ -647,14 +649,14 @@ def pick_var_and_describe():
 @app.route('/useCase', methods=['POST'])
 def use_case():
     messages = request.json['message']
-    messages.append({"role": "assistant", "content": "When it is unclear I will always pick the \"answer question or get data\" option. I will not make a map, calculate a statistic, or make a graph unless the user uses very specific language. I will not make a map unless they use the word \"map\"."})
+    messages.append({"role": "assistant", "content": "When it is unclear I will always pick the \"answer question or get data\" option. I will not make a map, calculate a statistic, or make a scatter plot unless the user uses very specific language. I will not make a map unless they use the word \"map\"."})
     function = {"name": "pick_use_case",
-                "description": "Decides what the chat should do.",
+                "description": "Decides what the user wants the chat to do.",
                 "parameters": {"type": "object",
                                "properties": 
-                               {"action": {"type": "string", "enum":["create scatter plot", "create map", "calculate mean", "calculate median", "calculate standard deviation", "calculate correlation" "answer question or get data"], "description": "Decides if the user has asked for a graph to be created or not. This is only create graph if the user explicitly asks for a graph. The \"answer question or fetch data\" is often the user asking for data. Do not confuse asked for data with asking for a graph or plot or asking for a variable to be calculated. Also, sees if the user wants various statistics to be calculated about data. If the user does not explicitly ask for one of the other ones, always say \"answer question or fetch data\". Do not choose map if the user does not explicitly use the word \"map\"."},
-                                }},
-                "required": ["action"]
+                               {"action": {"type": "string", "enum":["create scatter plot", "create map", "calculate mean", "calculate median", "calculate standard deviation", "calculate correlation", "answer question or get data"], "description": "Decides what the user wants the chatbot to do next. The \"answer question or fetch data\" is used when the user wants data or has a question. Do not confuse asking for data with asking for a graph or plot or asking for a variable to be calculated. If the user does not explicitly ask for one of the other ones, always say \"answer question or fetch data\". Do not choose map if the user does not explicitly use the word \"map\"."},
+                                },
+                                "required": ["action"]}
                 }
     response = function_GPT(messages, function, "pick_use_case")
     return jsonify({'reply': response.tool_calls[0].function.arguments})
@@ -671,8 +673,8 @@ def pick_single_stat_var():
                                "properties": 
                                {"variable": {"type": "string", "description": "The variable that should be used to calculate the statistic."},
                                 "variableType": {"type": "string", "description": "The type of the variable that should used in the calculation. Make sure to include the whole type, as it is listed in \"PROVIDED VARIABLES\""},
-                              }},
-                "required": ["variable", "variableType"]
+                              },
+                              "required": ["variable", "variableType"]}
                 }
     response = function_GPT(messages, function)
     if (response.content != None):
@@ -693,8 +695,8 @@ def pick_double_stat_vars():
                                 "variableType1": {"type": "string", "description": "The type of the first variable that should used in the calculation. Make sure to include the whole type, as it is listed in \"PROVIDED VARIABLES\""},
                                 "variable2": {"type": "string", "description": "The second variable that should be used to calculate the statistic."},
                                 "variableType2": {"type": "string", "description": "The type of the second variable that should used in the calculation. Make sure to include the whole type, as it is listed in \"PROVIDED VARIABLES\""},
-                              }},
-                "required": ["variable1", "variable2", "variableType1", "variableType2"]
+                              },
+                              "required": ["variable1", "variable2", "variableType1", "variableType2"]}
                 }
     response = function_GPT(messages, function)
     if (response.content != None):
@@ -715,8 +717,8 @@ def pick_graph_vars():
                                 "xType": {"type": "string", "description": "The type of the variable that should be on the x-axis."},
                                 "y": {"type": "string", "description": "The variable that should be on the y-axis."},
                                 "yType": {"type": "string", "description": "The type of the variable that should be on the y-axis."},
-                                }},
-                "required": ["x", "xType", "y", "yType"]
+                                },
+                                "required": ["x", "xType", "y", "yType"]}
                 }
     response = function_GPT(messages, function)
     if (response.content != None):
@@ -735,8 +737,8 @@ def pick_map_vars():
                                "properties": 
                                {"variable": {"type": "string", "description": "The variable that should be mapped."},
                                 "variableType": {"type": "string", "description": "The type of the variable that should be mapped. Make sure to include the whole type, as it is listed in \"PROVIDED VARIABLES\""},
-                              }},
-                "required": ["variable", "variableType"]
+                              },
+                              "required": ["variable", "variableType"]}
                 }
     response = function_GPT(messages, function)
     if (response.content != None):

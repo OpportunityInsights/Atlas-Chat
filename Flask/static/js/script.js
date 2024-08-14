@@ -1313,6 +1313,9 @@ function linkRows(table) {
         processedCount++;
     }
 
+    // Prints all the rows to the console
+    rows.forEach(row => console.log(row.innerText));
+
     // Removes any rows that were not used
     for (let i = rows.length - 1; i >= 0; i--) {
         if (!toShow.includes(i)) {

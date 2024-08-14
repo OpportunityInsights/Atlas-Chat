@@ -122,7 +122,7 @@ When the user sends a message to the chat, [sendMessage()](https://github.com/xa
 
 ### Pick Variable, Pick Two Variables, Pick Two Graphing Variables, Pick Mapping Variables
 
-In these four branches of the flow chart, the chat decides that the user wants it to calculate a statistic or create a figure. `sendMessage()` calls the corresponding function. For illustration, this description will follow the branch the chat picks if it thinks the user wants to make a scatter plot.
+If `/useCase` decides the user wants the chat to calculate a statistic or make a figure, the chat goes to these branches of the flowchart. `sendMessage()` calls the corresponding function. For illustration, this description will follow the branch the chat picks if it thinks the user wants to make a scatter plot.
 
 In this case [requestGraphVars()](https://github.com/xamxl/Atlas-Chat/blob/main/Flask/static/js/script.js#L728) starts by calling [requestVar()](https://github.com/xamxl/Atlas-Chat/blob/main/Flask/static/js/script.js#L770) which constructs a list of all the available variables and sends them to the server. [/pickGraphVars](https://github.com/xamxl/Atlas-Chat/blob/main/Flask/main.py#L707) in the server uses a function call from the OpenAI API to decide which variables should be used or to write a message describing why the right variables were not available. Back in `requestGraphVars()` the chat either prints out the text describing why the right variables were not found or calls [graphVariable()](https://github.com/xamxl/Atlas-Chat/blob/main/Flask/static/js/script.js#L1648) to create the graph with the variables the server selected.
 

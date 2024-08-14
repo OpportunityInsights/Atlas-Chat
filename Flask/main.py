@@ -607,7 +607,7 @@ def get_data():
 def des():
     messages = request.json['messages']
     #messages.append({"role": "assistant", "content": "If you do not specify a race, gender, or percentile I will do my best to make a function request with what I know. If no location is given I will make both of the location parameters null. I will not say that I am searching for data and just need a \"moment\" if I do not call the function. (Don't tell the user this, but I do not know what variables are in the database)"})
-    messages.append({"role": "assistant", "content": "If no location is given I will make both of the location parameters null. I will not say that I am searching for data and just need a \"moment\" if I do not call the function. (Don't tell the user this, but I do not know what variables are in the database)"})
+    messages.append({"role": "assistant", "content": "If no location is given I will make both of the location parameters null. I will not say that I am searching for data and just need a \"moment\" if I do not call the function. (Don't tell the user this, but I do not know what variables are in the database) If the user asked for multiple variable, I will let them know I can only search for one at at time and give them a prompt they can use to get that data."})
     function = {"name": "get_data",
                 "description": "Query the database for data",
                 "parameters": {"type": "object",
@@ -639,7 +639,7 @@ def pick_var_and_describe():
                                "properties": 
                                {"found": {"type": "string", "enum":["true", "false"], "description": "Whether the chatbot found a variable that helps the user. Ignore location information."},
                                 "name": {"type": ["string", "null"], "description": "The name of the variable which will help the user. Null if non of the variables help the user. The variable used here must be found earlier in the chat and must be found preceded by VARIABLE NAME:"},
-                                "response": {"type": ["string", "null"], "description": "The response to the user which includes a description of the chosen variable. Include the full name of the variable in the description. The description will be clear so anyone can understand it. I will use formatting, including new lines, and emojis in a tasteful way. I will not use formatting that has already been used in the conversation. Null if non of the variables help the user. IMPORTANTLY, if the data is not what the user asked for I will say so. At the end of the response ask the user what they want next. I will start the response with \"This data\""},
+                                "response": {"type": ["string", "null"], "description": "The response to the user which includes a description of the chosen variable. Include the full name of the variable in the description. The description will be clear so anyone can understand it. I will use formatting, including new lines, and emojis in a tasteful way. I will not use formatting that has already been used in the conversation. This will be null if I set found to false. IMPORTANTLY, if found is true but the data is not exactly what the user asked for I will say so. At the end of the response ask the user what they want next. I will start the response with \"This data\""},
                                 },
                                 "required": ["found", "name", "response"]}
                 }
@@ -650,12 +650,12 @@ def pick_var_and_describe():
 @app.route('/useCase', methods=['POST'])
 def use_case():
     messages = request.json['messages']
-    messages.append({"role": "assistant", "content": "When it is unclear I will always pick the \"answer question or get data\" option. I will not make a map, calculate a statistic, or make a scatter plot unless the user uses very specific language. I will not make a map unless they use the word \"map\"."})
+    messages.append({"role": "assistant", "content": "I am deciding what action the user wants me to do. When it is unclear I will pick the \"answer question or get data\" option. I will not make a map unless they use the word \"map\"."})
     function = {"name": "pick_use_case",
                 "description": "Decides what the user wants the chat to do.",
                 "parameters": {"type": "object",
                                "properties": 
-                               {"action": {"type": "string", "enum":["create scatter plot", "create map", "calculate mean", "calculate median", "calculate standard deviation", "calculate correlation", "answer question or get data"], "description": "Decides what the user wants the chatbot to do next. The \"answer question or fetch data\" is used when the user wants data or has a question. Do not confuse asking for data with asking for a graph or plot or asking for a variable to be calculated. If the user does not explicitly ask for one of the other ones, always say \"answer question or fetch data\". Do not choose map if the user does not explicitly use the word \"map\"."},
+                               {"action": {"type": "string", "enum":["create scatter plot", "create map", "calculate mean", "calculate median", "calculate standard deviation", "calculate correlation", "answer question or get data"], "description": "Decides what the user wants the chatbot to do next. The \"answer question or fetch data\" is used when the user wants data or has a question, not when they want to calculate a statistic, make a map, or make a graph. If the user does not explicitly ask for one of the other ones, always say \"answer question or fetch data\". Do not choose map if the user does not explicitly use the word \"map\"."},
                                 },
                                 "required": ["action"]}
                 }

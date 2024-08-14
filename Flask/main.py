@@ -606,7 +606,8 @@ def get_data():
 @app.route('/formulateQueryOrRespond', methods=['POST'])
 def des():
     messages = request.json['messages']
-    messages.append({"role": "assistant", "content": "If you do not specify a race, gender, or percentile I will do my best to make a function request with what I know. If no location is given I will make both of the location parameters null. I will not say that I am searching for data and just need a \"moment\" if I do not call the function. (Don't tell the user this, but I do not know what variables are in the database)"})
+    #messages.append({"role": "assistant", "content": "If you do not specify a race, gender, or percentile I will do my best to make a function request with what I know. If no location is given I will make both of the location parameters null. I will not say that I am searching for data and just need a \"moment\" if I do not call the function. (Don't tell the user this, but I do not know what variables are in the database)"})
+    messages.append({"role": "assistant", "content": "If no location is given I will make both of the location parameters null. I will not say that I am searching for data and just need a \"moment\" if I do not call the function. (Don't tell the user this, but I do not know what variables are in the database)"})
     function = {"name": "get_data",
                 "description": "Query the database for data",
                 "parameters": {"type": "object",
@@ -637,7 +638,7 @@ def pick_var_and_describe():
                 "parameters": {"type": "object",
                                "properties": 
                                {"found": {"type": "string", "enum":["true", "false"], "description": "Whether the chatbot found a variable that helps the user. Ignore location information."},
-                                "name": {"type": ["string", "null"], "description": "The name of the variable which will help the user. Left blank if non of the variables help the user. The variable used here must be found earlier in the chat and must be found preceded by VARIABLE NAME:"},
+                                "name": {"type": ["string", "null"], "description": "The name of the variable which will help the user. Null if non of the variables help the user. The variable used here must be found earlier in the chat and must be found preceded by VARIABLE NAME:"},
                                 "response": {"type": ["string", "null"], "description": "The response to the user which includes a description of the chosen variable. Include the full name of the variable in the description. The description will be clear so anyone can understand it. I will use formatting, including new lines, and emojis in a tasteful way. I will not use formatting that has already been used in the conversation. Null if non of the variables help the user. IMPORTANTLY, if the data is not what the user asked for I will say so. At the end of the response ask the user what they want next. I will start the response with \"This data\""},
                                 },
                                 "required": ["found", "name", "response"]}

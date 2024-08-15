@@ -44,14 +44,14 @@ First, open the terminal in a directory of your choosing and clone this reposito
 ```bash
 git clone https://github.com/xamxl/Atlas-Chat.git
 ```
-Next, navigate to the Flask folder and install the Python requirements.
+Next, navigate to the `Flask` folder and install the Python requirements.
 
 ```bash
 cd Atlas-Chat/Flask
 python -m pip install --upgrade pip
 pip install -r requirements.txt
 ```
-You now need your own OpenAI API key and Google Cloud service account (If you want error reporting to work). You can get an OpenAI API key [here](https://platform.openai.com/docs/overview) and a service account [here](https://cloud.google.com/iam/docs/keys-create-delete). Put the OpenAI API key in the .env file. If you get a Google Cloud service account, put your JSON key into the atlas-chat-gcloud-key.json file.
+You now need your own OpenAI API key and Google Cloud service account (If you want error reporting to work). You can get an OpenAI API key [here](https://platform.openai.com/docs/overview) and a service account [here](https://cloud.google.com/iam/docs/keys-create-delete). Put the OpenAI API key in the `.env` file. If you get a Google Cloud service account, put your JSON key into the `atlas-chat-gcloud-key.json` file.
 
 Now, run the Python file to start the server.
 
@@ -64,9 +64,9 @@ Finally, navigate to the [localhost](http://127.0.0.1:3000/). That's it! 🎉
 
 While in the future any actual deployments of this website should have a separate database, cloud backend, and static website host, for now, if you want to quickly make a shareable link, you can upload the whole program to [Google Cloud Run](https://cloud.google.com/run/?utm_source=google&utm_medium=cpc&utm_campaign=na-US-all-en-dr-bkws-all-all-trial-e-dr-1707554&utm_content=text-ad-none-any-DEV_c-CRE_665665924930-ADGP_Hybrid+%7C+BKWS+-+MIX+%7C+Txt-Serverless+Computing-Cloud+Run-KWID_43700077224933166-kwd-678836618089&utm_term=KW_google+cloud+run-ST_google+cloud+run&gad_source=1&gclid=Cj0KCQjwh7K1BhCZARIsAKOrVqGkYjouOnjAaTGADV02ZOaRybrk_BuAbY7DdY0i_b9Xr3Kin24g4tgaAuaIEALw_wcB&gclsrc=aw.ds&hl=en).
 
-To do this, first, go to the script.js file in the project and replace all occurrences of http\:\/\/<i></i>127\.0\.0\.1\:3000\/ with the link to your Google Cloud Run deployment. You may need to deploy twice, once to figure out what this link is and another time with this link in the code.
+To do this, first, go to the `script.js` file in the project and replace all occurrences of http\:\/\/<i></i>127\.0\.0\.1\:3000\/ with the link to your Google Cloud Run deployment. You may need to deploy twice, once to figure out what this link is and another time with this link in the code.
 
-Then set up a Google Cloud account and install the [Google Cloud SDK](https://cloud.google.com/sdk/docs/install). Navigate to the Flask folder and build the docker image.
+Then set up a Google Cloud account and install the [Google Cloud SDK](https://cloud.google.com/sdk/docs/install). Navigate to the `Flask` folder and build the docker image.
 
 ```bash
 cd Atlas-Chat/Flask
@@ -109,7 +109,7 @@ In the base directory, flowchart.jpeg, structure.jpeg, and README.md are all fil
 
 First, the loose files. .env and atlas-chat-gcloud-key.json store the OpenAI API key and the Google Cloud service account key respectively. countycode-countyname.csv stores a table converting county codes to county names. states.csv stores a table converting state names to state IDs. merged_data.csv is populated anew each time the server makes a map, and there is no need to understand or monitor its contents. requirements.txt lists the Python packages that need to be installed to run the Flask server. The server code itself is within main.py.
 
-Second, the folders. Static and templates store the website code (the HTML, CSS, JS, and images that main.py gives to the user's computer when it loads the page). The map_data folder contains files with information about the outlines of US counties and census tracts. These are used when constructing maps. The headers folder contains CSV sheets, each with only one row. This row contains the header names for all the columns in that sheet. data_columns contains the data itself. Each column from the original data was turned into its own sheet named with the number of the sheet the data came from and then the variable name. Header_description contains JSON files with descriptions for each variable. There are only four files (fewer files than there are sheets) since many of the sheets have the same variables, just for different geographical levels. Label_col_names holds the names of the label columns for each sheet. Examples of label columns are state ID, state name, county name, and county ID. descriptions_units contains JSON with each variable name and its description. Importantly these variables do not specify race, gender, or percentile. For example, descriptions_units may contain a variable called kfr_\[race\]_\[gender\]_mean. descriptions_units also contains information on the sheets' units and the different outcomes in each sheet. Think of descriptions_units as the information from the README on Opportunity Insights' data page. The embeddings folder contains the embeddings themselves. All columns in the sheets have a corresponding embedding, but each embedding normally corresponds to multiple columns. For example, kfr_pooled_pooled_mean and kfr_black_pooled_mean both have the same embedding. The embeddings for all label columns are set to zero.
+Second, the folders. Static and templates store the website code (the HTML, CSS, JS, and images that main.py gives to the user's computer when it loads the page). The map_data folder contains files with information about the outlines of US counties and census tracts. These are used when constructing maps. The headers folder contains CSV sheets, each with only one row. This row contains the header names for all the columns in that sheet. data_columns contains the data itself. Each column from the original data was turned into its own sheet named with the number of the sheet the data came from and then the variable name. Header_description contains files with descriptions for each variable. There are only four files (fewer files than there are sheets) since many of the sheets have the same variables, just for different geographical levels. Label_col_names holds the names of the label columns for each sheet. Examples of label columns are state ID, state name, county name, and county ID. descriptions_units contains with each variable name and its description. Importantly these variables do not specify race, gender, or percentile. For example, descriptions_units may contain a variable called kfr_\[race\]_\[gender\]_mean. descriptions_units also contains information on the sheets' units and the different outcomes in each sheet. Think of descriptions_units as the information from the README on Opportunity Insights' data page. The embeddings folder contains the embeddings themselves. All columns in the sheets have a corresponding embedding, but each embedding normally corresponds to multiple columns. For example, kfr_pooled_pooled_mean and kfr_black_pooled_mean both have the same embedding. The embeddings for all label columns are set to zero.
 
 ## Inner Workings
 

@@ -48,6 +48,7 @@ Next, navigate to the Flask folder and install the Python requirements.
 
 ```bash
 cd Atlas-Chat/Flask
+python -m pip install --upgrade pip
 pip install -r requirements.txt
 ```
 You now need your own OpenAI API key and Google Cloud service account (If you want error reporting to work). You can get an OpenAI API key [here](https://platform.openai.com/docs/overview) and a service account [here](https://cloud.google.com/iam/docs/keys-create-delete). Put the OpenAI API key in the .env file. If you get a Google Cloud service account, put your JSON key into the atlas-chat-gcloud-key.json file.

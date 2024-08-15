@@ -105,11 +105,13 @@ Some folders in the program only contain sheets 1, 4, 9, and 12. This is because
 
 ### File Structure of Repository
 
+The list below goes over each file in the project, where is is located, and what its purpose is.
+
 - `flowchart.jpeg`: Used in the README
 - `structure.jpeg`: Used in the README
 - `README.md`: A file that helps explain the code
 - `setup.py`: Contains the code that was used to construct the database
-- `.gitignore`: Prevents sensitive files from uploading to GitHub.
+- `.gitignore`: Prevents sensitive files from uploading to GitHub
 - `Flask`: Contains the application itself, including the files for the front end, Flask backend, and database. When running the program, the whole `Flask` folder is part of the execution
     - `.env`: Stores the OpenAI API key
     - `atlas-chat-gcloud-key.json`: Stores the Google Cloud service account key

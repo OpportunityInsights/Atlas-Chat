@@ -105,11 +105,28 @@ Some folders in the program only contain sheets 1, 4, 9, and 12. This is because
 
 ### File Structure of Repository
 
-In the base directory, `flowchart.jpeg`, `structure.jpeg`, and `README.md` are all files that help explain the code. The `setup.py` file contains the code that was used to construct the database. The `.gitignore` file prevents sensitive files from uploading to GitHub. The `Flask` folder contains the application itself, including the files for the front end, Flask backend, and database. When running the program, the whole `Flask` folder is part of the execution. Inside the `Flask` folder, there are loose files and other directories.
-
-First, the loose files. `.env` and `atlas-chat-gcloud-key.json` store the OpenAI API key and the Google Cloud service account key respectively. `countycode-countyname.csv` stores a table converting county codes to county names. `states.csv` stores a table converting state names to state IDs. `merged_data.csv` is populated anew each time the server makes a map, and there is no need to understand or monitor its contents. `requirements.txt` lists the Python packages that need to be installed to run the Flask server. The server code itself is within `main.py`.
-
-Second, the folders. `static` and `templates` store the website code (the HTML, CSS, JS, and images that `main.py` gives to the user's computer when it loads the page). The `map_data` folder contains files with information about the outlines of US counties and census tracts. These are used when constructing maps. The `headers` folder contains CSV sheets, each with only one row. This row contains the header names for all the columns in that sheet. `data_columns` contains the data itself. Each column from the original data was turned into its own sheet named with the number of the sheet the data came from and then the variable name. `header_description` contains files with descriptions for each variable. There are only four files (fewer files than there are sheets) since many of the sheets have the same variables, just for different geographical levels. `label_col_names` holds the names of the label columns for each sheet. Examples of label columns are state ID, state name, county name, and county ID. `descriptions_units` contains with each variable name and its description. Importantly these variables do not specify race, gender, or percentile. For example, `descriptions_units` may contain a variable called kfr_\[race\]_\[gender\]_mean. `descriptions_units` also contains information on the sheets' units and the different outcomes in each sheet. Think of `descriptions_units` as the information from the README on Opportunity Insights' data page. The `embeddings` folder contains the embeddings themselves. All columns in the sheets have a corresponding embedding, but each embedding normally corresponds to multiple columns. For example, kfr_pooled_pooled_mean and kfr_black_pooled_mean both have the same embedding. The embeddings for all label columns are set to zero.
+- `flowchart.jpeg`: Used in the README
+- `structure.jpeg`: Used in the README
+- `README.md`: A file that helps explain the code
+- `setup.py`: Contains the code that was used to construct the database
+- `.gitignore`: Prevents sensitive files from uploading to GitHub.
+- `Flask`: Contains the application itself, including the files for the front end, Flask backend, and database. When running the program, the whole `Flask` folder is part of the execution
+    - `.env`: Stores the OpenAI API key
+    - `atlas-chat-gcloud-key.json`: Stores the Google Cloud service account key
+    - `countycode-countyname.csv`: Stores a table converting county codes to county names
+    - `states.csv`: Stores a table converting state names to state IDs
+    - `merged_data.csv`: Populated anew each time the server makes a map. There is no need to know what is in this file
+    - `requirements.txt`: Lists the Python packages that need to be installed to run the Flask server
+    - `main.py`: Contains the server code
+    - `static`: Stores the CSS, JS, and images that `main.py` gives to the user's computer when it loads the page
+    - `templates`: Stores the HTML that `main.py` gives to the user's computer when it loads the page
+    - `map_data`: Contains files with information about the outlines of US counties and census tracts. Used to contruct maps
+    - `headers`: Contains CSV sheets, each with only one row. This row contains the header names for all the columns in that sheet
+    - `data_columns`: Contains the data itself. Each column from the original data was turned into its own sheet named with the number of the sheet the data came from and then the variable name
+    - `header_description`: Contains files with descriptions for each variable. There are only four files (fewer files than there are sheets) since many of the sheets have the same variables, just for different geographical levels
+    - `label_col_names`: Holds the names of the label columns for each sheet. Examples of label columns are state ID, state name, county name, and county ID
+    - `descriptions_units`: Contains each variable name and its description. Importantly these variables do not specify race, gender, or percentile. For example, `descriptions_units` may contain a variable called kfr_\[race]_\[gender]_mean. `descriptions_units` also contains information on the sheets' units and the different outcomes in each sheet. Think of `descriptions_units` as the information from the README on Opportunity Insights' data page
+    - `embeddings`: Contains the embeddings themselves. All columns in the sheets have a corresponding embedding, but each embedding normally corresponds to multiple columns. For example, kfr_pooled_pooled_mean and kfr_black_pooled_mean both have the same embedding. The embeddings for all label columns are set to zero
 
 ## Inner Workings
 
@@ -143,7 +160,7 @@ To find these variables `getRankedVariables()` goes to the database and gets a s
 
 Next, `getRankedVariables()` calculates "dumb distance", which is the fraction of the user's key words that appear in each of the texts that were used to make the precalculated embeddings. For example, the text "hs - the fraction of children who completed high school" would have a "dumb distance" of 0.75 since "high", "school", and "completion" are all in the text but "rate" is not.
 
-The two different distance metrics are then combined, weighing the cosine similarity by 0.8 and the "dumb distance" by 0.2. The specific values 0.8 and 0.2 were choosen by trying different ratios and seeing which variables the code did and did not return for each. The cosine similarity embedding distance is used so that terms like "upward mobility" which do not appear in the texts used to make the precalculated embeddings can be matched with phrases from the texts with similar meanings. The "dumb distance" is used so that terms like "individual" which do appear in the texts but whose meaning isn't picked up by the embedding model can still impact the search.
+The two different distance metrics are then combined, weighing the cosine similarity by 0.8 and the "dumb distance" by 0.2. The specific values 0.8 and 0.2 were choosen by trying different ratios and seeing which ratio regularly returned the most relevant variables. The cosine similarity embedding distance is used so that terms like "upward mobility" which do not appear in the texts used to make the precalculated embeddings can be matched with phrases from the texts with similar meanings. The "dumb distance" is used so that terms like "individual" which do appear in the texts but whose meaning isn't picked up by the embedding model can still impact the search.
 
 Finally, `getRankedVariables()` creates a list of all the variable names in the database ordered by the distance between the text they correspond to and the users's key words. For example, in this case, the list could start with hs_pooled_pooled_mean, hs_pooled_female_mean, and hs_pooled_male_mean. The lower the index of a variable in the list the closer the variable is to the key words. Strings with the variable description and the name of the sheet the variable is from are added to the variable list.
 

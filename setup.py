@@ -6,6 +6,9 @@ from flask_cors import CORS
 import json
 import os
 import pandas as pd
+import firebase_admin
+from firebase_admin import credentials
+from firebase_admin import firestore
 
 # Imports functions from main
 from Flask.main import *
@@ -301,5 +304,39 @@ def rename_files():
 
     return jsonify({'renamed_files': renamed_files}), 200
 
+# Uploads all the sheets in data_columns to the Firestore database in the data_columns collection
+@app.route('/upload_csvs', methods=['GET'])
+def upload_csvs():
+    # Initialize Firebase
+    cred = credentials.Certificate('Flask/atlas-chat-gcloud-key.json')
+    try:
+        firebase_admin.initialize_app(cred)
+    except ValueError:
+        pass
+    db = firestore.client()
+
+    # Path to the folder containing the CSV files
+    folder_path = 'Flask/data_columns'
+
+    # Iterate over each file in the folder
+    for filename in os.listdir(folder_path):
+        if filename.endswith('.csv'):
+            print(f"Processing file: {filename}")
+            # Load the CSV file into a DataFrame
+            file_path = os.path.join(folder_path, filename)
+            df = pd.read_csv(file_path)
+
+            # Convert DataFrame to a dictionary
+            data = df.to_dict(orient='records')
+
+            # Use the filename (without extension) as the document name
+            document_name = os.path.splitext(filename)[0]
+            print(f"Uploading document: {document_name}")
+
+            # Save the CSV file content as a document in the Firestore collection
+            db.collection('data_columns').document(document_name).set({"data": data})
+            return
+
+
 if __name__ == '__main__':
-    app.run(port=3000)
+    app.run(port=4000)

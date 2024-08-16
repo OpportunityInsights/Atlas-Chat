@@ -5,12 +5,12 @@ import csv
 import time
 import numpy as np
 import pandas as pd
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, Response
 from flask_cors import CORS
 from dotenv import load_dotenv
 import requests
 from urllib.parse import quote
-from shapely import wkt
+from shapely import Point, wkt
 import folium
 import geopandas as gpd
 from datetime import datetime
@@ -873,45 +873,59 @@ def generate_map():
         geo_df = geo_df[geo_df['STATEFP'].isin(state_fips_list)]
         df['GEOID'] = [state_fips + county + tract for state_fips, county, tract in zip(df.iloc[:, 1].apply(lambda x: str(x).zfill(2)).tolist(), county_fips, tract_fips)]
 
-
+    print("working0")
     # Merge the data with the GeoDataFrame
     merged = geo_df.set_index('GEOID').join(df.set_index('GEOID'))
     merged.reset_index(inplace=True)
 
+    print("working")
     # Save the merged data to a CSV file and then reads it back out
     merged.to_csv('merged_data.csv')
+    print("working .5")
+    # Load the merged data
     merged = pd.read_csv('merged_data.csv')
-
-    # Calculate the centroid for each geometry
-    projected_crs = 'EPSG:3857'
-
-    # Re-project the GeoDataFrame to the projected CRS
-    geo_df_projected = geo_df.to_crs(projected_crs)
-
-    # Calculate centroids on the projected GeoDataFrame
-    centroids = geo_df_projected.geometry.centroid
-
-    # If needed, you can re-project centroids back to the original CRS
-    centroids = centroids.to_crs(geo_df.crs)
-    xt = 0
-    yt = 0
-    for cen in centroids:
-        xt += cen.x
-        yt += cen.y
-    state_center = [yt / len(centroids), xt / len(centroids)]
+    print("working1")
 
     # Prepares final data and creates the map
     data_column = merged.columns[-1]
-    m = ""
+
+    # Replace NaN with a default value (e.g., 0 or '')
+    merged.fillna('', inplace=True)
+            
+    print("working again")
+
+    # Your route or function where you want to return the compressed string:
     if len(states) > 1:
-        m = create_folium_choropleth(merged, data_column, state_center, 3.5)
+        data = {
+            "features": merged['geometry'].to_json(),  # Convert to JSON serializable
+            "properties": merged[data_column].to_dict(),  # Convert Series to dict
+            "data_column": data_column,
+            "geo_level": 3.5
+        }
     else:
-        m = create_folium_choropleth(merged, data_column, state_center, 5.5)
+        data = {
+            "features": merged['geometry'].to_json(),  # Convert to JSON serializable
+            "properties": merged[data_column].to_dict(),  # Convert Series to dict
+            "data_column": data_column,
+            "geo_level": 5.5
+        }
 
-    # Save the map to an HTML string
-    map_html = m._repr_html_()
+    #compressed_string = compressed_jsonify(data)
+        # Generator to yield JSON chunks
+    def generate():
+        # Step 1: Generate the full JSON string
+        full_json = json.dumps(data)  # Convert the whole data dictionary into a JSON string
+        
+        # Step 2: Yield the JSON string in chunks
+        chunk_size = 10024  # Define the chunk size
+        for i in range(0, len(full_json), chunk_size):
+            yield full_json[i:i+chunk_size]  # Yield each chunk
 
-    return jsonify({"html": map_html})
+        # Optionally, you can yield an empty string to close the chunked transfer encoding
+        yield ''
+
+    # Step 3: Return the response
+    return Response(generate(), content_type='application/json', headers={"Transfer-Encoding": "chunked"})
 
 # Loads the index page
 @app.route('/')

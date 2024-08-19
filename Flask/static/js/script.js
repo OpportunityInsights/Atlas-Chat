@@ -439,7 +439,6 @@ function removeBR() {
 
 // Removes the last message from the chat
 function removeLastMessage() {
-    console.log("REMOVING");
     const messages = document.querySelectorAll('.message');
     if (messages.length > 0) {
         messages[messages.length - 1].remove();

@@ -139,7 +139,7 @@ let locationNameQ;
 let displayVariableDescriptionTable = true;
 
 // Adds the first message to the chat
-appendMessage('error topMessage', "Hello! I'm a bot designed to help you find data! Please ask me anything and I will do my best to find some related data from the Opportunity Atlas paper.");
+appendMessage('error topMessage', "Hello! I'm a bot designed to help you find data! Please ask me anything and I will do my best to find some related data from the <a target='_blank' href='https://opportunityinsights.org/paper/the-opportunity-atlas/'>Opportunity Atlas paper</a>.");
 messages.push({ role: 'assistant', content: "Hello! I'm a bot designed to help you find data! Please ask me anything and I will do my best to find some related data from the Opportunity Atlas paper." });
 
 // Adds an event listener to the input field to detect when the user presses enter and sends the message
@@ -377,7 +377,7 @@ function selectMode(mode) {
 
     // Replaces the message on the top of the screen with the right message for that mode
     removeLastMessage();
-    appendMessage('error topMessage', "Hello! I'm a bot designed to help you find data! Please ask me anything and I will do my best to find some related data from the Opportunity Atlas paper. (" + chatbotMode + " Mode)");
+    appendMessage('error topMessage', "Hello! I'm a bot designed to help you find data! Please ask me anything and I will do my best to find some related data from the <a target='_blank' href='https://opportunityinsights.org/paper/the-opportunity-atlas/'>Opportunity Atlas paper</a>. (" + chatbotMode + " Mode)");
     // Adds a message to messages to instruct the AI about its user
     if (chatbotMode == "Expert") {
         messages.push({ role: 'assistant', content: "I am talking with an expert. I will assume they understand economics and statistics and are a very serious person who does not like emojis. I am their helpful assistant. I WILL USE THIS IN EVERYTHING I WRITE AND DO, EVEN IN FUNCTION CALLS."});

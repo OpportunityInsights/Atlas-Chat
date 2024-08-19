@@ -853,10 +853,10 @@ def generate_map():
     columns = get_shapefile_columns(shapefile_path)
 
     # Check if the required columns are present in the shapefile
-    if 'STATEFP' not in columns or 'COUNTYFP' not in columns:
+    if 'STATEFP10' not in columns or 'COUNTYFP10' not in columns:
         print("error")
         return jsonify({"error": "The required columns STATEFP or COUNTYFP are not in the shapefile"}), 400
-    if geo_level == 'tract' and 'TRACTCE' not in columns:
+    if geo_level == 'tract' and 'TRACTCE10' not in columns:
         print("error")
         return jsonify({"error": "The required column TRACTCE is not in the shapefile"}), 400
 
@@ -865,16 +865,16 @@ def generate_map():
 
     # Add a GEOID column to the GeoDataFrame
     if geo_level == 'county':
-        geo_df['GEOID'] = geo_df['STATEFP'] + geo_df['COUNTYFP']
-        geo_df = geo_df[geo_df['STATEFP'].isin(state_fips_list)]
-        df['GEOID'] = [state_fips + county for state_fips, county in zip(df.iloc[:, 1].apply(lambda x: str(x).zfill(2)).tolist(), county_fips)]
+        geo_df['GEOID10'] = geo_df['STATEFP10'] + geo_df['COUNTYFP10']
+        geo_df = geo_df[geo_df['STATEFP10'].isin(state_fips_list)]
+        df['GEOID10'] = [state_fips + county for state_fips, county in zip(df.iloc[:, 1].apply(lambda x: str(x).zfill(2)).tolist(), county_fips)]
     elif geo_level == 'tract':
-        geo_df['GEOID'] = geo_df['STATEFP'] + geo_df['COUNTYFP'] + geo_df['TRACTCE']
-        geo_df = geo_df[geo_df['STATEFP'].isin(state_fips_list)]
-        df['GEOID'] = [state_fips + county + tract for state_fips, county, tract in zip(df.iloc[:, 1].apply(lambda x: str(x).zfill(2)).tolist(), county_fips, tract_fips)]
+        geo_df['GEOID10'] = geo_df['STATEFP10'] + geo_df['COUNTYFP10'] + geo_df['TRACTCE10']
+        geo_df = geo_df[geo_df['STATEFP10'].isin(state_fips_list)]
+        df['GEOID10'] = [state_fips + county + tract for state_fips, county, tract in zip(df.iloc[:, 1].apply(lambda x: str(x).zfill(2)).tolist(), county_fips, tract_fips)]
 
     # Merge the data with the GeoDataFrame
-    merged = geo_df.set_index('GEOID').join(df.set_index('GEOID'))
+    merged = geo_df.set_index('GEOID10').join(df.set_index('GEOID10'))
     merged.reset_index(inplace=True)
 
     # Save the merged data to a CSV file and then reads it back out

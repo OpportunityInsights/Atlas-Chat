@@ -266,11 +266,14 @@ def rename_files():
         try:
             # Load the shapefile
             gdf = gpd.read_file(os.path.join(directory, shapefile))
-            
+
             # Skip county files
             if shapefile == 'cb_2018_us_county_500k.shp':
                 print(f"Skipping county file: {shapefile}")
                 continue
+
+            # Remove columns ending with "10"
+            gdf.columns = [col[:-2] if col.endswith('10') else col for col in gdf.columns]
 
             # Determine FIPS code for tract files
             if 'STATEFP' in gdf.columns:

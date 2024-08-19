@@ -74,9 +74,6 @@ gcloud run deploy
 ```
 You may have to wait a while for the files to upload, but after that, the SDK will print out a link in the console and you will be all good to go. ☁️ 🔗
 
-> [!WARNING]
-> There is a bug in the code. Your deployment will return an error when you try to make a map of census tracts.
-
 ## LLM Vocabulary
 
 OpenAI offers two services through its API that are used in this project: text generation with chat-GPT and embedding generation.
@@ -147,6 +144,9 @@ When the user sends a message to the chat, [sendMessage()](https://github.com/xa
 If `/useCase` decides the user wants the chat to calculate a statistic or make a figure, `sendMessage()` calls one of the functions that corresponds to one of these branches of the flow chart. For illustration, this description will follow the branch the chat picks if it thinks the user wants to make a scatter plot.
 
 In this case [requestGraphVars()](https://github.com/xamxl/Atlas-Chat/blob/main/Flask/static/js/script.js#L728) starts by calling [requestVar()](https://github.com/xamxl/Atlas-Chat/blob/main/Flask/static/js/script.js#L770) which constructs a list of all the available variables and sends them to the server. [/pickGraphVars](https://github.com/xamxl/Atlas-Chat/blob/main/Flask/main.py#L707) in the server uses a function call from the OpenAI API to decide which variables should be used or to write a message describing why the right variables were not available. Back in `requestGraphVars()` the chat either prints out the text describing why the right variables were not found or calls [graphVariable()](https://github.com/xamxl/Atlas-Chat/blob/main/Flask/static/js/script.js#L1648) to create the graph with the variables the server selected.
+
+> [!WARNING]
+> There is a bug in the code. The map download feature is not fully functional.
 
 ### Extract Prompt: What do I ask the database for?
 

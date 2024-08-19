@@ -2087,6 +2087,7 @@ function captureElementM(event) {
             if ((sibling.classList.contains('error') && sibling.classList.contains('graph')) || sibling.classList.contains('dtd')) {
                 // Get the inner HTML of the target element
                 let innerHTML = sibling.innerHTML;
+                innerHTML = "<link rel='stylesheet' href='https://unpkg.com/leaflet/dist/leaflet.css' /><script src='https://unpkg.com/leaflet/dist/leaflet.js'></script><script src='https://cdnjs.cloudflare.com/ajax/libs/chroma-js/2.1.0/chroma.min.js'></script>" + innerHTML;
                 // Create a Blob with the inner HTML
                 let blob = new Blob([innerHTML], { type: 'text/html' });
                 // Create a link element to download the HTML file

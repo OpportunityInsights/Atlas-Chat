@@ -439,6 +439,7 @@ function removeBR() {
 
 // Removes the last message from the chat
 function removeLastMessage() {
+    console.log("REMOVING");
     const messages = document.querySelectorAll('.message');
     if (messages.length > 0) {
         messages[messages.length - 1].remove();
@@ -562,7 +563,7 @@ async function sendMessage() {
         let pVAD = await pickVarAndDescribe(table, linkRows(table));
         if (! pVAD) {return}
         // Fetches the data for the location specific variable
-        getLocationData(table)
+        await getLocationData(table);
         // Writes a final description for the location specific data
         describeLocationData();
     }
@@ -825,45 +826,134 @@ async function requestMapVars() {
         d.style.display = 'none';
         d.style.width = '100%';
 
-        // Sets the data to the server and gets a map back in return (the map is an html string)
         fetch('http://127.0.0.1:3000/generate_map', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
             },
             body: JSON.stringify({ table: data, geo_level: cOT }),
             signal: controller2.signal
         })
         .then(response => {
             clearTimeout(timeoutId2);
-            return response.json();
-        })
-        .then(data => {
-            // Removes the placeholder message
-            removeLastMessage();
-
-            // If the map was successfully generated adds the map to the div and makes it visible
-            // Otherwise sends an error
-            if (data.html) {
-                // Adds a header message for the map
-                appendMessage('error', `Here is your map of ${pars["variable"]} for ${result}. <a href="#" id="${'li' + randomNum}" onclick="captureElementM(event)" class="download-link"><img height="1em" width="1em" src="${downloadIconUrl}" alt="Download"> Click here to download</a>`);
-                messages.push({ role: 'assistant', content: `Here is your map of ${pars["variable"]} for ${result}.` });
-                // Adds the div to the chat
-                appendMessage('error graph', d.outerHTML);
-                // Adds the map to the div and makes it visible
-                document.getElementById('md' + randomNum).innerHTML = data.html;
-                document.getElementById('md' + randomNum).style.display = 'block';
-            } else {
-                appendMessage('error', "I'm sorry, their was an error generating your map of " + pars["variable"] + " for " + result + ".");
-                messages.push({ role: 'assistant', content: "I'm sorry, their was an error generating your map of " + pars["variable"] + " for " + result + "." });
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
             }
+        
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let chunks = '';
+        
+            function processChunk({ done, value }) {
+                if (done) {
+                    try {
+                        // Parse the accumulated chunks as JSON
+                        const data = JSON.parse(chunks);
+                        // Handle the parsed JSON data here
+                        let features = JSON.parse(data.features);
+                        features = Object.values(features);
+                        const properties = data.properties;
+
+                        // Convert the features object into an array of objects
+                        const featureArray = features.map((polygonStr, index) => {
+                            if (polygonStr.includes("MULTIPOLYGON")) {
+                                // Handle MultiPolygon
+                                const multiPolygonCoordinates = polygonStr
+                                    .replace('MULTIPOLYGON (((', '')
+                                    .replace(')))', '')
+                                    .split(')), ((')
+                                    .map(polygon => polygon.split(',').map(coordStr => {
+                                        const [lngStr, latStr] = coordStr.trim().split(' ');
+                                        let lng = Number(lngStr.replace(/[^0-9.-]/g, ''));
+                                        let lat = Number(latStr.replace(/[^0-9.-]/g, ''));
+                        
+                                        if (isNaN(lat) || isNaN(lng)) {
+                                            // Handle invalid coordinates as before
+                                            return null;
+                                        }
+                                        return [lng, lat];
+                                    }).filter(coord => coord !== null)); // Filter out invalid coordinates
+                        
+                                return {
+                                    type: "Feature",
+                                    geometry: {
+                                        type: "MultiPolygon",
+                                        coordinates: multiPolygonCoordinates.map(polygon => [polygon]) // Wrap each polygon's coordinates in an array
+                                    },
+                                    properties: {
+                                        VALUE: properties[index]
+                                    }
+                                };
+                            } else {
+                                // Handle Polygon
+                                const coordinatesStr = polygonStr.replace('POLYGON ((', '').replace('))', '');
+                                const coordinates = coordinatesStr.split(',').map((coordStr, i, arr) => {
+                                    const [lngStr, latStr] = coordStr.trim().split(' ');
+                                    let lng = Number(lngStr.replace(/[^0-9.-]/g, ''));
+                                    let lat = Number(latStr.replace(/[^0-9.-]/g, ''));
+                        
+                                    if (isNaN(lat) || isNaN(lng)) {
+                                        // Handle invalid coordinates as before
+                                        return null;
+                                    }
+                                    return [lng, lat];
+                                }).filter(coord => coord !== null);  // Filter out any null entries
+                        
+                                if (coordinates.length > 0) {
+                                    return {
+                                        type: "Feature",
+                                        geometry: {
+                                            type: "Polygon",
+                                            coordinates: [coordinates]  // Wrap coordinates in an array to match GeoJSON format
+                                        },
+                                        properties: {
+                                            VALUE: properties[index]
+                                        }
+                                    };
+                                } else {
+                                    return null;
+                                }
+                            }
+                        }).filter(feature => feature !== null);
+
+                            // Now you can create the GeoJSON object
+                            let geoJSON = {
+                                "type": "FeatureCollection",
+                                "features": featureArray
+                            };
+
+                            // Removes the placeholder message
+                            removeLastMessage();
+
+                            // If the map was successfully generated adds the map to the div and makes it visible
+                            // Otherwise sends an error
+                            // Adds a header message for the map
+                            appendMessage('error', `Here is your map of ${pars["variable"]} for ${result}. <a href="#" id="${'li' + randomNum}" onclick="captureElementM(event)" class="download-link"><img height="1em" width="1em" src="${downloadIconUrl}" alt="Download"> Click here to download</a>`);
+                            messages.push({ role: 'assistant', content: `Here is your map of ${pars["variable"]} for ${result}.` });
+                            // Adds the div to the chat
+                            appendMessage('error graph', "<div id='map' style='width: 100%; height: 500px;'></div>");
+                            // Makes the map
+                            createLeafletChoropleth(geoJSON, data.geo_level)
+                            document.getElementById('map').id = "";
+                    } catch (error) {
+                        console.error('Failed to parse JSON:', error);
+                    }
+                    return;
+                }
+        
+                // Decode and accumulate the chunk
+                chunks += decoder.decode(value, { stream: true });
+        
+                // Read the next chunk
+                return reader.read().then(processChunk);
+            }
+        
+            // Start reading the stream
+            return reader.read().then(processChunk);
         })
         .catch(error => {
-            console.error('Error:', error);
-            alert('An error occurred while generating the map.');
+            console.error('There was a problem with the fetch operation:', error);
         });
-
-        messages.push({ role: 'assistant', content: "Map created!" });
     } else {
         removeLastMessage();
         appendMessage('error', varsData.reply);
@@ -1355,7 +1445,7 @@ function pickVarAndDescribe(table, variableText) {
         .then(response => response.json())
         .then(data => {
             // Removes the placeholder message
-            removeLastMessage();
+            //removeLastMessage();
 
             let pars = JSON.parse(data.reply);
 
@@ -1406,6 +1496,7 @@ function pickVarAndDescribe(table, variableText) {
                 if (usingLocation) {
                     resolve(true);
                 } else {
+                    removeLastMessage();
                     appendMessage('error des', pars['response']);
                     messages.push({ role: 'assistant', content: pars['response'] });
                     if (displayVariableDescriptionTable) {
@@ -1471,7 +1562,6 @@ function replaceVariableContent(toShow) {
 // Uses chat-GPT to describe the data that has been found and then puts that description in the chat
 // Makes the data visible
 function describeLocationData() {
-        appendMessage('error', 'Generating a response <span class="animate-ellipsis"></span>');
         fetch('http://127.0.0.1:3000/describeLocationData', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -2170,4 +2260,107 @@ function downloadAll(event) {
             }
         }
     }
+}
+
+// Takes in geoJSON data and returns the data's center
+function findStateCenterD(geoData) {
+    var totalLat = 0;
+    var totalLon = 0;
+    var totalPoints = 0;
+
+    geoData.features.forEach(function (feature) {
+        if (feature.geometry.type === "Polygon" || feature.geometry.type === "MultiPolygon") {
+            var coordinates = feature.geometry.type === "Polygon" ? feature.geometry.coordinates[0] : feature.geometry.coordinates[0][0];
+            coordinates.forEach(function (coord) {
+                totalLon += coord[0];
+                totalLat += coord[1];
+                totalPoints += 1;
+            });
+        }
+    });
+
+    if (totalPoints === 0) {
+        console.error("No valid polygons found.");
+        return null;
+    }
+
+    var avgLat = totalLat / totalPoints;
+    var avgLon = totalLon / totalPoints;
+
+    return [avgLat, avgLon]; // Return as [longitude, latitude]
+}
+
+// Takes in geoJSON data and a zoom level and creates a map
+function createLeafletChoropleth(geoData, zoom) {
+    stateCenter = findStateCenterD(geoData);
+
+    var map = L.map('map', {
+        scrollWheelZoom: false, // Disable zooming when scrolling
+        worldCopyJump: false // Handle projections correctly
+    }).setView(stateCenter, zoom);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+    }).addTo(map);
+
+    var values = geoData.features.map(function (feature) {
+        return feature.properties["VALUE"];
+    }).filter(function (value) {
+        return value !== null && value !== undefined && value !== "";
+    });
+
+    var lowerBound = percentile1(values, 5);
+    var upperBound = percentile1(values, 95);
+
+    values = values.map(function (value) {
+        return Math.min(Math.max(value, lowerBound), upperBound);
+    });
+
+    var minValue = Math.min.apply(null, values);
+    var maxValue = Math.max.apply(null, values);
+
+    var colorScale = chroma.scale(['#7e1727', '#ffffc8', '#2b5371']).domain([minValue, maxValue]);
+
+    function styleFeature(feature) {
+        var value = feature.properties["VALUE"];
+        return {
+            fillColor: value !== null && value !== undefined && value !== '' ? colorScale(value).hex() : 'none',
+            weight: 0.2,
+            opacity: 1,
+            color: 'black',
+            fillOpacity: 0.7
+        };
+    }
+
+    L.geoJson(geoData, {
+        style: styleFeature
+    }).addTo(map);
+
+    var legend = L.control({ position: 'bottomright' });
+
+    legend.onAdd = function (map) {
+        var div = L.DomUtil.create('div', 'info legend');
+        var grades = chroma.scale(['#7e1727', '#ffffc8', '#2b5371']).domain([minValue, maxValue]).colors(6);
+    
+        // Generate a color spectrum for the legend
+        for (var i = 0; i < grades.length; i++) {
+            var grade = (minValue + (i * (maxValue - minValue) / (grades.length - 1))).toFixed(2);
+            div.innerHTML +=
+                '<i style="background:' + grades[i] + '; width: 18px; height: 18px; display: inline-block; margin-right: 5px;"></i> ' +
+                grade + (i < grades.length - 1 ? '&ndash;' : '+') + '<br>';
+        }
+    
+        return div;
+    };
+    
+    legend.addTo(map);
+
+    return map;
+}
+
+// Helper function to calculate percentiles
+function percentile1(arr, p) {
+    arr.sort(function (a, b) { return a - b; });
+    var index = Math.floor((arr.length - 1) * p / 100);
+    return arr[index];
 }

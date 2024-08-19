@@ -33,7 +33,7 @@
     // Function to send data to the server
     async function sendData(data) {
         
-        const response = await fetch('http://127.0.0.1:3000/save_report', {
+        const response = await fetch('https://flaskfull-gxyogdz3la-nn.a.run.app/save_report', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -137,6 +137,9 @@ let locationNameQ;
 
 // True if the table with the description should be displayed with the data, false otherwise
 let displayVariableDescriptionTable = true;
+
+// Keeps tract of if a request is in progress
+let requestInProgress = false;
 
 // Adds the first message to the chat
 appendMessage('error topMessage', "Hello! I'm a bot designed to help you find data! Please ask me anything and I will do my best to find some related data from the <a target='_blank' href='https://opportunityinsights.org/paper/the-opportunity-atlas/'>Opportunity Atlas paper</a>.");
@@ -509,9 +512,18 @@ function closeGraphPopup() {
 // First figures out what the user wants to do
 // Then  calls the function to execute that task
 async function sendMessage() {
+    // Checks if a request is in progress
+    if (requestInProgress) {
+        return;
+    }
+    requestInProgress = true;
+
     // Gets the message and checks it is not empty
     const message = messageInput.value;
-    if (message.trim() === '') return;
+    if (message.trim() === '') {
+        requestInProgress = false;
+        return;
+    };
 
     // Adds the message to the chat and messages
     appendMessage('user', message);
@@ -526,32 +538,47 @@ async function sendMessage() {
     let fourMessages = messages.slice(-4);
     let wTD = await useCase(fourMessages);
     if(wTD == "create scatter plot") {
-        requestGraphVars();
+        await requestGraphVars();
+        requestInProgress = false;
         return
     } else if (wTD == "create map") {
-        requestMapVars();
+        await requestMapVars();
+        requestInProgress = false;
         return
     } else if (wTD == "calculate mean") {
-        requestSingleStatVar('get mean');
+        await requestSingleStatVar('get mean');
+        requestInProgress = false;
         return
     } else if (wTD == "calculate median") {
-        requestSingleStatVar('get median');
+        await requestSingleStatVar('get median');
+        requestInProgress = false;
         return
     } else if (wTD == "calculate standard deviation") {
-        requestSingleStatVar('get standard deviation');
+        await requestSingleStatVar('get standard deviation');
+        requestInProgress = false;
         return
     } else if (wTD == "calculate correlation") {
-        requestDoubleStatVars();
+        await requestDoubleStatVars();
+        requestInProgress = false;
         return
     } else {
         // Prepares the parameters to search for a variable or directly answers the user's question
-        if (! await variableSearch()) {return}
+        if (! await variableSearch()) {
+            requestInProgress = false;
+            return
+        }
         // Gets a list of variables from the database
         let chatData = await fetchData();
-        if (! chatData) {return}
+        if (! chatData) {
+            requestInProgress = false;
+            return
+        }
         // Turns those variables into a table
         let randomID = makeTable(chatData);
-        if (! randomID) {return}
+        if (! randomID) {
+            requestInProgress = false;
+            return
+        }
         let table = document.getElementById(randomID);
         // Combines variables in the table with the same name but different characteristics like race, gender, or percentile
         condense(table);
@@ -560,7 +587,10 @@ async function sendMessage() {
         // linkRows: creates families of variables by linking things like kfr_black_pooled_p50 and kfr_black_pooled together
         // pickVarAndDescribe: picks a specific variable to display and writes a description for that variable
         let pVAD = await pickVarAndDescribe(table, linkRows(table));
-        if (! pVAD) {return}
+        if (! pVAD) {
+            requestInProgress = false;
+            return
+        }
         // Fetches the data for the location specific variable
         await getLocationData(table);
         // Writes a final description for the location specific data
@@ -573,7 +603,7 @@ async function variableSearch() {
     try {
         // Asks chat-GPT to either answer the user's question or do a function call to get the data
         // Sends the messages to the server
-        const response = await fetch('http://127.0.0.1:3000/formulateQueryOrRespond', {
+        const response = await fetch('https://flaskfull-gxyogdz3la-nn.a.run.app/formulateQueryOrRespond', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ messages }),
@@ -825,7 +855,7 @@ async function requestMapVars() {
         d.style.display = 'none';
         d.style.width = '100%';
 
-        fetch('http://127.0.0.1:3000/generate_map', {
+        fetch('https://flaskfull-gxyogdz3la-nn.a.run.app/generate_map', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -1028,7 +1058,7 @@ async function requestVar(endPoint) {
     mgs.push({ role: 'user', content: "PROVIDED VARIABLES: " + longString});
 
     // Calls the server to have chat-GPT pick one of the variable to use
-    const vars = await fetch('http://127.0.0.1:3000/' + endPoint, {   
+    const vars = await fetch('https://flaskfull-gxyogdz3la-nn.a.run.app/' + endPoint, {   
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ "messages": mgs }),
@@ -1070,7 +1100,7 @@ function getVariableId(variableName, variableType) {
 
 // Takes in a single message and asks chat-GPT to use it to figure out what action the user wants that chatbot to take
 async function useCase(fourMessages) {
-    const gQM = await fetch('http://127.0.0.1:3000/useCase', {
+    const gQM = await fetch('https://flaskfull-gxyogdz3la-nn.a.run.app/useCase', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ "messages": fourMessages }),
@@ -1084,7 +1114,7 @@ async function useCase(fourMessages) {
 async function fetchData() {
     try {
         // Calls the server to get the list of variables
-        const chatResponse = await fetch('http://127.0.0.1:3000/getRankedVariables', {
+        const chatResponse = await fetch('https://flaskfull-gxyogdz3la-nn.a.run.app/getRankedVariables', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ "message": queryQ }),
@@ -1132,7 +1162,7 @@ function makeTable(data) {
         let cells = row.split("SPECIAL").map((cell, index) => {
             if (index === 0) {
                 let [sheet, varName] = cell.split("LINK");
-                return `<td><a href="http://127.0.0.1:3000/viewData?sheet=${sheet}&var=${varName}" disabled onclick="clickLink(event)" class="broken" target="_blank">${varName}</a></td>`;
+                return `<td><a href="https://flaskfull-gxyogdz3la-nn.a.run.app/viewData?sheet=${sheet}&var=${varName}" disabled onclick="clickLink(event)" class="broken" target="_blank">${varName}</a></td>`;
             } else {
                 return `<td>${cell}</td>`;
             }
@@ -1436,7 +1466,7 @@ function pickVarAndDescribe(table, variableText) {
         }
 
         // Asks the server to pick a variable
-        fetch('http://127.0.0.1:3000/pickVarAndDescribe', {
+        fetch('https://flaskfull-gxyogdz3la-nn.a.run.app/pickVarAndDescribe', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ messages }),
@@ -1561,7 +1591,7 @@ function replaceVariableContent(toShow) {
 // Uses chat-GPT to describe the data that has been found and then puts that description in the chat
 // Makes the data visible
 function describeLocationData() {
-        fetch('http://127.0.0.1:3000/describeLocationData', {
+        fetch('https://flaskfull-gxyogdz3la-nn.a.run.app/describeLocationData', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ messages }),
@@ -1576,6 +1606,7 @@ function describeLocationData() {
                 }
                 Array.from(document.getElementsByClassName('showLatter')).forEach(element => element.classList.remove('showLatter'));
                 Array.from(document.getElementsByClassName('showLatter1')).forEach(element => element.classList.remove('hidden'));
+                requestInProgress = false;
             });
 }
 
@@ -1696,7 +1727,7 @@ async function getLocationData(table) {
   
 // Gets the data for a specific variable from a specific sheet
 async function fetchDataLoc(variable, sheet) {
-    const response = await fetch('http://127.0.0.1:3000/getData', {
+    const response = await fetch('https://flaskfull-gxyogdz3la-nn.a.run.app/getData', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ variable, sheet }),
@@ -1706,7 +1737,7 @@ async function fetchDataLoc(variable, sheet) {
 
 // takes in an address and returns the tract id, state code, and county code for that address
 async function getTractIdFromAddress(address) {
-    const response = await fetch('http://127.0.0.1:3000/geocode', {
+    const response = await fetch('https://flaskfull-gxyogdz3la-nn.a.run.app/geocode', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ address })
@@ -1721,7 +1752,7 @@ async function getTractIdFromAddress(address) {
 
 // Gets the county code for a county name
 async function getCountyIdFromName(countyName) {
-    const response = await fetch(`http://127.0.0.1:3000/get_county_code?county=${encodeURIComponent(countyName)}`, {
+    const response = await fetch(`https://flaskfull-gxyogdz3la-nn.a.run.app/get_county_code?county=${encodeURIComponent(countyName)}`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' }
     });
@@ -1736,7 +1767,7 @@ async function getCountyIdFromName(countyName) {
 
 // Gets the state id for a state name
 async function getStateIdFromName(stateName) {
-    const response = await fetch(`http://127.0.0.1:3000/get_state_id?state=${encodeURIComponent(stateName)}`, {
+    const response = await fetch(`https://flaskfull-gxyogdz3la-nn.a.run.app/get_state_id?state=${encodeURIComponent(stateName)}`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' }
     });

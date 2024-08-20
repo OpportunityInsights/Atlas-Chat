@@ -202,6 +202,11 @@ To save money, the function call in `/useCase` used to only get one message to u
 
 If a user knows how to use the chat then generally they should be able to find what they are looking for. However, if someone is not familiar with the chat's workflow, then trying to get data, calculate statistics, or make figures can be confusing. For example, they may not know that to make a map they first have to request a variable for a specific location and then ask for the map to be created. To fix this, more explanatory text could be added to the chat's error messages and to the prompts given to chat-GPT. Another way to fix this would be to improve the workflow so that the chat can do two tasks following one prompt. For example, the chat could be able to first get the data and then create the map without the user having to break the task down into two prompts.
 
+During a testing session with people form the lab, a number of OI members asked for the same three features:
+1. The ability for the chat to manipulate data in more ways. For example, people wanted to be able to be able to get the rows of tables with the biggest or smallest values and to get the difference between two tables. While these features could be added to the chat individually, a better solution would be to give the chat the ability to write and execute python code on tables so that it could complete any task, even ones it was not preprogrammed to do.
+2. The ability to understand more about how the data was calculated and what data is available. To do this the chat could be given the ability to search through the Atlas Paper with an embedding search engine to find relevant information to add to its context.
+3. The ability to fetch multiple variables simultaneously with one request.
+
 New embedding models and LLMs that outperform the ones used in this code are regularly being released. Researching the best LLMs and embedding models and replacing the models currently being used with the new ones will improve the chat. Try looking for chat-GPT 5 and for [llama 3.1 405B hosted by Groq](https://console.groq.com/docs/models).
 
 ## Contact

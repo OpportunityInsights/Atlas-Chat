@@ -33,7 +33,7 @@
     // Function to send data to the server
     async function sendData(data) {
         
-        const response = await fetch('https://flaskfullmw-gxyogdz3la-nn.a.run.app/save_report', {
+        const response = await fetch('http://127.0.0.1:3000/save_report', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -603,7 +603,7 @@ async function variableSearch() {
     try {
         // Asks chat-GPT to either answer the user's question or do a function call to get the data
         // Sends the messages to the server
-        const response = await fetch('https://flaskfullmw-gxyogdz3la-nn.a.run.app/formulateQueryOrRespond', {
+        const response = await fetch('http://127.0.0.1:3000/formulateQueryOrRespond', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ messages }),
@@ -855,7 +855,7 @@ async function requestMapVars() {
         d.style.display = 'none';
         d.style.width = '100%';
 
-        fetch('https://flaskfullmw-gxyogdz3la-nn.a.run.app/generate_map', {
+        fetch('http://127.0.0.1:3000/generate_map', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -1058,7 +1058,7 @@ async function requestVar(endPoint) {
     mgs.push({ role: 'user', content: "PROVIDED VARIABLES: " + longString});
 
     // Calls the server to have chat-GPT pick one of the variable to use
-    const vars = await fetch('https://flaskfullmw-gxyogdz3la-nn.a.run.app/' + endPoint, {   
+    const vars = await fetch('http://127.0.0.1:3000/' + endPoint, {   
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ "messages": mgs }),
@@ -1100,7 +1100,7 @@ function getVariableId(variableName, variableType) {
 
 // Takes in a single message and asks chat-GPT to use it to figure out what action the user wants that chatbot to take
 async function useCase(fourMessages) {
-    const gQM = await fetch('https://flaskfullmw-gxyogdz3la-nn.a.run.app/useCase', {
+    const gQM = await fetch('http://127.0.0.1:3000/useCase', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ "messages": fourMessages }),
@@ -1114,7 +1114,7 @@ async function useCase(fourMessages) {
 async function fetchData() {
     try {
         // Calls the server to get the list of variables
-        const chatResponse = await fetch('https://flaskfullmw-gxyogdz3la-nn.a.run.app/getRankedVariables', {
+        const chatResponse = await fetch('http://127.0.0.1:3000/getRankedVariables', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ "message": queryQ }),
@@ -1162,7 +1162,7 @@ function makeTable(data) {
         let cells = row.split("SPECIAL").map((cell, index) => {
             if (index === 0) {
                 let [sheet, varName] = cell.split("LINK");
-                return `<td><a href="https://flaskfullmw-gxyogdz3la-nn.a.run.app/viewData?sheet=${sheet}&var=${varName}" disabled onclick="clickLink(event)" class="broken" target="_blank">${varName}</a></td>`;
+                return `<td><a href="http://127.0.0.1:3000/viewData?sheet=${sheet}&var=${varName}" disabled onclick="clickLink(event)" class="broken" target="_blank">${varName}</a></td>`;
             } else {
                 return `<td>${cell}</td>`;
             }
@@ -1466,7 +1466,7 @@ function pickVarAndDescribe(table, variableText) {
         }
 
         // Asks the server to pick a variable
-        fetch('https://flaskfullmw-gxyogdz3la-nn.a.run.app/pickVarAndDescribe', {
+        fetch('http://127.0.0.1:3000/pickVarAndDescribe', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ messages }),
@@ -1591,7 +1591,7 @@ function replaceVariableContent(toShow) {
 // Uses chat-GPT to describe the data that has been found and then puts that description in the chat
 // Makes the data visible
 function describeLocationData() {
-        fetch('https://flaskfullmw-gxyogdz3la-nn.a.run.app/describeLocationData', {
+        fetch('http://127.0.0.1:3000/describeLocationData', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ messages }),
@@ -1727,7 +1727,7 @@ async function getLocationData(table) {
   
 // Gets the data for a specific variable from a specific sheet
 async function fetchDataLoc(variable, sheet) {
-    const response = await fetch('https://flaskfullmw-gxyogdz3la-nn.a.run.app/getData', {
+    const response = await fetch('http://127.0.0.1:3000/getData', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ variable, sheet }),
@@ -1737,7 +1737,7 @@ async function fetchDataLoc(variable, sheet) {
 
 // takes in an address and returns the tract id, state code, and county code for that address
 async function getTractIdFromAddress(address) {
-    const response = await fetch('https://flaskfullmw-gxyogdz3la-nn.a.run.app/geocode', {
+    const response = await fetch('http://127.0.0.1:3000/geocode', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ address })
@@ -1752,7 +1752,7 @@ async function getTractIdFromAddress(address) {
 
 // Gets the county code for a county name
 async function getCountyIdFromName(countyName) {
-    const response = await fetch(`https://flaskfullmw-gxyogdz3la-nn.a.run.app/get_county_code?county=${encodeURIComponent(countyName)}`, {
+    const response = await fetch(`http://127.0.0.1:3000/get_county_code?county=${encodeURIComponent(countyName)}`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' }
     });
@@ -1767,7 +1767,7 @@ async function getCountyIdFromName(countyName) {
 
 // Gets the state id for a state name
 async function getStateIdFromName(stateName) {
-    const response = await fetch(`https://flaskfullmw-gxyogdz3la-nn.a.run.app/get_state_id?state=${encodeURIComponent(stateName)}`, {
+    const response = await fetch(`http://127.0.0.1:3000/get_state_id?state=${encodeURIComponent(stateName)}`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' }
     });

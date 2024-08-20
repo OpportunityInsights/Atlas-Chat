@@ -1547,6 +1547,7 @@ function pickVarAndDescribe(table, variableText) {
                 if (messages[messages.length - 1].content.startsWith("Looking for location specific data")) {
                     removeLastMessage();
                 }
+                removeLastMessage();
                 Array.from(document.getElementsByClassName('showLatter')).forEach(element => element.classList.remove('showLatter'));
                 appendMessage('error', 'Sorry, I couldn\'t find a variable that would help. 😕 Do you want me to search for something else?');
                 messages.push({ role: 'assistant', content: 'Sorry, I couldn\'t find a variable that would help. 😕 Do you want me to search for something else?' });

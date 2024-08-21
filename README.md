@@ -121,7 +121,7 @@ The list below goes over each file in the project, where it is located, and what
     - `main.py`: Contains the server code
     - `static`: Stores the CSS, JS, and images that `main.py` gives to the user's computer when it loads the page
     - `templates`: Stores the HTML that `main.py` gives to the user's computer when it loads the page
-    - `map_data`: Contains files with information about the outlines of US counties and census tracts. Used to contruct maps
+    - `map_data`: Contains files with information about the outlines of US counties and census tracts. Used to construct maps
     - `headers`: Contains CSV sheets, each with only one row. This row contains the header names for all the columns in that sheet
     - `data_columns`: Contains the data itself. Each column from the original data was turned into its own sheet named with the number of the sheet the data came from and then the variable name
     - `header_description`: Contains files with descriptions for each variable. There are only four files (fewer files than there are sheets) since many of the sheets have the same variables, just for different geographical levels

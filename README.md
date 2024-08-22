@@ -60,6 +60,8 @@ python main.py
 ```
 Finally, navigate to the [localhost](http://127.0.0.1:3000/). That's it! 🎉
 
+Alternatively, you can run the chat in a Docker container. A Docker image of the current chat was shared with members of the OI team.
+
 ## Hosting
 
 If you want to make a shareable link, you can upload the whole program to [Google Cloud Run](https://cloud.google.com/run/?utm_source=google&utm_medium=cpc&utm_campaign=na-US-all-en-dr-bkws-all-all-trial-e-dr-1707554&utm_content=text-ad-none-any-DEV_c-CRE_665665924930-ADGP_Hybrid+%7C+BKWS+-+MIX+%7C+Txt-Serverless+Computing-Cloud+Run-KWID_43700077224933166-kwd-678836618089&utm_term=KW_google+cloud+run-ST_google+cloud+run&gad_source=1&gclid=Cj0KCQjwh7K1BhCZARIsAKOrVqGkYjouOnjAaTGADV02ZOaRybrk_BuAbY7DdY0i_b9Xr3Kin24g4tgaAuaIEALw_wcB&gclsrc=aw.ds&hl=en). Google Cloud Run is great because you can easily control how powerful the server is. The chat runs best when you give each instance maximum power, 8 VCPUs and 32 GB of memory. To scale the server up or down you can change the maximum number of instance. One instance can support at least 20 users at once, and the maximum number of instances is 100.
@@ -128,6 +130,7 @@ The list below goes over each file in the project, where it is located, and why 
     - `label_col_names`: Holds the names of the label columns for each sheet. Examples of label columns are state ID, state name, county name, and county ID
     - `descriptions_units`: Contains each variable name and its description. Importantly these variables do not specify race, gender, or percentile. For example, `descriptions_units` may contain a variable called `kfr_\[race]_\[gender]_mean`. `descriptions_units` also contains information on the sheets' units and the different outcomes in each sheet. Think of `descriptions_units` as the information from the README on Opportunity Insights' data page
     - `embeddings`: Contains the embeddings themselves. All columns in the sheets have a corresponding embedding, but each embedding normally corresponds to multiple columns. For example, `kfr_pooled_pooled_mean` and `kfr_black_pooled_mean` both have the same embedding. The embeddings for all label columns are set to zero
+    -`Dockerfile`: Used to build the a Docker image of the application
 
 ## Inner Workings
 

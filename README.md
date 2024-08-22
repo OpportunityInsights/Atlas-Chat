@@ -130,7 +130,7 @@ The list below goes over each file in the project, where it is located, and why 
     - `label_col_names`: Holds the names of the label columns for each sheet. Examples of label columns are state ID, state name, county name, and county ID
     - `descriptions_units`: Contains each variable name and its description. Importantly these variables do not specify race, gender, or percentile. For example, `descriptions_units` may contain a variable called `kfr_\[race]_\[gender]_mean`. `descriptions_units` also contains information on the sheets' units and the different outcomes in each sheet. Think of `descriptions_units` as the information from the README on Opportunity Insights' data page
     - `embeddings`: Contains the embeddings themselves. All columns in the sheets have a corresponding embedding, but each embedding normally corresponds to multiple columns. For example, `kfr_pooled_pooled_mean` and `kfr_black_pooled_mean` both have the same embedding. The embeddings for all label columns are set to zero
-    -`Dockerfile`: Used to build the a Docker image of the application
+    - `Dockerfile`: Used to build the a Docker image of the application
 
 ## Inner Workings
 

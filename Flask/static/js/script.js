@@ -957,7 +957,8 @@ async function requestMapVars() {
                             // If the map was successfully generated adds the map to the div and makes it visible
                             // Otherwise sends an error
                             // Adds a header message for the map
-                            appendMessage('error', `Here is your map of ${pars["variable"]} for ${result}. <a href="#" id="${'li' + randomNum}" onclick="captureElementM(event)" class="download-link"><img height="1em" width="1em" src="${downloadIconUrl}" alt="Download"> Click here to download</a>`);
+                            // appendMessage('error', `Here is your map of ${pars["variable"]} for ${result}. <a href="#" id="${'li' + randomNum}" onclick="captureElementM(event)" class="download-link"><img height="1em" width="1em" src="${downloadIconUrl}" alt="Download"> Click here to download</a>`);
+                            appendMessage('error', `Here is your map of ${pars["variable"]} for ${result}.`);
                             messages.push({ role: 'assistant', content: `Here is your map of ${pars["variable"]} for ${result}.` });
                             // Adds the div to the chat
                             appendMessage('error graph', "<div id='map' style='width: 100%; height: 500px;'></div>");

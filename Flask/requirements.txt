@@ -1,12 +1,10 @@
-branca==0.7.2
 firebase_admin==6.5.0
 Flask==3.0.3
 Flask_Cors==4.0.0
-folium==0.17.0
-geopandas==0.8.1
-numpy==2.0.1
-openai==1.40.6
-pandas==2.2.2
+numpy==1.24.4
+openai==1.42.0
+pandas==2.0.3
+pyshp==2.1.2
 python-dotenv==1.0.1
 Requests==2.32.3
-Shapely==2.0.5
+Shapely==2.0.6

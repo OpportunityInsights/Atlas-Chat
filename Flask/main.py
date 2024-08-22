@@ -10,9 +10,6 @@ from flask_cors import CORS
 from dotenv import load_dotenv
 import requests
 from urllib.parse import quote
-from shapely import Point, wkt
-import folium
-import geopandas as gpd
 from datetime import datetime
 import random
 import firebase_admin
@@ -21,9 +18,8 @@ from firebase_admin import firestore
 from openai import OpenAI
 import re
 import concurrent.futures
-from flask import Flask, request, jsonify
-import pandas as pd
-import branca.colormap as cm
+import shapefile
+from shapely.geometry import shape
 
 # Load environment variable from .env file for OpenAI and initialize OpenAI API
 load_dotenv()
@@ -497,69 +493,6 @@ def find_state_id(data, state_name):
                 return row[0]
         return None
 
-# Takes in data and produces a choropleth map of the data
-def create_folium_choropleth(gdf, data_column, state_center, zoom):
-    # Convert the 'geometry' column to shapely geometries
-    gdf['geometry'] = gdf['geometry'].apply(wkt.loads)
-
-    # Convert DataFrame to GeoDataFrame
-    gdf = gpd.GeoDataFrame(gdf, geometry='geometry')
-
-    # Ensure all geometries are present
-    gdf = gdf[gdf['geometry'].notnull()]
-
-    # Convert GeoDataFrame to GeoJSON
-    geo_json_data = gdf.to_json()
-
-    # Create the map centered on the state
-    m = folium.Map(location=state_center, zoom_start=zoom, scrollWheelZoom=False)
-
-    # Clip the data values to avoid outliers skewing the color map
-    lower_bound = np.percentile(gdf[data_column].dropna(), 5)
-    upper_bound = np.percentile(gdf[data_column].dropna(), 95)
-    gdf[data_column] = np.clip(gdf[data_column], lower_bound, upper_bound)
-
-    # Create a linear color map with white in the middle
-    min_value = gdf[data_column].min()
-    max_value = gdf[data_column].max()
-    linear = cm.LinearColormap(['#7e1727', '#ffffc8', '#2b5371'], vmin=min_value, vmax=max_value)
-    
-    # Add the choropleth layer
-    def style_function(feature):
-        value = feature['properties'].get(data_column)
-        if value is None:
-            return {
-                'fillColor': 'gray',  # Default color for missing values
-                'color': 'black',
-                'weight': 0.2,  # Thinner line
-                'fillOpacity': 0.7,
-                'lineOpacity': 1,
-            }
-        else:
-            return {
-                'fillColor': linear(value),
-                'color': 'black',
-                'weight': 0.2,  # Thinner line
-                'fillOpacity': 0.7,
-                'lineOpacity': 1,
-            }
-    
-    # Create the map
-    folium.GeoJson(
-        geo_json_data,
-        style_function=style_function
-    ).add_to(m)
-    
-    # Add the color map to the map
-    m.add_child(linear)
-
-    return m
-
-# Takes in a path to a shapefile and returns data from the file
-def get_shapefile_columns(filepath):
-    gdf = gpd.read_file(filepath)
-    return gdf.columns
-
 # Takes message, any functions, the names of any functions that must be used, and the model to use
 # Returns the response from the OpenAI API
 def chat_completion_request(messages, tools=None, tool_choice=None, model=model):
@@ -849,23 +782,48 @@ def generate_map():
     elif geo_level == 'tract':
         shapefile_path = 'map_data/' + state_fips_list[0] + '.shp'
 
-    # Load the shapefile into a GeoDataFrame
-    geo_df = gpd.read_file(shapefile_path)
+    def read_shapefile(shapefile_path):
+        # Open the shapefile
+        sf = shapefile.Reader(shapefile_path)
+        
+        # Read the fields (ignoring the DeletionFlag field)
+        fields = [field[0] for field in sf.fields if field[0] != 'DeletionFlag']
+        
+        # Read the records and geometries
+        records = []
+        geometries = []
+        
+        for sr in sf.shapeRecords():
+            geom = shape(sr.shape.__geo_interface__)  # Converts to a Shapely geometry
+            record = dict(zip(fields, sr.record))
+            records.append(record)
+            geometries.append(geom)
+        
+        # Create a DataFrame from records
+        df = pd.DataFrame(records)
+        
+        # Add the geometries as a column in the DataFrame
+        df['geometry'] = geometries
+        
+        return df
 
-    # Add a GEOID column to the GeoDataFrame
+    # Load the shapefile into a data frame
+    geo_df = read_shapefile(shapefile_path)
+
+    # Add a GEOID column to the data frame
     merged = ""
     if geo_level == 'county':
         geo_df['GEOID'] = geo_df['STATEFP'] + geo_df['COUNTYFP']
         geo_df = geo_df[geo_df['STATEFP'].isin(state_fips_list)]
         df['GEOID'] = [state_fips + county for state_fips, county in zip(df.iloc[:, 1].apply(lambda x: str(x).zfill(2)).tolist(), county_fips)]
-        # Merge the data with the GeoDataFrame
+        # Merge the data with the data frame
         merged = geo_df.set_index('GEOID').join(df.set_index('GEOID'))
         merged.reset_index(inplace=True)
     elif geo_level == 'tract':
         geo_df['GEOID10'] = geo_df['STATEFP10'] + geo_df['COUNTYFP10'] + geo_df['TRACTCE10']
         geo_df = geo_df[geo_df['STATEFP10'].isin(state_fips_list)]
         df['GEOID10'] = [state_fips + county + tract for state_fips, county, tract in zip(df.iloc[:, 1].apply(lambda x: str(x).zfill(2)).tolist(), county_fips, tract_fips)]
-        # Merge the data with the GeoDataFrame
+        # Merge the data with the data frame
         merged = geo_df.set_index('GEOID10').join(df.set_index('GEOID10'))
         merged.reset_index(inplace=True)
 
@@ -918,4 +876,5 @@ def index():
     return render_template('index.html')
 
 if __name__ == '__main__':
-    app.run(port=3000)
+    port = int(os.environ.get('PORT', 3000))
+    app.run(debug=True, host='0.0.0.0', port=port)

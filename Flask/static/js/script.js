@@ -2357,15 +2357,16 @@ function createLeafletChoropleth(geoData, zoom) {
         var value = feature.properties["VALUE"];
         return {
             fillColor: value !== null && value !== undefined && value !== '' ? colorScale(value).hex() : 'none',
-            weight: 0.2,
+            weight: 0.05,
             opacity: 1,
             color: 'black',
-            fillOpacity: 0.7
+            fillOpacity: 0.9
         };
     }
 
     L.geoJson(geoData, {
-        style: styleFeature
+        style: styleFeature,
+        smoothFactor: 0.1,
     }).addTo(map);
 
     var legend = L.control({ position: 'bottomright' });

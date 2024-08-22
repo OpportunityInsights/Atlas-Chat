@@ -2364,10 +2364,15 @@ function createLeafletChoropleth(geoData, zoom) {
         };
     }
 
-    L.geoJson(geoData, {
+    var geoJsonLayer = L.geoJson(geoData, {
         style: styleFeature,
         smoothFactor: 0.1,
     }).addTo(map);
+
+    // Fit the map to the bounds of the GeoJSON data
+    if (zoom != 3.5) {
+        map.fitBounds(geoJsonLayer.getBounds());
+    }
 
     var legend = L.control({ position: 'bottomright' });
 

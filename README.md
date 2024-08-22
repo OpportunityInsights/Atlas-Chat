@@ -212,6 +212,8 @@ During a testing session with people from the lab, a number of OI members asked 
 
 New embedding models and LLMs that outperform the ones used in this code are regularly being released. Researching the best LLMs and embedding models and replacing the models currently being used with the new ones will improve the chat. Try looking for chat-GPT 5 and for [llama 3.1 405B hosted by Groq](https://console.groq.com/docs/models).
 
+Lastly, if more data needs to be added to the chat, make sure to read through the `setup.py` file to see how raw datasets can be converted into a form the chat can understand. Look through the workflow in `main.py` and `script.js` to see places where functions need to be change. It will probably be necessary to update the location fetching code and the code that parses races, genders, parental income percentiles, and statistic types.
+
 ## Contact
 
 - [GitHub](https://github.com/xamxl)

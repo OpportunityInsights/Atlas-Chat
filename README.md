@@ -64,7 +64,7 @@ Alternatively, you can run the chat in a Docker container. A Docker image of the
 
 ## Hosting
 
-If you want to make a shareable link, you can upload the whole program to [Google Cloud Run](https://cloud.google.com/run/?utm_source=google&utm_medium=cpc&utm_campaign=na-US-all-en-dr-bkws-all-all-trial-e-dr-1707554&utm_content=text-ad-none-any-DEV_c-CRE_665665924930-ADGP_Hybrid+%7C+BKWS+-+MIX+%7C+Txt-Serverless+Computing-Cloud+Run-KWID_43700077224933166-kwd-678836618089&utm_term=KW_google+cloud+run-ST_google+cloud+run&gad_source=1&gclid=Cj0KCQjwh7K1BhCZARIsAKOrVqGkYjouOnjAaTGADV02ZOaRybrk_BuAbY7DdY0i_b9Xr3Kin24g4tgaAuaIEALw_wcB&gclsrc=aw.ds&hl=en). Google Cloud Run is great because you can easily control how powerful the server is. The chat runs best when you give each instance maximum power, 8 VCPUs and 32 GB of memory. To scale the server up or down you can change the maximum number of instance. One instance can support at least 20 users at once, and the maximum number of instances is 100.
+If you want to make a shareable link, you can upload the whole program to [Google Cloud Run](https://cloud.google.com/run/?utm_source=google&utm_medium=cpc&utm_campaign=na-US-all-en-dr-bkws-all-all-trial-e-dr-1707554&utm_content=text-ad-none-any-DEV_c-CRE_665665924930-ADGP_Hybrid+%7C+BKWS+-+MIX+%7C+Txt-Serverless+Computing-Cloud+Run-KWID_43700077224933166-kwd-678836618089&utm_term=KW_google+cloud+run-ST_google+cloud+run&gad_source=1&gclid=Cj0KCQjwh7K1BhCZARIsAKOrVqGkYjouOnjAaTGADV02ZOaRybrk_BuAbY7DdY0i_b9Xr3Kin24g4tgaAuaIEALw_wcB&gclsrc=aw.ds&hl=en). Google Cloud Run is great because you can easily control how powerful the server is. The chat runs best when you give each instance maximum power, 8 VCPUs and 32 GB of memory. To scale the server up or down you can change the maximum number of instances. One instance can support at least 20 users at once, and the maximum number of instances is 100.
 
 To do this, first, go to the `script.js` file in the project and replace all occurrences of http\:\/\/<i></i>127\.0\.0\.1\:3000\/ with the link to your Google Cloud Run deployment. You may need to deploy twice, once to figure out what this link is and another time with this link in the code.
 
@@ -130,7 +130,7 @@ The list below goes over each file in the project, where it is located, and why 
     - `label_col_names`: Holds the names of the label columns for each sheet. Examples of label columns are state ID, state name, county name, and county ID
     - `descriptions_units`: Contains each variable name and its description. Importantly these variables do not specify race, gender, or percentile. For example, `descriptions_units` may contain a variable called `kfr_\[race]_\[gender]_mean`. `descriptions_units` also contains information on the sheets' units and the different outcomes in each sheet. Think of `descriptions_units` as the information from the README on Opportunity Insights' data page
     - `embeddings`: Contains the embeddings themselves. All columns in the sheets have a corresponding embedding, but each embedding normally corresponds to multiple columns. For example, `kfr_pooled_pooled_mean` and `kfr_black_pooled_mean` both have the same embedding. The embeddings for all label columns are set to zero
-    - `Dockerfile`: Used to build the a Docker image of the application
+    - `Dockerfile`: Used to build a Docker image of the application
 
 ## Inner Workings
 
@@ -205,14 +205,14 @@ To save money, the function call in `/useCase` used to only get one message to u
 
 If a user knows how to use the chat then generally they should be able to find what they are looking for. However, if someone is not familiar with the chat's workflow, then trying to get data, calculate statistics, or make figures can be confusing. For example, they may not know that to make a map they first have to request a variable for a specific location and then ask for the map to be created. To fix this, more explanatory text could be added to the chat's error messages and to the prompts given to chat-GPT. Another way to fix this would be to improve the workflow so that the chat can do two tasks following one prompt. For example, the chat could first get the data and then create the map without the user having to break the task down into two prompts.
 
-During a testing session with people from the lab, a number of OI members asked for the same three features:
-1. The ability for the chat to manipulate data in more ways. For example, people wanted to be able to be able to get the rows of tables with the biggest or smallest values and to get the difference between two tables. While these features could be added to the chat individually, a better solution would be to give the chat the ability to write and execute python code on tables so that it could complete any task, even ones it was not preprogrammed to do.
+During a testing session with people from the lab, several OI members asked for the same three features:
+1. The ability for the chat to manipulate data in more ways. For example, people wanted to be able to be able to get the rows of tables with the biggest or smallest values and to get the difference between two tables. While these features could be added to the chat individually, a better solution would be to give the chat the ability to write and execute Python code on tables so that it could complete any task, even ones it was not preprogrammed to do.
 2. The ability to understand more about how the data was calculated and what data is available. To do this the chat could be given the ability to search through the Atlas Paper with an embedding search engine to find relevant information to add to its context.
 3. The ability to fetch multiple variables simultaneously with one request and the ability to fetch data and make a figure with one request.
 
 New embedding models and LLMs that outperform the ones used in this code are regularly being released. Researching the best LLMs and embedding models and replacing the models currently being used with the new ones will improve the chat. Try looking for chat-GPT 5 and for [llama 3.1 405B hosted by Groq](https://console.groq.com/docs/models).
 
-Lastly, if more data needs to be added to the chat, make sure to read through the `setup.py` file to see how raw datasets can be converted into a form the chat can understand. Look through the workflow in `main.py` and `script.js` to see places where functions need to be change. It will probably be necessary to update the location fetching code and the code that parses races, genders, parental income percentiles, and statistic types.
+Lastly, if more data needs to be added to the chat, make sure to read through the `setup.py` file to see how raw datasets can be converted into a form the chat can understand. Look through the workflow in `main.py` and `script.js` to see places where functions need to be changed. It will probably be necessary to update the location fetching code and the code that parses races, genders, parental income percentiles, and statistic types.
 
 ## Contact
 
